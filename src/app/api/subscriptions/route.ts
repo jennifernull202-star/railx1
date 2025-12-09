@@ -90,6 +90,25 @@ export async function GET() {
 // POST - Create checkout session for new subscription
 // ============================================================================
 
+// Helper function to get price IDs at runtime
+function getStripePriceId(type: 'seller' | 'contractor', tier: string, period: 'monthly' | 'yearly'): string {
+  const priceMap: Record<string, string | undefined> = {
+    // Seller prices
+    'seller_basic_monthly': process.env.STRIPE_PRICE_SELLER_BASIC_MONTHLY,
+    'seller_basic_yearly': process.env.STRIPE_PRICE_SELLER_BASIC_YEARLY,
+    'seller_plus_monthly': process.env.STRIPE_PRICE_SELLER_PLUS_MONTHLY,
+    'seller_plus_yearly': process.env.STRIPE_PRICE_SELLER_PLUS_YEARLY,
+    'seller_pro_monthly': process.env.STRIPE_PRICE_SELLER_PRO_MONTHLY,
+    'seller_pro_yearly': process.env.STRIPE_PRICE_SELLER_PRO_YEARLY,
+    // Contractor prices
+    'contractor_verified_monthly': process.env.STRIPE_PRICE_CONTRACTOR_VERIFIED_MONTHLY,
+    'contractor_verified_yearly': process.env.STRIPE_PRICE_CONTRACTOR_VERIFIED_YEARLY,
+  };
+  
+  const key = `${type}_${tier}_${period}`;
+  return priceMap[key] || '';
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -115,7 +134,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Get the appropriate tier config
+    // Get the appropriate tier config and price ID at runtime
     let tierConfig;
     let priceId;
 
@@ -124,18 +143,19 @@ export async function POST(request: NextRequest) {
       if (!tierConfig) {
         return NextResponse.json({ error: 'Invalid seller tier' }, { status: 400 });
       }
-      priceId = billingPeriod === 'yearly' 
-        ? tierConfig.stripePriceIdYearly 
-        : tierConfig.stripePriceIdMonthly;
+      // Get price ID at runtime from env vars
+      priceId = getStripePriceId('seller', tier, billingPeriod);
     } else {
       tierConfig = CONTRACTOR_TIER_CONFIG[tier as ContractorTier];
       if (!tierConfig) {
         return NextResponse.json({ error: 'Invalid contractor tier' }, { status: 400 });
       }
-      priceId = billingPeriod === 'yearly' 
-        ? tierConfig.stripePriceIdYearly 
-        : tierConfig.stripePriceIdMonthly;
+      // Get price ID at runtime from env vars
+      priceId = getStripePriceId('contractor', tier, billingPeriod);
     }
+
+    // Log for debugging
+    console.log('Checkout request:', { type, tier, billingPeriod, priceId: priceId ? 'found' : 'missing' });
 
     // Check if this is a free tier (no checkout needed)
     if (tierConfig.priceMonthly === 0) {
@@ -162,8 +182,9 @@ export async function POST(request: NextRequest) {
 
     // Ensure we have a valid price ID
     if (!priceId) {
+      console.error(`Missing Stripe price ID for ${type}_${tier}_${billingPeriod}`);
       return NextResponse.json(
-        { error: 'Stripe price ID not configured for this tier' },
+        { error: `Stripe price ID not configured for ${tier} (${billingPeriod}). Please contact support.` },
         { status: 400 }
       );
     }
