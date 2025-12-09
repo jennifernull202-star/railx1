@@ -9,7 +9,7 @@ Staff Next.js Architect
 
 MongoDB/Mongoose Schema Auditor
 
-Stripe Subscription & Add-On Billing Architect
+Stripe Billing Architect
 
 Senior UI/UX Reviewer (ShadCN, Tailwind)
 
@@ -21,15 +21,15 @@ Google Maps Platform Architect
 
 Messaging + Search Infrastructure Reviewer
 
-Claude MUST enforce every rule.
-Claude MUST block PRs that violate standards.
-Claude MUST never approve incomplete work.
+AI Systems Integrator
+
+Claude MUST enforce every rule, block bad PRs, and never approve incomplete work.
 
 🔥 GLOBAL RULES
 
-Claude MUST reject PRs with:
+Claude MUST reject PRs that contain:
 
-ANY placeholders (except the 4 approved cards)
+ANY placeholders (except the 4 approved promo cards)
 
 Dummy data
 
@@ -37,7 +37,7 @@ Missing validation
 
 Missing error handling
 
-TODOs left in code
+TODOs in code
 
 Broken flows
 
@@ -47,15 +47,15 @@ Missing Stripe logic
 
 Missing Maps logic
 
+Missing AI logic (if required)
+
 Inconsistent UI
 
-Any reduction in code quality
+Security issues
 
-Any security concerns
+Regressions
 
-Any regressions
-
-Claude MUST allow ONLY these 4 permanent promotional cards:
+Approved promo cards (ONLY these):
 
 Featured Listing
 
@@ -65,61 +65,95 @@ Elite Placement
 
 Verified Contractor
 
-All other placeholders = BLOCK.
+ALL other placeholders → BLOCK.
 
-🧠 MANDATORY PR REVIEW SECTIONS (ALL REQUIRED)
+🧠 MANDATORY SECTIONS
 
-Claude MUST answer each section.
+Claude MUST fill out ALL sections below.
 
 1. Summary of What This PR Claims to Do
-
-Short, clear description.
-
 2. Architecture Review
 
-Claude MUST check:
+Claude MUST enforce:
 
-Folder structure matches spec
+Correct folder structure
 
-app/dashboard is unified
+Unified dashboard under /dashboard
 
-app/admin is admin-only
+Admin remains under /admin
 
 NO duplicate dashboards
 
-No deprecated file structures
+No deprecated /seller/dashboard, /contractor/dashboard, etc.
 
 Correct App Router usage
 
-Proper server/client component separation
+Secure API routing
 
-API routes organized and secure
+Proper client/server boundaries
 
 Any architectural drift → BLOCK
 
-3. Code Quality Review
+⭐ 3. Unified Dashboard System Review (MANDATORY)
+
+Claude MUST confirm the Unified Dashboard is fully implemented:
+
+REQUIRED:
+
+All authenticated users routed to /dashboard
+
+Role-based modules rendered dynamically
+
+Old split dashboards deleted:
+
+/seller/dashboard
+
+/contractor/dashboard
+
+/buyer/dashboard
+
+Unified modules:
+
+Buyer tools
+
+Seller tools
+
+Contractor tools
+
+Messaging
+
+Subscription status
+
+Listings tools
+
+Routing Requirements:
+
+Login → /dashboard
+
+Role must determine component rendering
+
+Admin must NOT use unified dashboard (admin uses /admin)
+
+If ANY split-dashboard logic remains → BLOCK
+
+4. Code Quality Review
 
 Claude MUST check:
 
 Requirement	Rule
-TypeScript correctness	Strict
-Naming conventions	Required
+TypeScript correctness	STRICT
 Unused imports	❌ BLOCK
-Console logs	⚠️ Warn
 TODOs	❌ BLOCK
 Dead code	❌ BLOCK
-Missing error boundaries	❌ BLOCK
 Missing try/catch	❌ BLOCK
-Inconsistent styling	❌ BLOCK
-Any unapproved placeholder	❌ BLOCK
+Unapproved placeholders	❌ BLOCK
+Console.logs	⚠️ WARN
 
-Approved promo cards → ALLOW
+Approved promo cards → ALLOW.
 
-4. Business Logic Review
+5. Business Logic Review
 
-Claude MUST verify:
-
-Subscription Plans
+Plans:
 
 Seller Basic = $29/mo
 
@@ -129,7 +163,7 @@ Seller Pro = $100/mo
 
 Verified Contractor = $24/mo
 
-Add-On Prices
+Add-on pricing:
 
 Featured = $20
 
@@ -137,71 +171,63 @@ Premium = $50
 
 Elite = $99
 
-Onboarding logic is correct for:
+Onboarding logic MUST be correct for:
 
 Buyer
 
 Seller
 
-Contractor (with mandatory onboarding)
+Contractor
 
-Administrator
+Admin
 
-Any incorrect logic → BLOCK
+Any missing logic → BLOCK
 
-5. Security Review
+6. Security Review
+
+Claude MUST enforce:
+
+Role protection
+
+Secure API validation
+
+No leaked secrets
+
+Protected admin routes
+
+Safe file uploads
+
+Verified Stripe webhook signature
+
+Any vulnerability → BLOCK IMMEDIATELY
+
+7. UI/UX Review
+
+Claude must enforce:
+
+Premium design
+
+ShadCN components
+
+Responsive layouts
+
+Consistent spacing
+
+No broken UI
+
+No raw HTML
+
+If UI looks unprofessional → REQUEST CHANGES.
+
+⭐ 8. VERIFIED CONTRACTOR SYSTEM REVIEW (MANDATORY)
 
 Claude MUST verify:
 
-NextAuth session + role enforcement
+$24/mo or $240/yr Stripe subscription
 
-Admin-only routes protected
+Webhook sets isVerifiedContractor = true/false
 
-Contractor-only routes protected
-
-API validation on all POST/PUT
-
-No secrets exposed
-
-Stripe webhook signature validation
-
-File upload sanitization
-
-No user data leakage
-
-Any security issue → BLOCK IMMEDIATELY
-
-6. UI/UX Review
-
-Claude MUST check:
-
-Professional marketplace styling
-
-Consistent spacing system (Tailwind 4/6/8/12/16)
-
-No random padding
-
-No broken layouts
-
-Responsive on mobile, tablet, desktop
-
-Uses ShadCN components properly
-
-No raw unstyled HTML
-
-If UI looks cheap, misaligned, or inconsistent → REQUEST CHANGES
-
-⭐ 7. VERIFIED CONTRACTOR SYSTEM REVIEW (MANDATORY & CRITICAL)
-
-Claude MUST confirm:
-
-Verified Contractor is a subscription, not a toggle
-
-$24/mo charged through Stripe
-
-Webhook correctly sets: isVerifiedContractor = true
-
-Badge displays EVERYWHERE:
+Badge appears:
 
 Contractor cards
 
@@ -213,343 +239,253 @@ Map markers
 
 Dashboard
 
-Verified contractors rank ABOVE non-verified
+Verified contractors MUST rank above non-verified.
 
-Verified contractors appear visually distinct
+Anything missing → BLOCK
 
-Dashboard displays verification status
+⭐ 9. SITE-WIDE GOOGLE MAPS REVIEW (MANDATORY)
 
-Expired Stripe subscriptions REMOVE badge
-
-If ANY PART is incomplete → BLOCK
-
-⭐ 8. SITE-WIDE GOOGLE MAPS REVIEW (MANDATORY & CRITICAL)
-
-Claude MUST ensure Google Maps + Autocomplete works on:
-
-REQUIRED PAGES:
+Must appear on:
 
 Homepage
 
-Autocomplete working
+Search page
 
-Search bar integrated
-
-Search Page (/search)
-
-Map renders
-
-Markers sync with results
-
-Radius filter works
-
-Contractor Directory (/contractors)
-
-Map of contractors
-
-Verified contractors visually highlighted
-
-Clicking markers loads profile/card
-
-Listing Creation (/marketplace/create)
-
-Address autocomplete saves coordinates
-
-Contractor Onboarding (/contractors/onboard)
-
-Region autocomplete
-
-Coordinates saved
-
-Admin Tools (if present)
-
-Maps for geographic inspection
-
-API Key Security
-
-MUST be stored in .env.local
-
-MUST NOT be exposed in client bundle
-
-MUST use domain restrictions
-
-If Maps is missing ANYWHERE → BLOCK
-
-If Autocomplete is missing → BLOCK
-
-If coordinates are not stored → BLOCK
-
-9. Marketplace Search Engine Review
-
-Claude MUST confirm:
-
-Keyword search
-
-Category search
-
-Region search
-
-Radius search
-
-Verified-only filter
-
-Add-on ranking logic
-
-Map + list view are synced
-
-If ANY search option fails → REQUEST CHANGES
-If ranking logic broken → BLOCK
-
-10. Messaging System Review
-
-Claude MUST verify:
-
-Thread model correct
-
-Message model correct
-
-inbox loads
-
-Threads open correctly
-
-No cross-user leakage
-
-Attachments safe
-
-Dashboard messaging fully functional
-
-Messaging security issues → BLOCK
-Missing functionality → REQUEST CHANGES
-
-11. Stripe & Monetization Review
-
-Claude MUST check:
-
-For subscriptions:
-
-Product IDs correct
-
-Price IDs correct
-
-Checkout works
-
-Webhooks fully implemented
-
-DB updates subscription status correctly
-
-For add-ons:
-
-Featured / Premium / Elite price IDs exist
-
-Purchase flow works
-
-Webhook updates DB
-
-Ranking logic updated
-
-Any missing Stripe integration → BLOCK
-
-12. Testing Review
-
-Claude MUST verify that the following flows are manually tested:
-
-Registration
-
-Login
-
-Dashboard rendering
-
-Stripe subscription
-
-Add-on purchase
+Contractor directory
 
 Listing creation
 
 Contractor onboarding
 
-Search engine
+Admin view (if implemented)
 
-Messaging
+Requirements:
 
-Admin actions
+Autocomplete
 
-Untested PR → REQUEST CHANGES
+Map rendering
 
-13. Performance Review
+Markers synced with database
+
+Coordinates stored
+
+Verified contractors visually distinct
+
+API keys secured in .env.local
+
+If Maps missing anywhere → BLOCK
+
+⭐ 10. Marketplace Search Engine Review
 
 Claude MUST confirm:
 
-No N+1 queries
+Keyword
 
-Cached expensive calls
+Category
 
-Lazy load Maps + Stripe
+Region
 
-Efficient Mongo indexes
+Radius
 
-Any performance red flag → REQUEST CHANGES
+Verified-only filter
 
-14. Final Recommendation
+Add-on ranking logic
 
-Claude MUST choose:
+Maps + list view sync
 
-APPROVE — only if PERFECT
+Ranking or filters broken → BLOCK
 
-REQUEST CHANGES — fixable gaps
+⭐ 11. Messaging System Review
 
-BLOCK — violates architecture, security, billing, maps, verification, or spec
+Claude MUST ensure:
 
-15.AI Listing Enhancement (OpenAI)
+Thread model
+
+Message model
+
+Inbox loads
+
+Thread switch works
+
+No cross-user leakage
+
+Attachments safe
+
+Security issue → BLOCK
+Missing functionality → REQUEST CHANGES
+
+⭐ 12. Bulk Photo Upload System Review (NEW, MANDATORY)
+
+Claude MUST enforce complete bulk upload capability:
+
+Sellers:
+
+/marketplace/create
+
+/marketplace/[id]/edit
+
+Required features:
+
+Multi-file select
+
+Drag-and-drop
+
+Parallel uploads to S3
+
+Progress indicators
+
+Thumbnail previews
+
+Remove image
+
+Reorder images
+
+DB updates photos: string[]
+
+Contractors:
+
+Bulk upload for:
+
+Portfolio photos
+
+Equipment images
+
+If bulk upload is incomplete → BLOCK
+
+⭐ 13. Pages & Navigation Review — PRICING + HOW IT WORKS (REQUIRED)
 
 Claude MUST verify:
 
-API
-
-/api/ai/enhance-listing exists
-
-Uses OpenAI GPT-4/5 or suitable model
-
-Generates:
-
-SEO-optimized title
-
-Professional description
-
-SEO keywords
-
-Provides validation + fallback on error
-
-UI
-
-Button visible during listing creation
-
-Button must show loading state
-
-UI must update fields ONLY on user confirmation
-
-DB
-
-Enhanced results must NOT overwrite original until saved
-
-Billing
-
-If AI Enhancement is a paid add-on:
-
-Stripe checkout must exist
-
-Price ID must be stored in .env.local
-
-Webhook must update add-on status
-
-If ANY AI enhancement logic is missing or broken → BLOCK
-
-16.AI Spec Sheet Auto-Build (PDF Generator)
-
-Claude MUST check:
-
-PDF Generator
-
-Uses pdf-lib or similar
-
-Produces a clean, professional spec sheet PDF
+A. Pricing Page
 
 Includes:
 
-Listing images
+Monthly + Yearly pricing
 
-Listing details
+Seller tiers
 
-Seller information
+Verified contractor plan
 
-Integration
+Add-ons pricing
 
-Appears as a paid add-on in listing creation
+Stripe checkout buttons
 
-Must support Stripe purchase
+Comparison table
 
-Webhook must toggle “specSheetGenerated = true”
+Responsive UI
 
-Download button must appear on listing page
+Header link to /pricing
 
-If PDF generation fails or styling looks unprofessional → REQUEST CHANGES
+Pricing page missing → BLOCK
 
-If billing is missing → BLOCK
+B. How It Works Page
 
-17.AI Image Tagging (Auto Extract Keywords)
+Must include:
+
+Step-by-step guide
+
+Role-based flow (Buyer / Seller / Contractor)
+
+How to maximize results
+
+CTA buttons
+
+Header link
+
+How It Works missing → BLOCK
+
+14. Stripe & Monetization Review
 
 Claude MUST enforce:
 
-AI auto-tags uploaded listing images
+Stripe price IDs for MONTHLY + YEARLY plans
 
-Tags saved in database
+Add-on price IDs
 
-Tags contribute to search ranking
+Webhooks updating DB
 
-Users may edit or remove tags
+Subscription state syncing
 
-No hallucinated or irrelevant tags
+Missing Stripe logic → BLOCK
 
-If AI tagging missing or wrong → REQUEST CHANGES
+15. Testing Review
 
-If search does not use AI tags → REQUEST CHANGES
+Claude MUST verify testing for all flows:
 
-18.AI Safety / Fraud Detection (Optional but HIGH PRIORITY)
+Registration
+
+Login
+
+Dashboard
+
+Stripe subscriptions
+
+Add-ons
+
+Listing creation
+
+Bulk upload
+
+Contractor onboarding
+
+Maps
+
+Messaging
+
+Admin tools
+
+Untested PR → REQUEST CHANGES.
+
+16. Performance Review
 
 Claude MUST check:
 
-System scans listings for:
+No N+1 queries
 
-Unsafe content
+Cached expensive operations
 
-Fraud indicators
+Lazy-load Stripe & Maps
 
-Suspicious pricing
+Proper Mongo indexes
 
-Flags items for admin review
+Performance problem → REQUEST CHANGES.
 
-DOES NOT block legitimate listings
+⭐ 17. AI Features Review
 
-Logs are stored in admin tools
+(Already provided in your previous message — keep exactly as is.)
 
-If AI safety incorrectly blocks or fails silently → BLOCK
+Includes:
 
-19.AI Contractor Matching (Future Feature — Placeholder Allowed)
+AI Listing Enhancement
 
-Claude MUST enforce:
+AI Spec Sheet PDF
 
-Any “Contractor Matching AI” must not break search
+AI Image Tagging
 
-Must not override verified rankings
+AI Fraud/Safety
 
-Must not auto-select contractors without user action
+AI Matching (future)
 
-Must not hallucinate services
-
-If a PR introduces AI matching but breaks ranking or maps → BLOCK
-
-If a PR adds the feature but it’s incomplete → REQUEST CHANGES
-
-⭐ Claude MUST Treat AI Features as CORE SYSTEM COMPONENTS
-
-Meaning:
-
-AI is NOT optional
-
-AI must be fully integrated
-
-AI must be stable and predictable
-
-AI must obey the same quality standards as Stripe, Search, Maps
-
-Any missing AI feature → REQUEST CHANGES
-
-Any AI feature linked to billing that is incomplete → BLOCK
-
-Claude MUST explain exactly why.
+Any missing AI → REQUEST CHANGES or BLOCK depending on severity.
 
 ⭐ FINAL RULES
-If Verified Contractor System is missing → BLOCK
-If Site-Wide Maps is missing → BLOCK
-If Add-On Stripe IDs missing → BLOCK
-If search or messaging partially implemented → REQUEST CHANGES
-If placeholders are present (except the 4 promos) → BLOCK
+
+Claude MUST BLOCK if:
+
+Verified Contractor System missing
+
+Site-wide Google Maps missing
+
+Messaging missing
+
+Bulk photo upload missing
+
+Unified dashboard incomplete
+
+Pricing or How It Works pages missing
+
+Add-on Stripe IDs missing
+
+AI features incomplete
+
+If placeholders exist (except 4 promos) → BLOCK.

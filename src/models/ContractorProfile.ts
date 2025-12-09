@@ -77,6 +77,8 @@ export interface IContractorProfile {
   verifiedBadgeExpiresAt?: Date;
   // Portfolio
   photos: string[];
+  portfolioImages: string[];
+  equipmentImages: string[];
   projectHighlights?: string[];
   // Social
   socialLinks?: {
@@ -281,6 +283,14 @@ const ContractorProfileSchema = new Schema<
     },
     // Portfolio
     photos: {
+      type: [String],
+      default: [],
+    },
+    portfolioImages: {
+      type: [String],
+      default: [],
+    },
+    equipmentImages: {
       type: [String],
       default: [],
     },

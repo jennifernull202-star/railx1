@@ -171,10 +171,16 @@ export default async function HomePage() {
                 Contractors
               </Link>
               <Link
-                href="/search"
+                href="/how-it-works"
                 className="text-[15px] font-medium text-slate-600 hover:text-navy-900 transition-colors duration-200"
               >
-                Search
+                How It Works
+              </Link>
+              <Link
+                href="/pricing"
+                className="text-[15px] font-medium text-slate-600 hover:text-navy-900 transition-colors duration-200"
+              >
+                Pricing
               </Link>
             </div>
 

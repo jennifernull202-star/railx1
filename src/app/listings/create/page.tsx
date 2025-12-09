@@ -7,13 +7,14 @@
 
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LISTING_CATEGORIES, LISTING_CONDITIONS } from '@/lib/listing-constants';
 import { US_STATES } from '@/lib/constants';
 import LocationAutocomplete, { LocationResult } from '@/components/search/LocationAutocomplete';
+import BulkPhotoUpload, { UploadedImage } from '@/components/forms/BulkPhotoUpload';
 
 const CATEGORY_LABELS: Record<string, { label: string; description: string }> = {
   'locomotives': { label: 'Locomotives', description: 'Diesel, electric, and switcher locomotives' },
@@ -38,15 +39,6 @@ const CONDITION_LABELS: Record<string, { label: string; description: string }> =
   'for-parts': { label: 'For Parts', description: 'Suitable for parts or scrap' },
   'as-is': { label: 'As-Is', description: 'Sold as-is, no warranty' },
 };
-
-interface MediaFile {
-  url: string;
-  type: 'image' | 'video' | 'document';
-  caption: string;
-  isPrimary: boolean;
-  order: number;
-  file?: File;
-}
 
 interface Specification {
   label: string;
@@ -86,7 +78,6 @@ const STEPS = [
 export default function CreateListingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,91 +102,12 @@ export default function CreateListingPage() {
     tags: [],
   });
   
-  const [media, setMedia] = useState<MediaFile[]>([]);
+  const [media, setMedia] = useState<UploadedImage[]>([]);
   const [specifications, setSpecifications] = useState<Specification[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [uploadingMedia, setUploadingMedia] = useState(false);
 
   const updateFormData = (updates: Partial<ListingFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
-  };
-
-  // Handle media upload
-  const handleFileSelect = useCallback(async (files: FileList) => {
-    setUploadingMedia(true);
-    setError('');
-
-    try {
-      for (const file of Array.from(files)) {
-        // Validate file type
-        const isImage = file.type.startsWith('image/');
-        const isVideo = file.type.startsWith('video/');
-        const isDocument = file.type === 'application/pdf';
-
-        if (!isImage && !isVideo && !isDocument) {
-          continue;
-        }
-
-        // Get presigned URL
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            filename: file.name,
-            contentType: file.type,
-            folder: 'listings',
-          }),
-        });
-
-        const uploadData = await uploadRes.json();
-        if (!uploadData.success) {
-          throw new Error('Failed to get upload URL');
-        }
-
-        // Upload to S3
-        await fetch(uploadData.data.uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: { 'Content-Type': file.type },
-        });
-
-        // Add to media list
-        setMedia(prev => [
-          ...prev,
-          {
-            url: uploadData.data.fileUrl,
-            type: isImage ? 'image' : isVideo ? 'video' : 'document',
-            caption: '',
-            isPrimary: prev.length === 0, // First image is primary
-            order: prev.length,
-          },
-        ]);
-      }
-    } catch {
-      setError('Failed to upload files. Please try again.');
-    } finally {
-      setUploadingMedia(false);
-    }
-  }, []);
-
-  const removeMedia = (index: number) => {
-    setMedia(prev => {
-      const updated = prev.filter((_, i) => i !== index);
-      // If we removed the primary, make first one primary
-      if (prev[index].isPrimary && updated.length > 0) {
-        updated[0].isPrimary = true;
-      }
-      return updated;
-    });
-  };
-
-  const setPrimaryMedia = (index: number) => {
-    setMedia(prev =>
-      prev.map((item, i) => ({
-        ...item,
-        isPrimary: i === index,
-      }))
-    );
   };
 
   const addSpecification = () => {
@@ -313,7 +225,13 @@ export default function CreateListingPage() {
           lat: formData.lat,
           lng: formData.lng,
         },
-        media: media.map((m, i) => ({ ...m, order: i })),
+        media: media.filter(m => !m.uploading && !m.error).map((m, i) => ({
+          url: m.url,
+          type: 'image' as const,
+          caption: '',
+          isPrimary: m.isPrimary,
+          order: i,
+        })),
         specifications: specifications.filter(s => s.label && s.value),
         quantity: parseInt(formData.quantity) || 1,
         quantityUnit: formData.quantityUnit,
@@ -696,118 +614,29 @@ export default function CreateListingPage() {
             {/* Step 3: Photos */}
             {currentStep === 3 && (
               <div className="space-y-6">
-                <h2 className="heading-lg mb-6">Photos & Documents</h2>
+                <h2 className="heading-lg mb-2">Photos & Documents</h2>
+                <p className="text-body-md text-text-secondary mb-6">
+                  Add high-quality photos to showcase your equipment. Listings with 5+ photos get 2x more inquiries.
+                </p>
 
-                {/* Upload Area */}
-                <div
-                  className="border-2 border-dashed border-surface-border rounded-2xl p-8 text-center hover:border-rail-orange transition-colors cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (e.dataTransfer.files) {
-                      handleFileSelect(e.dataTransfer.files);
-                    }
-                  }}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/*,video/*,application/pdf"
-                    className="hidden"
-                    onChange={(e) => e.target.files && handleFileSelect(e.target.files)}
-                  />
-                  <div className="w-16 h-16 bg-surface-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-body-md font-medium text-navy-900 mb-1">
-                    {uploadingMedia ? 'Uploading...' : 'Click to upload or drag and drop'}
-                  </p>
-                  <p className="text-body-sm text-text-secondary">
-                    Images, videos, or PDF documents (max 50MB each)
-                  </p>
-                </div>
-
-                {/* Media Grid */}
-                {media.length > 0 && (
-                  <div className="space-y-4">
-                    <p className="text-body-sm text-text-secondary">
-                      Click the star to set as primary image. Drag to reorder.
-                    </p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {media.map((item, index) => (
-                        <div
-                          key={index}
-                          className={`relative group aspect-square rounded-xl overflow-hidden border-2 ${
-                            item.isPrimary ? 'border-rail-orange' : 'border-surface-border'
-                          }`}
-                        >
-                          {item.type === 'image' && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={item.url}
-                              alt={`Upload ${index + 1}`}
-                              className="w-full h-full object-cover"
-                            />
-                          )}
-                          {item.type === 'video' && (
-                            <div className="w-full h-full bg-navy-900 flex items-center justify-center">
-                              <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          )}
-                          {item.type === 'document' && (
-                            <div className="w-full h-full bg-surface-secondary flex items-center justify-center">
-                              <svg className="w-12 h-12 text-text-tertiary" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          )}
-
-                          {/* Actions */}
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setPrimaryMedia(index)}
-                              className={`p-2 rounded-lg ${item.isPrimary ? 'bg-rail-orange text-white' : 'bg-white text-navy-900'}`}
-                              title="Set as primary"
-                            >
-                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => removeMedia(index)}
-                              className="p-2 rounded-lg bg-red-500 text-white"
-                              title="Remove"
-                            >
-                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                              </svg>
-                            </button>
-                          </div>
-
-                          {/* Primary Badge */}
-                          {item.isPrimary && (
-                            <div className="absolute top-2 left-2 bg-rail-orange text-white text-caption px-2 py-1 rounded">
-                              Primary
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <BulkPhotoUpload
+                  images={media}
+                  onChange={setMedia}
+                  folder="listings"
+                  maxImages={20}
+                  maxFileSize={10}
+                />
 
                 {media.length === 0 && (
-                  <p className="text-body-sm text-text-tertiary text-center">
-                    No media uploaded yet. Listings with photos get 5x more views!
-                  </p>
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                    <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-medium text-amber-800">No photos yet</p>
+                      <p className="text-sm text-amber-700">Listings with photos get 5x more views!</p>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -960,7 +789,7 @@ export default function CreateListingPage() {
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-text-secondary">Photos</dt>
-                        <dd className="font-medium">{media.filter(m => m.type === 'image').length}</dd>
+                        <dd className="font-medium">{media.length}</dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-text-secondary">Specifications</dt>

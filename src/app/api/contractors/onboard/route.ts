@@ -75,6 +75,8 @@ export async function POST(request: NextRequest) {
       numberOfEmployees: body.numberOfEmployees,
       equipmentOwned: body.equipmentOwned,
       photos: body.photos || [],
+      portfolioImages: body.portfolioImages || [],
+      equipmentImages: body.equipmentImages || [],
       projectHighlights: body.projectHighlights || [],
       socialLinks: body.socialLinks,
       isPublished: body.isPublished || false,
