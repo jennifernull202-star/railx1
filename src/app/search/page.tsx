@@ -52,6 +52,10 @@ interface Listing {
   location: {
     city: string;
     state: string;
+    coordinates?: {
+      type: 'Point';
+      coordinates: [number, number]; // [lng, lat]
+    };
   };
   viewCount: number;
   premiumAddOns: {

@@ -335,8 +335,8 @@ export async function POST(request: NextRequest) {
         // Add GeoJSON coordinates if lat/lng provided
         ...(body.location.lat && body.location.lng ? {
           coordinates: {
-            type: 'Point',
-            coordinates: [body.location.lng, body.location.lat], // GeoJSON is [lng, lat]
+            type: 'Point' as const,
+            coordinates: [Number(body.location.lng), Number(body.location.lat)] as [number, number], // GeoJSON is [lng, lat]
           },
         } : {}),
       },
