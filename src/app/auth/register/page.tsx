@@ -41,7 +41,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      // Register user with default 'user' role
+      // Register user with default 'buyer' role
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -49,7 +49,7 @@ export default function RegisterPage() {
           name,
           email,
           password,
-          role: 'user', // Everyone starts as a basic user
+          role: 'buyer', // Everyone starts as a buyer, can upgrade later
         }),
       });
 
