@@ -63,6 +63,10 @@ export const authOptions: NextAuthOptions = {
             name: user.name,
             role: user.role,
             image: user.image || undefined,
+            // Subscription info
+            subscriptionTier: user.sellerTier !== 'buyer' ? user.sellerTier : undefined,
+            isVerifiedContractor: user.contractorTier === 'verified',
+            contractorTier: user.contractorTier,
           };
         } catch (error) {
           console.error('Auth error:', error);
@@ -96,12 +100,21 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name;
         token.role = user.role;
         token.image = user.image;
+        token.subscriptionTier = user.subscriptionTier;
+        token.isVerifiedContractor = user.isVerifiedContractor;
+        token.contractorTier = user.contractorTier;
       }
 
       // Handle session updates
       if (trigger === 'update' && session) {
         token.name = session.name || token.name;
         token.image = session.image || token.image;
+        if (session.subscriptionTier !== undefined) {
+          token.subscriptionTier = session.subscriptionTier;
+        }
+        if (session.isVerifiedContractor !== undefined) {
+          token.isVerifiedContractor = session.isVerifiedContractor;
+        }
       }
 
       return token;
@@ -114,6 +127,9 @@ export const authOptions: NextAuthOptions = {
         session.user.name = token.name;
         session.user.role = token.role;
         session.user.image = token.image;
+        session.user.subscriptionTier = token.subscriptionTier;
+        session.user.isVerifiedContractor = token.isVerifiedContractor;
+        session.user.contractorTier = token.contractorTier;
       }
       return session;
     },

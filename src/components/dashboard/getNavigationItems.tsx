@@ -1,7 +1,8 @@
 /**
  * THE RAIL EXCHANGE™ — Dashboard Navigation Builder
  * 
- * Generates role-based navigation items for the dashboard sidebar.
+ * Unified navigation - all users see all sections.
+ * Locked features show upgrade prompts.
  */
 
 import * as React from 'react';
@@ -87,71 +88,98 @@ const DollarIcon = () => (
   </svg>
 );
 
+const ToolsIcon = () => (
+  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+  </svg>
+);
+
 export interface GetNavigationItemsParams {
-  role: 'buyer' | 'seller' | 'contractor' | 'admin';
+  isAdmin?: boolean;
   hasContractorProfile?: boolean;
+  isVerifiedContractor?: boolean;
+  hasSellerSubscription?: boolean;
   unreadMessages?: number;
   pendingInquiries?: number;
+  // Dashboard visibility preferences (from user settings)
+  showSellerSection?: boolean;
+  showContractorSection?: boolean;
 }
 
 export function getNavigationItems({
-  role,
+  isAdmin = false,
   hasContractorProfile = false,
+  isVerifiedContractor = false,
+  hasSellerSubscription = false,
   unreadMessages = 0,
   pendingInquiries = 0,
+  showSellerSection = true,
+  showContractorSection = true,
 }: GetNavigationItemsParams): NavSection[] {
   const sections: NavSection[] = [];
 
-  // General section - for all users
+  // Main section - for all users (free features)
   sections.push({
-    title: 'General',
+    title: 'Dashboard',
     items: [
       { href: '/dashboard', label: 'Overview', icon: <HomeIcon /> },
-      { href: '/dashboard/listings', label: 'My Listings', icon: <ListingsIcon /> },
-      { 
-        href: '/dashboard/inquiries', 
-        label: 'Inquiries', 
-        icon: <InboxIcon />,
-        badge: pendingInquiries > 0 ? pendingInquiries : undefined,
-      },
       { 
         href: '/dashboard/messages', 
         label: 'Messages', 
         icon: <MessagesIcon />,
         badge: unreadMessages > 0 ? unreadMessages : undefined,
       },
-      { href: '/dashboard/saved', label: 'Saved Items', icon: <HeartIcon /> },
+      { href: '/dashboard/saved', label: 'Saved & Watchlist', icon: <HeartIcon /> },
     ],
   });
 
-  // Contractor section
-  if (role === 'contractor') {
+  // Seller section - show to everyone (free listings available)
+  if (showSellerSection) {
     sections.push({
-      title: 'Contractor',
+      title: 'Selling',
       items: [
+        { href: '/dashboard/listings', label: 'My Listings', icon: <ListingsIcon /> },
         { 
-          href: hasContractorProfile ? '/dashboard/profile' : '/dashboard/contractor/setup',
-          label: hasContractorProfile ? 'Business Profile' : 'Complete Setup',
-          icon: <ProfileIcon />,
+          href: '/dashboard/inquiries', 
+          label: 'Inquiries', 
+          icon: <InboxIcon />,
+          badge: pendingInquiries > 0 ? pendingInquiries : undefined,
         },
-        { href: '/dashboard/leads', label: 'Leads', icon: <LeadsIcon /> },
-        { href: '/dashboard/analytics', label: 'Analytics', icon: <AnalyticsIcon /> },
+        { 
+          href: '/dashboard/analytics', 
+          label: hasSellerSubscription ? 'Analytics' : 'Analytics ⭐', 
+          icon: <AnalyticsIcon /> 
+        },
       ],
     });
   }
 
-  // Seller section
-  if (role === 'seller') {
+  // Contractor section - show to everyone (free directory listing available)
+  if (showContractorSection) {
     sections.push({
-      title: 'Seller Tools',
+      title: 'Contractor Services',
       items: [
-        { href: '/dashboard/analytics', label: 'Analytics', icon: <AnalyticsIcon /> },
+        { 
+          href: hasContractorProfile ? '/dashboard/contractor/setup' : '/dashboard/contractor/setup',
+          label: hasContractorProfile ? 'My Services' : 'List Your Services',
+          icon: <ToolsIcon />,
+        },
+        { 
+          href: '/dashboard/leads', 
+          label: isVerifiedContractor ? 'Leads' : 'Leads ✓', 
+          icon: <LeadsIcon /> 
+        },
+        {
+          href: '/dashboard/contractor/setup',
+          label: isVerifiedContractor ? 'Verified ✓' : 'Get Verified',
+          icon: <ShieldIcon />,
+        },
       ],
     });
   }
 
   // Admin section
-  if (role === 'admin') {
+  if (isAdmin) {
     sections.push({
       title: 'Admin',
       items: [
@@ -169,7 +197,7 @@ export function getNavigationItems({
   sections.push({
     title: 'Account',
     items: [
-      { href: '/dashboard/billing', label: 'Billing', icon: <BillingIcon /> },
+      { href: '/dashboard/billing', label: 'Plans & Billing', icon: <BillingIcon /> },
       { href: '/dashboard/settings', label: 'Settings', icon: <SettingsIcon /> },
     ],
   });

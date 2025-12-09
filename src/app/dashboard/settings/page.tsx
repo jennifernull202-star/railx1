@@ -47,6 +47,36 @@ export default function SettingsPage() {
     weeklyDigest: true,
   });
 
+  // Dashboard Preferences
+  const [dashboardPrefs, setDashboardPrefs] = useState({
+    showSellerSection: true,
+    showContractorSection: true,
+  });
+  const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
+  const [prefsSuccess, setPrefsSuccess] = useState('');
+  const [prefsError, setPrefsError] = useState('');
+
+  // Fetch dashboard preferences
+  useEffect(() => {
+    const fetchPrefs = async () => {
+      try {
+        const res = await fetch('/api/user/preferences');
+        if (res.ok) {
+          const data = await res.json();
+          setDashboardPrefs({
+            showSellerSection: data.showSellerSection ?? true,
+            showContractorSection: data.showContractorSection ?? true,
+          });
+        }
+      } catch {
+        // Use defaults
+      }
+    };
+    if (session?.user) {
+      fetchPrefs();
+    }
+  }, [session]);
+
   // Initialize profile from session
   useEffect(() => {
     if (session?.user) {
@@ -164,6 +194,32 @@ export default function SettingsPage() {
       await signOut({ callbackUrl: '/' });
     } catch {
       alert('Failed to delete account. Please try again.');
+    }
+  };
+
+  const handleDashboardPrefsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdatingPrefs(true);
+    setPrefsError('');
+    setPrefsSuccess('');
+
+    try {
+      const res = await fetch('/api/user/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dashboardPrefs),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update preferences');
+      }
+
+      setPrefsSuccess('Dashboard preferences updated! Refresh the page to see changes.');
+    } catch (err) {
+      setPrefsError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setIsUpdatingPrefs(false);
     }
   };
 
@@ -431,6 +487,78 @@ export default function SettingsPage() {
             Save Preferences
           </button>
         </div>
+      </section>
+
+      {/* Dashboard Preferences */}
+      <section className="bg-white rounded-2xl border border-surface-border p-6 mb-8">
+        <h2 className="heading-md mb-2">Dashboard Preferences</h2>
+        <p className="text-body-sm text-text-secondary mb-6">
+          Choose which sections you want to see in your dashboard sidebar. You can always change these later.
+        </p>
+
+        <form onSubmit={handleDashboardPrefsSubmit} className="space-y-4">
+          {prefsSuccess && (
+            <div className="p-4 bg-status-success/10 border border-status-success/30 rounded-xl flex items-center gap-3">
+              <svg className="w-5 h-5 text-status-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <p className="text-status-success font-medium">{prefsSuccess}</p>
+            </div>
+          )}
+
+          {prefsError && (
+            <div className="p-4 bg-status-error/10 border border-status-error/30 rounded-xl flex items-center gap-3">
+              <svg className="w-5 h-5 text-status-error flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-status-error">{prefsError}</p>
+            </div>
+          )}
+
+          <label className="flex items-center justify-between p-4 rounded-xl border border-surface-border hover:border-surface-tertiary cursor-pointer transition-colors">
+            <div>
+              <span className="text-body-md font-medium text-navy-900">Selling Section</span>
+              <p className="text-caption text-text-secondary mt-1">
+                Show listings, analytics, and selling tools in your dashboard
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={dashboardPrefs.showSellerSection}
+              onChange={(e) =>
+                setDashboardPrefs({ ...dashboardPrefs, showSellerSection: e.target.checked })
+              }
+              className="w-5 h-5 rounded border-surface-border text-rail-orange focus:ring-rail-orange/20"
+            />
+          </label>
+
+          <label className="flex items-center justify-between p-4 rounded-xl border border-surface-border hover:border-surface-tertiary cursor-pointer transition-colors">
+            <div>
+              <span className="text-body-md font-medium text-navy-900">Contractor Section</span>
+              <p className="text-caption text-text-secondary mt-1">
+                Show contractor services, leads, and verification options
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={dashboardPrefs.showContractorSection}
+              onChange={(e) =>
+                setDashboardPrefs({ ...dashboardPrefs, showContractorSection: e.target.checked })
+              }
+              className="w-5 h-5 rounded border-surface-border text-rail-orange focus:ring-rail-orange/20"
+            />
+          </label>
+
+          <div className="flex justify-end mt-6">
+            <button
+              type="submit"
+              disabled={isUpdatingPrefs}
+              className="btn-primary min-w-[180px]"
+            >
+              {isUpdatingPrefs ? 'Saving...' : 'Save Dashboard Preferences'}
+            </button>
+          </div>
+        </form>
       </section>
 
       {/* Danger Zone */}

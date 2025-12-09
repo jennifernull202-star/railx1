@@ -1,209 +1,419 @@
-/**
- * THE RAIL EXCHANGE™ — Dashboard Layout
- * 
- * Shared layout for all dashboard pages with sidebar navigation.
- */
+"use client";
 
-import { getServerSession } from 'next-auth';
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { authOptions } from '@/lib/auth';
+import React, { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import {
+  Home,
+  Package,
+  MessageSquare,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  User,
+  Bell,
+  CreditCard,
+  Heart,
+  ShoppingCart,
+  Wrench,
+  BarChart3,
+  FileText,
+  Star,
+  Shield,
+  ChevronDown,
+  ChevronRight,
+  Crown,
+  Lock,
+} from "lucide-react";
 
-export default async function DashboardLayout({
-  children,
-}: {
+interface DashboardLayoutProps {
   children: React.ReactNode;
-}) {
-  const session = await getServerSession(authOptions);
+}
 
-  if (!session?.user) {
-    redirect('/auth/login?callbackUrl=/dashboard');
+interface NavSection {
+  title: string;
+  icon: React.ElementType;
+  items: NavItem[];
+  requiresSubscription?: string;
+}
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  badge?: string;
+}
+
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<string[]>([
+    "general",
+    "marketplace",
+  ]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [userPreferences, setUserPreferences] = useState({
+    showSellerSection: true,
+    showContractorSection: true,
+  });
+
+  // Fetch user preferences for which sections to show
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      try {
+        const res = await fetch("/api/user/preferences");
+        if (res.ok) {
+          const data = await res.json();
+          setUserPreferences({
+            showSellerSection: data.showSellerSection ?? true,
+            showContractorSection: data.showContractorSection ?? true,
+          });
+        }
+      } catch (error) {
+        // Use defaults
+      }
+    };
+    if (session?.user) {
+      fetchPreferences();
+    }
+  }, [session]);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/login");
+    }
+  }, [status, router]);
+
+  // Fetch unread notification count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await fetch("/api/notifications?unreadOnly=true");
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.notifications?.length || 0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      }
+    };
+
+    if (session?.user) {
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [session]);
+
+  if (status === "loading") {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600" />
+      </div>
+    );
   }
 
-  const isContractor = session.user.role === 'contractor';
-  const isAdmin = session.user.role === 'admin';
+  if (!session?.user) {
+    return null;
+  }
+
+  const user = session.user;
+  const isAdmin = user.role === "admin";
+  const hasSellerSubscription = !!user.subscriptionTier;
+  const isVerifiedContractor = user.isVerifiedContractor === true;
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) =>
+      prev.includes(sectionId)
+        ? prev.filter((id) => id !== sectionId)
+        : [...prev, sectionId]
+    );
+  };
+
+  // Navigation sections - unified for all users
+  const navigationSections: NavSection[] = [
+    {
+      title: "General",
+      icon: Home,
+      items: [
+        { label: "Dashboard", href: "/dashboard", icon: Home },
+        { label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: unreadCount > 0 ? String(unreadCount) : undefined },
+        { label: "Notifications", href: "/dashboard/settings", icon: Bell },
+        { label: "Profile", href: "/dashboard/profile", icon: User },
+        { label: "Billing", href: "/dashboard/billing", icon: CreditCard },
+        { label: "Settings", href: "/dashboard/settings", icon: Settings },
+      ],
+    },
+    {
+      title: "Marketplace",
+      icon: ShoppingCart,
+      items: [
+        { label: "Browse Listings", href: "/listings", icon: Package },
+        { label: "Saved Items", href: "/dashboard/saved", icon: Heart },
+        { label: "My Inquiries", href: "/dashboard/inquiries", icon: MessageSquare },
+        { label: "Find Contractors", href: "/contractors", icon: Wrench },
+      ],
+    },
+  ];
+
+  // Add Seller section if user wants to see it
+  if (userPreferences.showSellerSection) {
+    navigationSections.push({
+      title: "Selling",
+      icon: Package,
+      requiresSubscription: hasSellerSubscription ? undefined : "seller",
+      items: [
+        { label: "My Listings", href: "/dashboard/listings", icon: Package },
+        { label: "Create Listing", href: "/listings/create", icon: FileText },
+        { label: "Leads & Inquiries", href: "/dashboard/leads", icon: MessageSquare },
+        { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+      ],
+    });
+  }
+
+  // Add Contractor section if user wants to see it
+  if (userPreferences.showContractorSection) {
+    navigationSections.push({
+      title: "Contractor",
+      icon: Wrench,
+      requiresSubscription: isVerifiedContractor ? undefined : "contractor",
+      items: [
+        { label: "My Services", href: "/dashboard/contractor", icon: Wrench },
+        { label: "Contractor Profile", href: "/dashboard/contractor/profile", icon: User },
+        { label: "Service Leads", href: "/dashboard/contractor/leads", icon: MessageSquare },
+        ...(isVerifiedContractor
+          ? [{ label: "Verified Badge", href: "/dashboard/contractor/verified", icon: Shield }]
+          : [{ label: "Get Verified", href: "/dashboard/contractor/apply", icon: Star }]),
+      ],
+    });
+  }
+
+  // Admin section
+  if (isAdmin) {
+    navigationSections.push({
+      title: "Admin",
+      icon: Shield,
+      items: [
+        { label: "Admin Dashboard", href: "/admin", icon: Shield },
+        { label: "Manage Users", href: "/admin/users", icon: User },
+        { label: "Manage Listings", href: "/admin/listings", icon: Package },
+        { label: "Contractors", href: "/admin/contractors", icon: Wrench },
+        { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+      ],
+    });
+  }
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/" });
+  };
+
+  const SidebarLink = ({
+    href,
+    icon: Icon,
+    children,
+    badge,
+    locked,
+  }: {
+    href: string;
+    icon: React.ElementType;
+    children: React.ReactNode;
+    badge?: string;
+    locked?: boolean;
+  }) => {
+    const isActive = pathname === href;
+
+    if (locked) {
+      return (
+        <div
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 cursor-not-allowed`}
+        >
+          <Icon className="h-5 w-5" />
+          <span className="flex-1">{children}</span>
+          <Lock className="h-4 w-4" />
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        href={href}
+        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+          isActive
+            ? "bg-orange-100 text-orange-700 font-medium"
+            : "text-gray-700 hover:bg-gray-100"
+        }`}
+        onClick={() => setSidebarOpen(false)}
+      >
+        <Icon className="h-5 w-5" />
+        <span className="flex-1">{children}</span>
+        {badge && (
+          <span className="bg-orange-600 text-white text-xs px-2 py-0.5 rounded-full">
+            {badge}
+          </span>
+        )}
+      </Link>
+    );
+  };
+
+  const SidebarSection = ({ section }: { section: NavSection }) => {
+    const isExpanded = expandedSections.includes(section.title.toLowerCase());
+    const isLocked = !!section.requiresSubscription;
+    const Icon = section.icon;
+
+    return (
+      <div className="mb-2">
+        <button
+          onClick={() => toggleSection(section.title.toLowerCase())}
+          className={`w-full flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+            isLocked
+              ? "text-gray-400 hover:bg-gray-50"
+              : "text-gray-900 hover:bg-gray-100"
+          }`}
+        >
+          <Icon className="h-4 w-4" />
+          <span className="flex-1 text-left">{section.title}</span>
+          {isLocked && (
+            <Link
+              href={section.requiresSubscription === "seller" ? "/pricing" : "/contractors/onboard"}
+              className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full hover:bg-orange-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Upgrade
+            </Link>
+          )}
+          {isExpanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </button>
+        {isExpanded && (
+          <div className="mt-1 ml-2 space-y-1">
+            {section.items.map((item) => (
+              <SidebarLink
+                key={item.href}
+                href={item.href}
+                icon={item.icon}
+                badge={item.badge}
+                locked={isLocked}
+              >
+                {item.label}
+              </SidebarLink>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-surface-secondary">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-50 bg-white border-b border-surface-border">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <Link href="/" className="flex items-center">
-              <span className="text-heading-lg font-bold text-navy-900">The Rail</span>
-              <span className="text-heading-lg font-bold text-rail-orange ml-1">Exchange</span>
-              <span className="text-rail-orange text-sm font-medium ml-0.5">™</span>
-            </Link>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile menu button */}
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 bg-white rounded-lg shadow-md"
+        >
+          {sidebarOpen ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <Menu className="h-6 w-6" />
+          )}
+        </button>
+      </div>
 
-            {/* User Menu */}
-            <div className="flex items-center gap-4">
-              <Link
-                href="/listings/create"
-                className="btn-primary py-2 px-4 text-body-sm"
-              >
-                + New Listing
-              </Link>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-surface-secondary rounded-full flex items-center justify-center overflow-hidden">
-                  {session.user.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={session.user.image}
-                      alt={session.user.name || 'User'}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-sm font-bold text-text-tertiary">
-                      {session.user.name?.charAt(0) || session.user.email?.charAt(0) || 'U'}
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-72 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0`}
+      >
+        <div className="flex flex-col h-full">
+          {/* Logo */}
+          <div className="p-6 border-b">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="text-2xl font-bold text-orange-600">RailX</span>
+            </Link>
+          </div>
+
+          {/* User info */}
+          <div className="p-4 border-b bg-gray-50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                <User className="h-5 w-5 text-orange-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 truncate">
+                  {user.name || "User"}
+                </p>
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  {hasSellerSubscription && (
+                    <span className="flex items-center gap-1 bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
+                      <Crown className="h-3 w-3" />
+                      {user.subscriptionTier}
                     </span>
                   )}
-                </div>
-                <div className="hidden md:block">
-                  <p className="text-body-sm font-medium text-navy-900">
-                    {session.user.name || 'User'}
-                  </p>
-                  <p className="text-caption text-text-tertiary capitalize">
-                    {session.user.role || 'Member'}
-                  </p>
+                  {isVerifiedContractor && (
+                    <span className="flex items-center gap-1 bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                      <Shield className="h-3 w-3" />
+                      Verified
+                    </span>
+                  )}
+                  {isAdmin && (
+                    <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
+                      Admin
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </header>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="hidden lg:block w-64 bg-white border-r border-surface-border min-h-[calc(100vh-73px)] sticky top-[73px]">
-          <nav className="p-4 space-y-1">
-            <p className="text-caption font-semibold text-text-tertiary uppercase tracking-wider px-3 mb-2">
-              Dashboard
-            </p>
-            <SidebarLink href="/dashboard" icon="home">
-              Overview
-            </SidebarLink>
-            <SidebarLink href="/dashboard/listings" icon="listings">
-              My Listings
-            </SidebarLink>
-            <SidebarLink href="/dashboard/inquiries" icon="inbox">
-              Inquiries
-            </SidebarLink>
-            <SidebarLink href="/dashboard/saved" icon="heart">
-              Saved Items
-            </SidebarLink>
-
-            {isContractor && (
-              <>
-                <p className="text-caption font-semibold text-text-tertiary uppercase tracking-wider px-3 mb-2 mt-6">
-                  Contractor
-                </p>
-                <SidebarLink href="/dashboard/profile" icon="profile">
-                  Business Profile
-                </SidebarLink>
-                <SidebarLink href="/dashboard/leads" icon="leads">
-                  Leads
-                </SidebarLink>
-              </>
-            )}
-
-            {isAdmin && (
-              <>
-                <p className="text-caption font-semibold text-text-tertiary uppercase tracking-wider px-3 mb-2 mt-6">
-                  Admin
-                </p>
-                <SidebarLink href="/admin" icon="admin">
-                  Admin Panel
-                </SidebarLink>
-              </>
-            )}
-
-            <p className="text-caption font-semibold text-text-tertiary uppercase tracking-wider px-3 mb-2 mt-6">
-              Account
-            </p>
-            <SidebarLink href="/dashboard/settings" icon="settings">
-              Settings
-            </SidebarLink>
-            <SidebarLink href="/api/auth/signout" icon="logout">
-              Sign Out
-            </SidebarLink>
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto p-4">
+            {navigationSections.map((section) => (
+              <SidebarSection key={section.title} section={section} />
+            ))}
           </nav>
-        </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8">
-          {children}
-        </main>
-      </div>
+          {/* Bottom actions */}
+          <div className="p-4 border-t space-y-2">
+            {!hasSellerSubscription && (
+              <Link
+                href="/pricing"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all"
+              >
+                <Crown className="h-4 w-4" />
+                Upgrade Plan
+              </Link>
+            )}
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-3 w-full px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <LogOut className="h-5 w-5" />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main content */}
+      <main className="lg:ml-72 min-h-screen">
+        <div className="p-6 lg:p-8">{children}</div>
+      </main>
     </div>
-  );
-}
-
-function SidebarLink({
-  href,
-  icon,
-  children,
-}: {
-  href: string;
-  icon: string;
-  children: React.ReactNode;
-}) {
-  const icons: Record<string, React.ReactNode> = {
-    home: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
-    listings: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-      </svg>
-    ),
-    inbox: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-      </svg>
-    ),
-    heart: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-      </svg>
-    ),
-    profile: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
-    leads: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-    ),
-    settings: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-    admin: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
-    logout: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-      </svg>
-    ),
-  };
-
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-body-sm font-medium text-text-secondary hover:bg-surface-secondary hover:text-navy-900 transition-colors"
-    >
-      {icons[icon]}
-      {children}
-    </Link>
   );
 }

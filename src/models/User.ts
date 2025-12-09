@@ -56,6 +56,12 @@ export interface IUser {
   passwordResetToken?: string | null;
   passwordResetExpires?: Date | null;
   
+  // User preferences
+  preferences?: {
+    showSellerSection?: boolean;
+    showContractorSection?: boolean;
+  };
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -233,6 +239,20 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
     passwordResetExpires: {
       type: Date,
       default: null,
+    },
+    
+    // ============================================
+    // USER PREFERENCES (Dashboard visibility)
+    // ============================================
+    preferences: {
+      type: {
+        showSellerSection: { type: Boolean, default: true },
+        showContractorSection: { type: Boolean, default: true },
+      },
+      default: {
+        showSellerSection: true,
+        showContractorSection: true,
+      },
     },
   },
   {

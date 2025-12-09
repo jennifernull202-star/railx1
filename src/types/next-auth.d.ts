@@ -4,7 +4,7 @@
  * Extends NextAuth types to include custom session data.
  */
 
-import { UserRole } from '@/models/User';
+import { UserRole, SellerTierType, ContractorTierType } from '@/models/User';
 import 'next-auth';
 import { DefaultSession } from 'next-auth';
 
@@ -16,6 +16,10 @@ declare module 'next-auth' {
       email: string;
       name: string;
       image?: string;
+      // Subscription info
+      subscriptionTier?: SellerTierType;
+      isVerifiedContractor?: boolean;
+      contractorTier?: ContractorTierType;
     } & DefaultSession['user'];
   }
 
@@ -25,6 +29,9 @@ declare module 'next-auth' {
     email: string;
     name: string;
     image?: string;
+    subscriptionTier?: SellerTierType;
+    isVerifiedContractor?: boolean;
+    contractorTier?: ContractorTierType;
   }
 }
 
@@ -35,5 +42,8 @@ declare module 'next-auth/jwt' {
     email: string;
     name: string;
     image?: string;
+    subscriptionTier?: SellerTierType;
+    isVerifiedContractor?: boolean;
+    contractorTier?: ContractorTierType;
   }
 }
