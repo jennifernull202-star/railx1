@@ -1,0 +1,549 @@
+THE RAIL EXCHANGE™ — STEP-BY-STEP DEVELOPMENT SEQUENCE FOR GITHUB COPILOT
+
+Copilot must follow this sequence in order.
+No skipping steps. No partial implementations.
+Each step must be completed fully before moving to the next.
+
+PHASE 1 — SYSTEM SETUP
+Step 1 — Initialize the project
+
+Create a new Next.js 14 project with App Router
+
+Add TypeScript
+
+Add Tailwind CSS
+
+Add environment variable loader
+
+Add global styles and base layout
+
+Deliverables:
+
+package.json, tsconfig.json, tailwind.config.js, /app/layout.tsx
+
+Step 2 — Install core dependencies
+
+Install:
+
+next-auth
+
+mongoose
+
+aws-sdk or @aws-sdk/client-s3
+
+openai
+
+google maps client library (or use fetch endpoint for Places API)
+
+zustand (optional for state)
+
+pdf-lib (for spec sheet generator)
+
+Deliverables:
+
+Fully configured package dependencies
+
+Step 3 — Configure environment variables
+
+Copilot must create .env.example containing:
+
+DATABASE_URL=
+NEXTAUTH_SECRET=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_S3_BUCKET=
+GOOGLE_MAPS_API_KEY=
+OPENAI_API_KEY=
+NEXTAUTH_URL=
+
+Step 4 — Set up MongoDB connection utility
+
+Create utils/db.ts with a reusable Mongoose connection handler.
+
+PHASE 2 — USER + AUTHENTICATION SYSTEM
+Step 5 — Create User model
+
+Schema fields:
+
+name
+
+email
+
+role (buyer, seller, contractor, admin)
+
+password (hashed)
+
+image (optional)
+
+createdAt / updatedAt
+
+Step 6 — Implement NextAuth
+
+Email/password login
+
+OAuth optional
+
+JWT sessions
+
+Role-based session data
+
+Step 7 — Build Auth Pages
+
+/auth/register
+
+/auth/login
+
+/auth/forgot-password
+
+Each page must be fully functional.
+
+Step 8 — Build Role Selection During Registration
+
+Users must choose:
+
+Buyer/Seller
+
+Contractor
+
+This determines the onboarding flow.
+
+PHASE 3 — CONTRACTOR SYSTEM
+Step 9 — Create ContractorProfile model
+
+Fields:
+
+business info
+
+services offered
+
+regions served
+
+insurance docs
+
+safety docs
+
+experience
+
+equipment
+
+logo
+
+verification status
+
+verifiedBadgePurchased (true/false)
+
+Step 10 — Build Contractor Onboarding UI
+
+Page: /contractors/onboard
+
+Includes:
+
+Dynamic form sections
+
+File upload fields (S3)
+
+Save & continue logic
+
+Step 11 — Build Contractor API Routes
+POST /api/contractors/onboard
+PUT  /api/contractors/:id
+GET  /api/contractors
+GET  /api/contractors/:id
+
+Step 12 — Build Contractor Profile Page
+
+Page: /contractors/[id]
+
+Must display:
+
+Services
+
+Regions (map)
+
+Photos
+
+Documents (admin-only)
+
+Verification badge
+
+Contact form
+
+Reviews section (placeholder initially)
+
+PHASE 4 — MARKETPLACE FOUNDATION
+Step 13 — Create Listing model
+
+Fields:
+
+title
+
+description
+
+category
+
+price
+
+region
+
+sellerId
+
+photos
+
+status (active, pending, removed)
+
+addOns (featured, premium, elite, verified asset, AI enhanced, spec sheet)
+
+createdAt / updatedAt
+
+Step 14 — Build Listing API
+POST   /api/listings
+GET    /api/listings
+GET    /api/listings/:id
+PUT    /api/listings/:id
+DELETE /api/listings/:id
+
+Step 15 — Build Listing Creation UI
+
+Page: /marketplace/create
+
+Features:
+
+S3 upload
+
+Auto-populating categories
+
+Region dropdown with Google API autocomplete
+
+Option to purchase add-ons
+
+Step 16 — Build Listing Detail Page
+
+Page: /marketplace/[id]
+
+Show:
+
+Title + description
+
+Price
+
+Seller info
+
+Add-on indicators (Featured, Verified Asset)
+
+Photo gallery
+
+Contact/messaging button
+
+PHASE 5 — HOMEPAGE + SEARCH
+Step 17 — Build Hero Section
+
+Homepage must include:
+
+Global search input
+
+Category selector
+
+Region autocomplete
+
+Clean UI (no heavy header)
+
+Step 18 — Build Google Maps Contractor Search Component
+
+Features:
+
+Map markers
+
+Autocomplete search
+
+Filter sidebar
+
+Clickable contractor cards
+
+Step 19 — Build Featured Listings Section
+
+Shows all listings with Featured/Premium/Elite add-ons.
+
+Step 20 — Build Marketplace Add-Ons Explanation Block
+
+Explain:
+
+Featured
+
+Premium
+
+Elite
+
+AI Enhancement
+
+Verified Badge
+
+Spec Sheet Auto-Build
+
+Step 21 — Build Recent Listings Section
+
+Pulls most recently added listings.
+
+Step 22 — Build Category Tiles
+
+Tiles for:
+
+Contractors
+
+Equipment
+
+Materials
+
+Services
+
+PHASE 6 — ADD-ONS + MONETIZATION ENGINE
+Step 23 — Create AddOnPurchase model
+
+Fields:
+
+userId
+
+listingId
+
+contractorId (optional)
+
+type (featured, premium, elite, verified-badge, ai-enhancement, spec-sheet)
+
+amount
+
+timestamp
+
+Step 24 — Create Add-On Purchase API
+POST /api/addons/purchase
+GET  /api/addons
+
+Step 25 — Implement Add-On Ranking Logic
+
+Featured → boosted search rank
+
+Premium → pinned category
+
+Elite → pinned + homepage highlight
+
+Verified Badge → contractor search priority
+
+AI Tools → a completed attribute on listing
+
+Step 26 — Build AI Listing Enhancement Endpoint
+
+OpenAI must generate:
+
+Title
+
+Description
+
+SEO keywords
+
+Step 27 — Build Spec Sheet Auto-Build
+
+Using pdf-lib or similar:
+
+Generate downloadable PDF
+
+Attach to listing
+
+PHASE 7 — SEARCH ENGINE
+Step 28 — Build /api/search Endpoint
+
+Search fields:
+
+Keyword
+
+Category
+
+Region
+
+Radius
+
+Verified-only filter
+
+Add-on rank scoring
+
+Step 29 — Build Search UI Page
+
+Page: /search
+
+Integrates:
+
+Filters
+
+Map view toggle
+
+Listing results grid
+
+PHASE 8 — USER SYSTEM TOOLS
+Step 30 — Build Watchlist
+
+Model + API:
+
+POST /api/watchlist
+GET  /api/watchlist
+
+Step 31 — Build Saved Searches
+
+Model + API:
+
+POST /api/savedsearches
+GET  /api/savedsearches
+
+Step 32 — Build Notification System
+
+Model + API:
+
+GET /api/notifications
+
+
+Triggers required for:
+
+Messages
+
+Listing approvals
+
+Contractor verification
+
+Add-on expirations
+
+Saved search matches
+
+PHASE 9 — MESSAGING SYSTEM
+Step 33 — Create Message model
+
+Fields:
+
+senderId
+
+recipientId
+
+content
+
+attachments
+
+listingId (optional)
+
+threadId
+
+Step 34 — Build Messaging API
+GET  /api/messages
+POST /api/messages
+GET  /api/messages/thread/:id
+
+Step 35 — Build Messaging UI
+
+Components:
+
+ThreadList
+
+ChatWindow
+
+New message composer
+
+Attachment support
+
+PHASE 10 — DASHBOARDS
+Step 36 — User Dashboard
+
+Sections:
+
+My Listings
+
+Watchlist
+
+Saved Searches
+
+Messages
+
+Account Settings
+
+Step 37 — Contractor Dashboard
+
+Sections:
+
+Contractor Profile Info
+
+Projects/Jobs
+
+Documents
+
+Purchased Add-ons
+
+Verification status
+
+Messaging
+
+Step 38 — Admin Dashboard
+
+Sections:
+
+User management
+
+Listing approvals
+
+Contractor verifications
+
+Category management
+
+Add-on reporting
+
+Basic analytics
+
+PHASE 11 — POLISH + DEPLOYMENT
+Step 39 — Visual Cleanup
+
+Consistent typography
+
+Spacing
+
+Reusable components
+
+Mobile responsiveness
+
+Step 40 — Finalize Deployment
+
+To Vercel:
+
+Add environment variables
+
+Configure build
+
+Optimize images
+
+Test all pages
+
+PHASE 12 — QA + FEATURE COMPLETION
+Step 41 — Test all flows
+
+Contractor onboarding
+
+Listing creation
+
+Add-on purchase
+
+Messaging
+
+Notifications
+
+Search
+
+Dashboard functionality
+
+Step 42 — Fix any missing logic
+
+Copilot MUST NOT stop until:
+
+All API endpoints work
+
+UI connects to backend
+
+All pages render correctly
+
+All add-ons apply ranking as intended
+
+Google Maps & autocomplete work end-to-end
+
+PDF spec sheet generator works
+
+Auth is stable
