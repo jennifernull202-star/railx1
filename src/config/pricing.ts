@@ -65,7 +65,7 @@ export const SELLER_TIER_CONFIG: Record<SellerTier, SellerTierConfig> = {
       'Standard support',
       'Listing analytics (basic)',
     ],
-    stripePriceIdMonthly: process.env.STRIPE_PRICE_SELLER_BASIC_MONTHLY || '',
+    stripePriceIdMonthly: process.env.STRIPE_PRICE_SELLER_BASIC_MONTHLY || process.env.NEXT_PUBLIC_STRIPE_PRICE_SELLER_BASIC || '',
     stripePriceIdYearly: process.env.STRIPE_PRICE_SELLER_BASIC_YEARLY || '',
   },
   [SELLER_TIERS.PLUS]: {
@@ -83,7 +83,7 @@ export const SELLER_TIER_CONFIG: Record<SellerTier, SellerTierConfig> = {
       'Bulk listing tools',
       'Featured seller badge',
     ],
-    stripePriceIdMonthly: process.env.STRIPE_PRICE_SELLER_PLUS_MONTHLY || '',
+    stripePriceIdMonthly: process.env.STRIPE_PRICE_SELLER_PLUS_MONTHLY || process.env.NEXT_PUBLIC_STRIPE_PRICE_SELLER_UNLIMITED || '',
     stripePriceIdYearly: process.env.STRIPE_PRICE_SELLER_PLUS_YEARLY || '',
     isPopular: true,
   },
@@ -104,7 +104,7 @@ export const SELLER_TIER_CONFIG: Record<SellerTier, SellerTierConfig> = {
       'White-label options',
       'Priority 24/7 support',
     ],
-    stripePriceIdMonthly: process.env.STRIPE_PRICE_SELLER_PRO_MONTHLY || '',
+    stripePriceIdMonthly: process.env.STRIPE_PRICE_SELLER_PRO_MONTHLY || process.env.NEXT_PUBLIC_STRIPE_PRICE_SELLER_PRO || '',
     stripePriceIdYearly: process.env.STRIPE_PRICE_SELLER_PRO_YEARLY || '',
   },
   [SELLER_TIERS.ENTERPRISE]: {
@@ -177,7 +177,7 @@ export const CONTRACTOR_TIER_CONFIG: Record<ContractorTier, ContractorTierConfig
       'Analytics dashboard',
       'Priority support',
     ],
-    stripePriceIdMonthly: process.env.STRIPE_PRICE_CONTRACTOR_VERIFIED_MONTHLY || '',
+    stripePriceIdMonthly: process.env.STRIPE_PRICE_CONTRACTOR_VERIFIED_MONTHLY || process.env.NEXT_PUBLIC_STRIPE_PRICE_CONTRACTOR_VERIFIED || '',
     stripePriceIdYearly: process.env.STRIPE_PRICE_CONTRACTOR_VERIFIED_YEARLY || '',
   },
 };
