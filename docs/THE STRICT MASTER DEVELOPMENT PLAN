@@ -1,0 +1,474 @@
+THE RAIL EXCHANGE™ — MASTER DEVELOPMENT SPEC (STRICT + FINAL)
+**Claude Opus MUST FOLLOW EVERY STEP EXACTLY AS WRITTEN.
+
+NO ALTERATIONS. NO SKIPPING. NO PLACEHOLDERS.
+EVERY STEP MUST BE 100% COMPLETE BEFORE ADVANCING.**
+
+==========================================================
+🎯 SECTION 0 — GLOBAL ENGINEERING RULES (NON-NEGOTIABLE)
+==========================================================
+
+NO PLACEHOLDERS ALLOWED.
+No “TODO”, no dummy data, no lorem ipsum, no temporary text.
+
+EVERY FEATURE MUST BE PRODUCTION READY.
+
+ARCHITECTURE MUST MATCH THIS DOCUMENT EXACTLY.
+
+UNIFIED DASHBOARD REQUIRED.
+Only:
+
+/dashboard
+
+
+Everything else is modular inside it.
+
+SHADCN UI + Tailwind for ALL components.
+
+ALL MODELS MUST CONNECT TO REAL API ROUTES.
+
+ALL ROUTES MUST BE PROTECTED BY NEXTAUTH + MIDDLEWARE.
+
+EVERY SUBMISSION MUST BE FULLY VALIDATED.
+
+ALL PAGES MUST BE RESPONSIVE AND POLISHED (AutoTrader/Airbnb style).
+
+STRIPE VERIFIED CONTRACTOR SUBSCRIPTION = $24/month — REQUIRED.
+
+==========================================================
+🎯 SECTION 1 — SYSTEM SETUP
+==========================================================
+STEP 1 — Initialize Next.js 14 Project
+
+Create:
+
+Next.js 14 (App Router)
+
+TypeScript
+
+Tailwind
+
+ShadCN UI initialized
+
+Global layout
+
+Deliverables:
+package.json, /app/layout.tsx, /app/globals.css, components/ui/*
+
+STEP 2 — Install Core Dependencies
+
+Install:
+
+next-auth
+mongoose
+@aws-sdk/client-s3
+openai
+pdf-lib
+stripe
+google-maps client
+zustand (if needed)
+
+STEP 3 — Create .env.example
+
+Values REQUIRED:
+
+DATABASE_URL=
+NEXTAUTH_SECRET=
+NEXTAUTH_URL=
+
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_S3_BUCKET=
+
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PUBLIC_KEY=
+
+GOOGLE_MAPS_API_KEY=
+OPENAI_API_KEY=
+
+STEP 4 — Mongo Connection Utility
+
+Create:
+
+/lib/db.ts
+Must include:
+
+Global cached connection
+
+Error handling
+
+Auto-reconnect
+
+==========================================================
+🎯 SECTION 2 — USER + AUTH SYSTEM
+==========================================================
+STEP 5 — User Model
+
+Required fields:
+
+name
+email
+passwordHash
+role (buyer | seller | contractor | admin)
+image
+createdAt
+updatedAt
+
+STEP 6 — NextAuth Configuration
+
+MUST:
+
+Use credential provider (email + password)
+
+Load user.role into JWT
+
+Load contractorProfileExists into session
+
+NO placeholders
+
+Full error handling
+
+JWT MUST include:
+
+token.role = user.role
+token.contractorProfileExists = contractorHasProfile
+session.user.role = token.role
+session.user.contractorProfileExists = token.contractorProfileExists
+
+STEP 7 — Auth Pages
+
+Create:
+
+/auth/register
+/auth/login
+/auth/forgot-password
+
+All with production UI (ShadCN cards, inputs, buttons).
+
+STEP 8 — Registration Role Selection
+
+User MUST choose:
+
+Buyer/Seller
+
+Contractor
+
+This determines dashboard modules.
+
+==========================================================
+🎯 SECTION 3 — UNIFIED DASHBOARD (MANDATORY)
+==========================================================
+STEP 9 — DELETE ALL OLD DASHBOARDS
+
+ABSOLUTELY REMOVE:
+
+/dashboard/buyer
+/dashboard/seller
+/dashboard/contractor
+/contractors/register
+/contractors/onboard
+
+
+CLAUDE MUST CONFIRM DELETION BEFORE MOVING ON.
+
+STEP 10 — Create Unified Dashboard Layout
+
+Path:
+
+/dashboard/layout.tsx
+
+
+Includes:
+
+Left side navigation (role-based items)
+
+Top header
+
+ShadCN UI components
+
+Dynamic module loader
+
+STEP 11 — Dashboard Modules (Role-Based)
+
+Inside:
+
+/dashboard/modules/
+
+
+Create folders:
+
+buyer/
+seller/
+contractor/
+admin/
+
+
+Dashboard landing loads modules depending on:
+
+session.user.role
+session.user.contractorProfileExists
+
+STEP 12 — Contractor Setup INSIDE Dashboard
+
+NEW PATH:
+
+/dashboard/contractor/setup
+
+
+Includes:
+
+Business info
+
+Services offered
+
+Regions served
+
+Insurance & documents upload
+
+Experience
+
+Equipment
+
+Profile photo & logo
+
+SAVE & CONTINUE logic
+
+STEP 13 — Stripe Verification Subscription ($24/month)
+
+Contractor sees tile:
+
+Status: Not Verified
+[ Become Verified – $24/month ]
+
+
+Stripe Checkout → creates subscription.
+
+Webhook must:
+
+Mark contractor verified = true
+
+Save verificationSubscriptionId
+
+Update verificationStatus = "verified"
+
+When subscription ends:
+
+verified = false
+
+STEP 14 — Middleware Rewrite
+
+MUST enforce:
+
+If NOT authenticated → /auth/login
+If dashboard → allow
+If contractorProfileExists = false → show contractor setup module inside dashboard
+NO LOOPS
+NO redirects to removed contractor URLs
+
+==========================================================
+🎯 SECTION 4 — CONTRACTOR SYSTEM
+==========================================================
+STEP 15 — ContractorProfile Model
+
+Fields MUST include:
+
+businessName
+services[]
+regions[]
+insuranceDocs (S3)
+safetyDocs (S3)
+experience
+equipment
+logoUrl
+verificationStatus
+verified (boolean)
+verificationSubscriptionId
+
+STEP 16 — Contractor API Routes
+
+Create:
+
+POST    /api/contractor/setup
+PUT     /api/contractor
+GET     /api/contractor/[id]
+GET     /api/contractor
+
+
+MUST handle:
+
+Validation
+
+Authentication
+
+Error handling
+
+STEP 17 — Contractor Profile Page
+
+Path:
+
+/contractors/[id]
+
+
+Display:
+
+Verified badge
+
+Services
+
+Regions (Google Maps)
+
+Photos
+
+Contact button
+
+Add-on badges
+
+==========================================================
+🎯 SECTION 5 — MARKETPLACE SYSTEM
+==========================================================
+STEP 18 — Listing Model
+
+Fields:
+
+title
+description
+category
+price
+region
+sellerId
+photos[]
+status
+addOns[]
+createdAt
+updatedAt
+
+STEP 19 — Listing API Routes
+
+CRUD:
+
+POST    /api/listings
+GET     /api/listings
+GET     /api/listings/[id]
+PUT     /api/listings/[id]
+DELETE  /api/listings/[id]
+
+STEP 20 — Listing Creation Page
+
+Features:
+
+S3 upload
+
+Category selector
+
+Region autocomplete
+
+Add-on options
+
+STEP 21 — Listing Detail Page
+
+AutoTrader-style with:
+
+Gallery
+
+Price sidebar
+
+Seller card
+
+Verified seller indicator
+
+Watchlist button
+
+Contact seller
+
+==========================================================
+🎯 SECTION 6 — HOMEPAGE + SEARCH
+==========================================================
+STEP 22 — Hero Search Bar
+
+AutoTrader/Airbnb hybrid:
+
+Keyword search
+
+Category dropdown
+
+Region autocomplete
+
+CTA buttons
+
+STEP 23 — Contractor Map Search
+
+Google Maps: markers + sidebar filters.
+
+STEP 24 — Featured Listings
+
+Pulled based on add-ons.
+
+STEP 25 — Add-On Explainer
+
+Explain all add-ons.
+
+STEP 26 — Category Tiles
+
+Modern, ShadCN card grid.
+
+==========================================================
+🎯 SECTION 7 — MONETIZATION + AI TOOLS
+==========================================================
+STEP 27 — AddOnPurchase Model
+STEP 28 — Add-On Purchase API
+STEP 29 — Ranking Logic
+STEP 30 — AI Enhancement Endpoint
+STEP 31 — Spec Sheet PDF Generator
+==========================================================
+🎯 SECTION 8 — SEARCH ENGINE
+==========================================================
+STEP 32 — /api/search Endpoint
+STEP 33 — /search UI Page
+==========================================================
+🎯 SECTION 9 — USER TOOLS
+==========================================================
+STEP 34 — Watchlist
+STEP 35 — Saved Searches
+STEP 36 — Notification System
+==========================================================
+🎯 SECTION 10 — MESSAGING SYSTEM
+==========================================================
+STEP 37 — Message Model
+STEP 38 — Messaging API
+STEP 39 — Messaging UI (ThreadList, ChatWindow)
+==========================================================
+🎯 SECTION 11 — ADMIN DASHBOARD (FULL ENTERPRISE PANEL)
+==========================================================
+
+Admin module MUST include:
+
+Users
+Listings
+Contractors
+Contractor Verification Queue
+Add-On Revenue Analytics
+Stripe Payments Dashboard
+Marketplace Analytics
+Category Management
+Moderation Hub
+System Logs
+
+Admin MUST see full financial breakdown including:
+
+Verified badge revenue ($24/mo)
+
+Add-on revenue
+
+MRR
+
+Churn
+
+Subscription statuses
+
+==========================================================
+🎯 SECTION 12 — FINAL POLISH & DEPLOYMENT
+==========================================================
+STEP 40 — UI/UX Cleanup
+STEP 41 — Vercel Deployment
+STEP 42 — Comprehensive QA Testing

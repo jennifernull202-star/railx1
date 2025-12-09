@@ -1,0 +1,808 @@
+/**
+ * THE RAIL EXCHANGE™ — Contractor Onboarding Page
+ * 
+ * Multi-step onboarding form for contractor profiles.
+ * Includes business info, services, regions, and document uploads.
+ */
+
+'use client';
+
+import { useState, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import { SERVICE_CATEGORIES, US_STATES, US_REGIONS, EMPLOYEE_COUNTS } from '@/lib/constants';
+
+type Step = 'business' | 'services' | 'location' | 'review';
+
+interface FormData {
+  // Business Info
+  businessName: string;
+  businessDescription: string;
+  businessPhone: string;
+  businessEmail: string;
+  website: string;
+  yearsInBusiness: number;
+  numberOfEmployees: string;
+  // Services
+  services: string[];
+  serviceDescription: string;
+  equipmentOwned: string[];
+  // Location
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    country: string;
+  };
+  regionsServed: string[];
+  // Social
+  socialLinks: {
+    linkedin: string;
+    facebook: string;
+    twitter: string;
+  };
+}
+
+const initialFormData: FormData = {
+  businessName: '',
+  businessDescription: '',
+  businessPhone: '',
+  businessEmail: '',
+  website: '',
+  yearsInBusiness: 0,
+  numberOfEmployees: '',
+  services: [],
+  serviceDescription: '',
+  equipmentOwned: [],
+  address: {
+    street: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    country: 'USA',
+  },
+  regionsServed: [],
+  socialLinks: {
+    linkedin: '',
+    facebook: '',
+    twitter: '',
+  },
+};
+
+const steps: { id: Step; title: string; description: string }[] = [
+  { id: 'business', title: 'Business Info', description: 'Tell us about your company' },
+  { id: 'services', title: 'Services', description: 'What services do you offer?' },
+  { id: 'location', title: 'Location & Coverage', description: 'Where do you operate?' },
+  { id: 'review', title: 'Review & Submit', description: 'Verify your information' },
+];
+
+export default function ContractorOnboardPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  
+  const [currentStep, setCurrentStep] = useState<Step>('business');
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [equipmentInput, setEquipmentInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  // Redirect if not authenticated
+  if (status === 'unauthenticated') {
+    router.push('/auth/login?callbackUrl=/contractors/onboard');
+    return null;
+  }
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-rail-orange border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  const currentStepIndex = steps.findIndex((s) => s.id === currentStep);
+
+  const updateFormData = <K extends keyof FormData>(field: K, value: FormData[K]) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const updateAddress = (field: keyof FormData['address'], value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      address: { ...prev.address, [field]: value },
+    }));
+  };
+
+  const toggleService = (serviceId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      services: prev.services.includes(serviceId)
+        ? prev.services.filter((s) => s !== serviceId)
+        : [...prev.services, serviceId],
+    }));
+  };
+
+  const toggleRegion = (region: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      regionsServed: prev.regionsServed.includes(region)
+        ? prev.regionsServed.filter((r) => r !== region)
+        : [...prev.regionsServed, region],
+    }));
+  };
+
+  const addEquipment = () => {
+    if (equipmentInput.trim()) {
+      setFormData((prev) => ({
+        ...prev,
+        equipmentOwned: [...prev.equipmentOwned, equipmentInput.trim()],
+      }));
+      setEquipmentInput('');
+    }
+  };
+
+  const removeEquipment = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      equipmentOwned: prev.equipmentOwned.filter((_, i) => i !== index),
+    }));
+  };
+
+  const validateStep = (step: Step): boolean => {
+    switch (step) {
+      case 'business':
+        return !!(
+          formData.businessName &&
+          formData.businessDescription &&
+          formData.businessPhone &&
+          formData.businessEmail &&
+          formData.yearsInBusiness >= 0
+        );
+      case 'services':
+        return formData.services.length > 0;
+      case 'location':
+        return !!(
+          formData.address.city &&
+          formData.address.state &&
+          formData.address.zipCode &&
+          formData.regionsServed.length > 0
+        );
+      default:
+        return true;
+    }
+  };
+
+  const nextStep = () => {
+    if (!validateStep(currentStep)) {
+      setError('Please complete all required fields before continuing.');
+      return;
+    }
+    setError('');
+    const nextIndex = currentStepIndex + 1;
+    if (nextIndex < steps.length) {
+      setCurrentStep(steps[nextIndex].id);
+    }
+  };
+
+  const prevStep = () => {
+    const prevIndex = currentStepIndex - 1;
+    if (prevIndex >= 0) {
+      setCurrentStep(steps[prevIndex].id);
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/contractors/onboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          isPublished: true,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create profile');
+      }
+
+      // Redirect to the new contractor profile
+      router.push(`/contractors/${data.profile._id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-surface-secondary">
+      {/* Header */}
+      <header className="bg-white border-b border-surface-border">
+        <div className="container-rail py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="flex items-center">
+              <span className="text-heading-md font-bold text-navy-900">The Rail</span>
+              <span className="text-heading-md font-bold text-rail-orange ml-1">Exchange</span>
+              <span className="text-rail-orange text-xs font-medium ml-0.5">™</span>
+            </Link>
+            <div className="text-body-sm text-text-secondary">
+              Welcome, {session?.user?.name}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container-rail py-12">
+        {/* Progress Indicator */}
+        <div className="max-w-3xl mx-auto mb-12">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex items-center">
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-body-sm transition-colors ${
+                      index < currentStepIndex
+                        ? 'bg-status-success text-white'
+                        : index === currentStepIndex
+                        ? 'bg-rail-orange text-white'
+                        : 'bg-surface-tertiary text-text-tertiary'
+                    }`}
+                  >
+                    {index < currentStepIndex ? (
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    ) : (
+                      index + 1
+                    )}
+                  </div>
+                  <div className="mt-2 text-center hidden sm:block">
+                    <p className={`text-body-sm font-medium ${index === currentStepIndex ? 'text-navy-900' : 'text-text-tertiary'}`}>
+                      {step.title}
+                    </p>
+                  </div>
+                </div>
+                {index < steps.length - 1 && (
+                  <div
+                    className={`w-16 sm:w-24 h-1 mx-2 rounded ${
+                      index < currentStepIndex ? 'bg-status-success' : 'bg-surface-tertiary'
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Form Card */}
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-card border border-surface-border p-8">
+            {/* Step Header */}
+            <div className="mb-8">
+              <h1 className="text-display-sm font-bold text-navy-900 mb-2">
+                {steps[currentStepIndex].title}
+              </h1>
+              <p className="body-md">{steps[currentStepIndex].description}</p>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mb-6 p-4 bg-status-error/10 border border-status-error/20 rounded-xl">
+                <p className="text-body-sm text-status-error font-medium">{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              {/* Step 1: Business Info */}
+              {currentStep === 'business' && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                      Business Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.businessName}
+                      onChange={(e) => updateFormData('businessName', e.target.value)}
+                      placeholder="Your Company Name"
+                      className="input-primary"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                      Business Description *
+                    </label>
+                    <textarea
+                      value={formData.businessDescription}
+                      onChange={(e) => updateFormData('businessDescription', e.target.value)}
+                      placeholder="Describe your company, experience, and capabilities..."
+                      rows={4}
+                      className="input-primary resize-none"
+                      required
+                    />
+                    <p className="mt-1 text-caption text-text-tertiary">
+                      {formData.businessDescription.length}/2000 characters
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                        Business Phone *
+                      </label>
+                      <input
+                        type="tel"
+                        value={formData.businessPhone}
+                        onChange={(e) => updateFormData('businessPhone', e.target.value)}
+                        placeholder="(555) 123-4567"
+                        className="input-primary"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                        Business Email *
+                      </label>
+                      <input
+                        type="email"
+                        value={formData.businessEmail}
+                        onChange={(e) => updateFormData('businessEmail', e.target.value)}
+                        placeholder="contact@yourcompany.com"
+                        className="input-primary"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                      Website
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.website}
+                      onChange={(e) => updateFormData('website', e.target.value)}
+                      placeholder="https://www.yourcompany.com"
+                      className="input-primary"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                        Years in Business *
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.yearsInBusiness || ''}
+                        onChange={(e) => updateFormData('yearsInBusiness', parseInt(e.target.value) || 0)}
+                        placeholder="10"
+                        min="0"
+                        className="input-primary"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                        Number of Employees
+                      </label>
+                      <select
+                        value={formData.numberOfEmployees}
+                        onChange={(e) => updateFormData('numberOfEmployees', e.target.value)}
+                        className="input-primary"
+                      >
+                        <option value="">Select range</option>
+                        {EMPLOYEE_COUNTS.map((ec) => (
+                          <option key={ec.value} value={ec.value}>
+                            {ec.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Services */}
+              {currentStep === 'services' && (
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-body-sm font-medium text-navy-900 mb-4">
+                      Select Your Services * (choose all that apply)
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {SERVICE_CATEGORIES.map((service) => (
+                        <button
+                          key={service.id}
+                          type="button"
+                          onClick={() => toggleService(service.id)}
+                          className={`p-4 rounded-xl border-2 text-left transition-all ${
+                            formData.services.includes(service.id)
+                              ? 'border-rail-orange bg-rail-orange/5'
+                              : 'border-surface-border hover:border-surface-border/80'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-body-sm font-medium text-navy-900">
+                              {service.label}
+                            </span>
+                            {formData.services.includes(service.id) && (
+                              <svg className="w-5 h-5 text-rail-orange" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                      Additional Service Details
+                    </label>
+                    <textarea
+                      value={formData.serviceDescription}
+                      onChange={(e) => updateFormData('serviceDescription', e.target.value)}
+                      placeholder="Describe your specific capabilities, certifications, or specializations..."
+                      rows={3}
+                      className="input-primary resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                      Equipment Owned
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={equipmentInput}
+                        onChange={(e) => setEquipmentInput(e.target.value)}
+                        placeholder="e.g., Track excavator, Rail grinder"
+                        className="input-primary flex-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addEquipment();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={addEquipment}
+                        className="btn-outline px-4"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    {formData.equipmentOwned.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {formData.equipmentOwned.map((item, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center gap-1 px-3 py-1 bg-surface-secondary rounded-full text-body-sm"
+                          >
+                            {item}
+                            <button
+                              type="button"
+                              onClick={() => removeEquipment(index)}
+                              className="text-text-tertiary hover:text-status-error"
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                  fillRule="evenodd"
+                                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Location & Coverage */}
+              {currentStep === 'location' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-heading-sm font-semibold text-navy-900 mb-4">
+                      Business Address
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                          Street Address
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.address.street}
+                          onChange={(e) => updateAddress('street', e.target.value)}
+                          placeholder="123 Railroad Ave"
+                          className="input-primary"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                            City *
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.address.city}
+                            onChange={(e) => updateAddress('city', e.target.value)}
+                            placeholder="Chicago"
+                            className="input-primary"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                            State *
+                          </label>
+                          <select
+                            value={formData.address.state}
+                            onChange={(e) => updateAddress('state', e.target.value)}
+                            className="input-primary"
+                            required
+                          >
+                            <option value="">Select state</option>
+                            {US_STATES.map((state) => (
+                              <option key={state} value={state}>
+                                {state}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                            ZIP Code *
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.address.zipCode}
+                            onChange={(e) => updateAddress('zipCode', e.target.value)}
+                            placeholder="60601"
+                            className="input-primary"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-body-sm font-medium text-navy-900 mb-2">
+                            Country
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.address.country}
+                            className="input-primary bg-surface-secondary"
+                            disabled
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-body-sm font-medium text-navy-900 mb-4">
+                      Regions Served * (select all that apply)
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {US_REGIONS.map((region) => (
+                        <button
+                          key={region}
+                          type="button"
+                          onClick={() => toggleRegion(region)}
+                          className={`p-3 rounded-xl border-2 text-center transition-all ${
+                            formData.regionsServed.includes(region)
+                              ? 'border-rail-orange bg-rail-orange/5'
+                              : 'border-surface-border hover:border-surface-border/80'
+                          }`}
+                        >
+                          <span className="text-body-sm font-medium text-navy-900">
+                            {region}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Review */}
+              {currentStep === 'review' && (
+                <div className="space-y-8">
+                  {/* Business Summary */}
+                  <div>
+                    <h3 className="text-heading-sm font-semibold text-navy-900 mb-4 flex items-center justify-between">
+                      Business Information
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep('business')}
+                        className="text-body-sm text-rail-orange hover:text-rail-orange-dark"
+                      >
+                        Edit
+                      </button>
+                    </h3>
+                    <div className="bg-surface-secondary rounded-xl p-4 space-y-2">
+                      <p className="text-body-md"><strong>Name:</strong> {formData.businessName}</p>
+                      <p className="text-body-md"><strong>Phone:</strong> {formData.businessPhone}</p>
+                      <p className="text-body-md"><strong>Email:</strong> {formData.businessEmail}</p>
+                      {formData.website && <p className="text-body-md"><strong>Website:</strong> {formData.website}</p>}
+                      <p className="text-body-md"><strong>Years in Business:</strong> {formData.yearsInBusiness}</p>
+                      {formData.numberOfEmployees && (
+                        <p className="text-body-md"><strong>Employees:</strong> {formData.numberOfEmployees}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Services Summary */}
+                  <div>
+                    <h3 className="text-heading-sm font-semibold text-navy-900 mb-4 flex items-center justify-between">
+                      Services
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep('services')}
+                        className="text-body-sm text-rail-orange hover:text-rail-orange-dark"
+                      >
+                        Edit
+                      </button>
+                    </h3>
+                    <div className="bg-surface-secondary rounded-xl p-4">
+                      <div className="flex flex-wrap gap-2">
+                        {formData.services.map((serviceId) => {
+                          const service = SERVICE_CATEGORIES.find((s) => s.id === serviceId);
+                          return (
+                            <span
+                              key={serviceId}
+                              className="px-3 py-1 bg-white rounded-full text-body-sm border border-surface-border"
+                            >
+                              {service?.label || serviceId}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Location Summary */}
+                  <div>
+                    <h3 className="text-heading-sm font-semibold text-navy-900 mb-4 flex items-center justify-between">
+                      Location & Coverage
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep('location')}
+                        className="text-body-sm text-rail-orange hover:text-rail-orange-dark"
+                      >
+                        Edit
+                      </button>
+                    </h3>
+                    <div className="bg-surface-secondary rounded-xl p-4 space-y-3">
+                      <p className="text-body-md">
+                        <strong>Address:</strong>{' '}
+                        {[formData.address.street, formData.address.city, formData.address.state, formData.address.zipCode]
+                          .filter(Boolean)
+                          .join(', ')}
+                      </p>
+                      <div>
+                        <strong className="text-body-md">Regions Served:</strong>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {formData.regionsServed.map((region) => (
+                            <span
+                              key={region}
+                              className="px-3 py-1 bg-white rounded-full text-body-sm border border-surface-border"
+                            >
+                              {region}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Terms */}
+                  <div className="p-4 bg-status-info/5 border border-status-info/20 rounded-xl">
+                    <p className="text-body-sm text-text-secondary">
+                      By submitting your profile, you agree to our{' '}
+                      <Link href="/terms" className="text-rail-orange hover:underline">
+                        Terms of Service
+                      </Link>{' '}
+                      and{' '}
+                      <Link href="/privacy" className="text-rail-orange hover:underline">
+                        Privacy Policy
+                      </Link>
+                      . Your profile will be publicly visible once submitted.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation Buttons */}
+              <div className="flex items-center justify-between mt-10 pt-6 border-t border-surface-border">
+                {currentStepIndex > 0 ? (
+                  <button
+                    type="button"
+                    onClick={prevStep}
+                    className="btn-ghost"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                {currentStep === 'review' ? (
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="btn-primary py-3 px-8 disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
+                        </svg>
+                        Creating Profile...
+                      </span>
+                    ) : (
+                      'Submit Profile'
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    className="btn-primary py-3 px-8"
+                  >
+                    Continue
+                    <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

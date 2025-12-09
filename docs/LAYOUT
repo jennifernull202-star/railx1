@@ -1,0 +1,286 @@
+🚨 THE RAIL EXCHANGE™ — FULL PROJECT BLUEPRINT (FINAL + COMPLETE)
+Opus MUST read and understand this ENTIRE structure BEFORE writing ANY code.
+
+This blueprint defines:
+
+All folders
+
+All files
+
+All dashboards
+
+All modules
+
+All marketplace categories
+
+All layouts
+
+All component groups
+
+There is NO guessing once Opus has this.
+
+===========================================
+⭐ 1. PROJECT ROOT STRUCTURE
+===========================================
+/
+├── app/
+├── components/
+├── dashboard/
+├── lib/
+├── models/
+├── public/
+└── utils/
+
+===========================================
+⭐ 2. APP ROUTER STRUCTURE (Next.js 14)
+===========================================
+app/
+  layout.tsx                ← Global layout (required)
+  page.tsx                  ← Homepage
+
+  auth/
+    layout.tsx
+    login/page.tsx
+    register/page.tsx
+    forgot-password/page.tsx
+
+  dashboard/
+    layout.tsx              ← Unified dashboard layout
+    components/
+      Sidebar.tsx
+      Header.tsx
+      ModuleWrapper.tsx
+    modules/
+      buyer/page.tsx
+      seller/page.tsx
+      contractor/page.tsx
+      admin/page.tsx
+    contractor/
+      setup/page.tsx
+
+  marketplace/
+    create/page.tsx
+    [id]/page.tsx
+    category/
+      [slug]/page.tsx
+      [slug]/layout.tsx
+      components/
+        CategoryHeader.tsx
+        Filters.tsx
+        ListingsGrid.tsx
+
+  search/
+    page.tsx
+
+===========================================
+⭐ 3. GLOBAL COMPONENTS (REUSABLE)
+===========================================
+components/
+  ui/                      ← All ShadCN components
+  forms/
+    InputField.tsx
+    SelectField.tsx
+    ImageUpload.tsx
+  cards/
+    ListingCard.tsx
+    ContractorCard.tsx
+    CategoryTile.tsx
+  search/
+    GlobalSearchBar.tsx
+    FilterBar.tsx
+  maps/
+    MapWrapper.tsx
+    ContractorMap.tsx
+
+===========================================
+⭐ 4. LIB (BACKEND UTILITIES)
+===========================================
+lib/
+  db.ts                     ← MongoDB connection handler
+  auth.ts                   ← NextAuth config
+  stripe/
+    client.ts               ← Stripe client
+    webhook.ts              ← Webhook handler for subscriptions
+  validation/
+    listingValidation.ts
+    contractorValidation.ts
+
+===========================================
+⭐ 5. MODELS (DATABASE)
+===========================================
+models/
+  User.ts
+  ContractorProfile.ts
+  Listing.ts
+  AddOnPurchase.ts
+  Message.ts
+  Notification.ts
+  SavedSearch.ts
+  Watchlist.ts
+
+===========================================
+⭐ 6. DASHBOARD ARCHITECTURE (UNIFIED)
+===========================================
+dashboard/
+  utils/
+    getNavigationItems.ts   ← Role-based navigation builder
+    checkContractorSetup.ts ← Forces setup if needed
+
+MUST HAVE MODULES:
+dashboard/modules/
+  buyer/
+    page.tsx
+  seller/
+    page.tsx
+  contractor/
+    page.tsx
+  admin/
+    page.tsx
+
+CONTRACTOR SETUP (MANDATORY):
+dashboard/contractor/setup/
+  page.tsx
+  components/
+    BusinessInfoForm.tsx
+    ServicesForm.tsx
+    RegionsForm.tsx
+    DocumentsForm.tsx
+    EquipmentForm.tsx
+
+===========================================
+⭐ 7. MARKETPLACE CATEGORY BLUEPRINT
+===========================================
+Supported categories:
+Hi-Rail Vehicles
+Locomotives
+Rail Equipment & Tools
+Track Maintenance Equipment
+Materials (rail, tie plates, spikes)
+Rail Cars
+Attachments
+Rentals
+Contractors For Hire
+Rail Services
+
+Category folder structure:
+app/marketplace/category/[slug]/
+  page.tsx
+  layout.tsx
+  components/
+    CategoryHeader.tsx
+    Filters.tsx
+    ListingsGrid.tsx
+
+===========================================
+⭐ 8. MARKETPLACE LISTINGS (CREATION + DETAIL)
+===========================================
+Create Listing Page
+/marketplace/create/page.tsx
+
+Listing Detail Page
+/marketplace/[id]/page.tsx
+
+===========================================
+⭐ 9. SEARCH SYSTEM
+===========================================
+app/search/page.tsx
+api/search/route.ts
+components/search/FilterBar.tsx
+components/search/GlobalSearchBar.tsx
+components/maps/ContractorMap.tsx
+
+
+Filters depend on category.
+
+===========================================
+⭐ 10. VERIFIED CONTRACTOR SYSTEM ($24/month)
+===========================================
+Contractor model fields:
+verified: boolean
+verificationStatus: "unverified" | "pending" | "verified"
+verificationSubscriptionId: string
+
+Stripe subscription integration:
+lib/stripe/webhook.ts:
+  - checkout.session.completed
+  - customer.subscription.created
+  - customer.subscription.updated
+  - customer.subscription.deleted
+
+Dashboard tile:
+/dashboard/modules/contractor/components/VerificationTile.tsx
+
+===========================================
+⭐ 11. ADMIN DASHBOARD (FULL ENTERPRISE PANEL)
+===========================================
+dashboard/modules/admin/
+  page.tsx
+  Users.tsx
+  Listings.tsx
+  ContractorVerification.tsx
+  AddOnRevenue.tsx
+  StripePayments.tsx
+  MarketplaceAnalytics.tsx
+  Categories.tsx
+  Moderation.tsx
+  SystemLogs.tsx
+
+
+Admin MUST see:
+
+MRR
+
+Add-on revenue
+
+Verified contractor revenue
+
+Subscription churn
+
+Search trends
+
+Top listings
+
+Top contractors
+
+===========================================
+⭐ 12. API ROUTES (MANDATORY)
+===========================================
+api/
+  auth/[...nextauth]/route.ts
+  listings/
+    route.ts
+    [id]/route.ts
+  contractors/
+    setup/route.ts
+    [id]/route.ts
+  addons/purchase/route.ts
+  messages/
+    route.ts
+    thread/[id]/route.ts
+  search/route.ts
+  watchlist/route.ts
+  savedsearches/route.ts
+
+===========================================
+⭐ 13. PUBLIC ASSETS
+===========================================
+public/
+  favicon.ico
+  logos/
+    rail-exchange-logo.svg
+    contractor-verified.svg
+  placeholders/
+    listing-no-image.png
+
+===========================================
+⭐ 14. WHAT YOU TELL OPUS (CRITICAL)
+===========================================
+
+Copy/paste this:
+
+**“Opus, before writing ANY code, you MUST fully understand and adopt this COMPLETE PROJECT BLUEPRINT.
+This blueprint defines ALL required files, folders, dashboards, components, modules, marketplace categories, and layouts.
+
+You are NOT allowed to deviate from this structure.
+
+Confirm that you understand the entire blueprint BEFORE starting implementation.”**

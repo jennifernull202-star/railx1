@@ -1,0 +1,292 @@
+⭐ THE RAIL EXCHANGE™ — UI/UX BLUEPRINT (PREMIUM MARKETPLACE DESIGN)
+Give this to Opus so he designs everything like a million-dollar SaaS marketplace.
+🎨 1. DESIGN SYSTEM (FOUNDATION)
+Colors
+
+Primary colors:
+
+Navy:        #0A1A2F  
+Orange:      #FF6A1A  
+Light Gray:  #F5F7FA  
+Dark Slate:  #1E293B  
+White:       #FFFFFF  
+
+
+Use navy + white as the base, orange as accent/action, slate for text.
+
+Typography
+
+Use a premium modern font:
+
+Inter (or Geist UI Font)
+
+
+Sizes:
+
+H1: 36–48px  
+H2: 28–32px  
+H3: 22–24px  
+Body: 16px  
+Small: 14px  
+
+Spacing Rules
+
+Consistent spacing system:
+
+8px baseline  
+16px padding  
+24px section spacing  
+32px major section spacing  
+
+
+No crowded UI. Lots of breathing room.
+
+🖼 2. CORE COMPONENT STYLES (ShadCN UI)
+Cards
+
+All cards MUST follow this pattern:
+
+Rounded corners (rounded-xl)
+
+Subtle shadow (shadow-sm hover:shadow-md transition)
+
+Padding: p-4 or p-6
+
+Clean spacing between elements
+
+Consistent title → subtitle → actions pattern
+
+Buttons
+
+Use ShadCN’s button with custom styles:
+
+Primary = Orange (#FF6A1A)
+Secondary = Navy outline
+Ghost = Gray hover
+
+
+Always large enough for touch targets.
+
+Inputs & Forms
+
+Use:
+
+ShadCN Input
+
+ShadCN Select
+
+Label above input
+
+Helper text below (optional)
+
+Consistent vertical spacing
+
+🏠 3. HOMEPAGE UI BLUEPRINT
+Sections (in order):
+
+Hero Search Bar (AutoTrader-style):
+
+Big search input
+
+Category dropdown
+
+Location autocomplete
+
+CTA buttons
+
+Full-width, centered layout
+
+Category Tiles
+
+3–4 columns
+
+Large icons
+
+Clean labels
+
+Minimal text
+
+Featured Listings
+
+Horizontal card slider
+
+Listing photo
+
+Title, price, category
+
+Contractor Map Search
+
+Map left
+
+Contractor cards right
+
+Recent Listings
+
+Grid of 6
+
+High visual clarity
+
+🚗 4. MARKETPLACE LISTING PAGE UI
+Listing Card (Grid)
+
+Large photo top
+
+Title
+
+Price in bold
+
+Category badge
+
+Location
+
+Verified badge if contractor
+
+Listing Detail Page
+
+Structure:
+
+Left: Photo gallery
+Right: Price box + seller info
+Below: Description, specs, features
+
+🧭 5. DASHBOARD UI BLUEPRINT (Unified Dashboard)
+Sidebar
+
+Navy background
+
+Icons + labels
+
+Active state highlighted
+
+Divided into sections:
+
+General
+Marketplace Tools
+Contractor Tools
+Admin Tools
+
+Header
+
+White background
+
+Minimal shadow
+
+User avatar right
+
+Notifications icon
+
+Content Wrapper
+
+White card-like sections
+
+Top margin 24px
+
+Spacing between modules
+
+Dashboard Modules (Card Grid)
+
+Use 3-column or 2-column grids depending on screen size:
+
+|  My Listings        |  Messages                |
+|  Add-On Purchases   |  Account Settings        |
+
+Contractor Dashboard Tile
+
+Large card:
+
+🛡 Verified Contractor Badge
+Status: Unverified
+Your listing visibility increases 300% when verified.
+[ Get Verified $24/month ]
+
+🧰 6. CONTRACTOR PROFILE UI
+
+Tabs:
+
+Profile Overview
+Services
+Regions
+Documents
+Equipment
+Verification Status
+
+
+Each tab uses clean card layout.
+
+Verified contractors show a badge:
+
+✔ Verified Contractor (Paid Subscription)
+
+🔍 7. SEARCH PAGE UI
+
+Two views:
+
+Grid View
+
+Left: Filters panel
+
+Right: Listing results
+
+Map View
+
+Left: Map with markers
+
+Right: Cards
+
+Filters include:
+
+Category
+
+Price range
+
+Region
+
+Condition
+
+Verified contractors
+
+📊 8. ADMIN DASHBOARD UI BLUEPRINT
+
+A true enterprise analytics layout:
+
+Top-level KPIs:
+Total Users
+Total Contractors
+Monthly Revenue (MRR)
+Add-on Revenue
+Verified Contractor Revenue
+Total Listings
+Pending Approvals
+Active Subscriptions
+
+Charts:
+
+Revenue over time
+
+Add-on performance
+
+Search volume trends
+
+Top categories
+
+Admin Modules:
+
+User management table
+
+Contractor verification queue
+
+Listing approvals table
+
+Category manager
+
+Moderation panel
+
+System logs
+
+📱 9. MOBILE RESPONSIVENESS RULES
+
+Sidebar collapses into a slide-out menu.
+Dashboard cards stack vertically.
+Listings become 1-column.
+Filters collapse into accordion.
+Hero search becomes vertical stack.
