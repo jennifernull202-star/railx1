@@ -62,6 +62,13 @@ export interface IUser {
     showContractorSection?: boolean;
   };
   
+  // Pending add-ons from cart checkout
+  pendingAddons?: {
+    addonType?: string;
+    listingId?: string;
+    checkoutSessionId?: string;
+  }[];
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -253,6 +260,18 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
         showSellerSection: true,
         showContractorSection: true,
       },
+    },
+    
+    // ============================================
+    // PENDING CART ADD-ONS (for checkout webhook)
+    // ============================================
+    pendingAddons: {
+      type: [{
+        addonType: { type: String },
+        listingId: { type: String },
+        checkoutSessionId: { type: String },
+      }],
+      default: [],
     },
   },
   {

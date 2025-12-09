@@ -11,7 +11,23 @@ import mongoose, { Document, Model, Schema, Types } from 'mongoose';
 // TYPES
 // ============================================
 
-export type VerificationStatus = 'pending' | 'verified' | 'rejected' | 'expired';
+export type VerificationStatus = 'none' | 'pending' | 'ai_approved' | 'approved' | 'verified' | 'rejected' | 'expired';
+
+export interface IVerificationDocuments {
+  businessLicense?: string;
+  insuranceCertificate?: string;
+  workPhotos?: string[];
+  submittedAt?: Date;
+}
+
+export interface IVerificationResult {
+  status: 'approved' | 'rejected' | 'needs_review';
+  confidence: number;
+  notes: string;
+  reviewedAt: Date;
+  reviewedBy: 'ai' | 'admin';
+  adminId?: Types.ObjectId;
+}
 
 export type ServiceCategory = 
   | 'track-construction'
@@ -72,6 +88,8 @@ export interface IContractorProfile {
   safetyRecordVerified: boolean;
   // Verification
   verificationStatus: VerificationStatus;
+  verificationDocuments?: IVerificationDocuments;
+  verificationResult?: IVerificationResult;
   verifiedAt?: Date;
   verifiedBadgePurchased: boolean;
   verifiedBadgeExpiresAt?: Date;
@@ -268,8 +286,22 @@ const ContractorProfileSchema = new Schema<
     // Verification
     verificationStatus: {
       type: String,
-      enum: ['pending', 'verified', 'rejected', 'expired'],
-      default: 'pending',
+      enum: ['none', 'pending', 'ai_approved', 'approved', 'verified', 'rejected', 'expired'],
+      default: 'none',
+    },
+    verificationDocuments: {
+      businessLicense: { type: String },
+      insuranceCertificate: { type: String },
+      workPhotos: { type: [String], default: [] },
+      submittedAt: { type: Date },
+    },
+    verificationResult: {
+      status: { type: String, enum: ['approved', 'rejected', 'needs_review'] },
+      confidence: { type: Number },
+      notes: { type: String },
+      reviewedAt: { type: Date },
+      reviewedBy: { type: String, enum: ['ai', 'admin'] },
+      adminId: { type: Schema.Types.ObjectId, ref: 'User' },
     },
     verifiedAt: {
       type: Date,

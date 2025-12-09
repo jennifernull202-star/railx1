@@ -165,8 +165,8 @@ export const CONTRACTOR_TIER_CONFIG: Record<ContractorTier, ContractorTierConfig
     id: CONTRACTOR_TIERS.VERIFIED,
     name: 'Verified Contractor',
     description: 'Stand out with verification and premium placement',
-    priceMonthly: 2400, // $24.00
-    priceYearly: 24000, // $240/year (2 months free)
+    priceMonthly: 10000, // $100.00
+    priceYearly: 120000, // $1200/year
     features: [
       'Verified badge on profile',
       'Priority search placement',

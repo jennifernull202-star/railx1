@@ -144,6 +144,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         { label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: unreadCount > 0 ? String(unreadCount) : undefined },
         { label: "Notifications", href: "/dashboard/settings", icon: Bell },
         { label: "Profile", href: "/dashboard/profile", icon: User },
+        { label: "Upgrade", href: "/dashboard/upgrade", icon: Crown },
         { label: "Billing", href: "/dashboard/billing", icon: CreditCard },
         { label: "Settings", href: "/dashboard/settings", icon: Settings },
       ],
