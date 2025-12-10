@@ -15,6 +15,7 @@ export const metadata: Metadata = {
     "rail services",
   ],
   authors: [{ name: "The Rail Exchange" }],
+  metadataBase: new URL("https://www.therailexchange.com"),
   openGraph: {
     title: "The Rail Exchange™ | Premium Rail Industry Marketplace",
     description:
@@ -22,12 +23,21 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "The Rail Exchange",
+    images: [
+      {
+        url: "/railxphoto.png",
+        width: 1200,
+        height: 630,
+        alt: "The Rail Exchange - Rail Industry Marketplace",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "The Rail Exchange™",
     description:
       "The premier marketplace for rail industry equipment, materials, services, and contractors.",
+    images: ["/railxphoto.png"],
   },
   robots: {
     index: true,
