@@ -195,6 +195,19 @@ export async function POST(request: NextRequest) {
     // Get or create Stripe customer
     let customerId = user.stripeCustomerId;
     
+    // Verify the customer exists in Stripe (handles test vs live mode mismatch)
+    if (customerId) {
+      try {
+        await stripe.customers.retrieve(customerId);
+      } catch {
+        // Customer doesn't exist (likely test mode customer in live mode)
+        // Clear it so we create a new one
+        console.log(`Customer ${customerId} not found in Stripe, creating new one`);
+        customerId = null;
+        user.stripeCustomerId = null;
+      }
+    }
+    
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: user.email,
