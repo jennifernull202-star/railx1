@@ -14,7 +14,7 @@ import connectDB from '@/lib/db';
 import User, { SubscriptionStatusType, SellerTierType, ContractorTierType } from '@/models/User';
 import AddOnPurchase from '@/models/AddOnPurchase';
 import Listing from '@/models/Listing';
-import { ADD_ON_TYPES, calculateExpirationDate, type AddOnType } from '@/config/addons';
+import { ADD_ON_TYPES, VISIBILITY_ADDONS, calculateExpirationDate, type AddOnType } from '@/config/addons';
 
 // Initialize Stripe lazily to avoid build-time errors
 const getStripe = () => {
@@ -95,6 +95,13 @@ export async function POST(request: NextRequest) {
         break;
       }
 
+      // #15 fix: Handle refunds
+      case 'charge.refunded': {
+        const charge = event.data.object as Stripe.Charge;
+        await handleRefund(charge);
+        break;
+      }
+
       default:
         console.log(`Unhandled subscription event type: ${event.type}`);
     }
@@ -114,7 +121,7 @@ export async function POST(request: NextRequest) {
 // ============================================================================
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
-  const { purchaseType, purchaseId, addonType, listingId, contractorId, userId, subscriptionType, tier } = session.metadata || {};
+  const { purchaseType, purchaseId, addonType, listingId, contractorId, userId, subscriptionType, tier, promoCode } = session.metadata || {};
 
   // Handle add-on purchases
   if (purchaseType === 'addon' && purchaseId) {
@@ -153,6 +160,37 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     if (user.role === 'buyer') {
       user.role = 'contractor';
     }
+    
+    // CRITICAL: Update ContractorProfile to activate verified badge
+    if (tier === 'verified') {
+      const ContractorProfile = (await import('@/models/ContractorProfile')).default;
+      await ContractorProfile.findOneAndUpdate(
+        { userId: user._id },
+        {
+          $set: {
+            verificationStatus: 'verified',
+            verifiedBadgePurchased: true,
+            verifiedAt: new Date(),
+            verifiedBadgeExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          },
+        }
+      );
+      console.log(`Contractor verified badge activated for user ${userId}`);
+    }
+  }
+
+  // Record used promo code if one was applied
+  if (promoCode && promoCode.trim()) {
+    if (!user.usedPromoCodes) {
+      user.usedPromoCodes = [];
+    }
+    user.usedPromoCodes.push({
+      code: promoCode.toUpperCase(),
+      usedAt: new Date(),
+      subscriptionType: subscriptionType,
+      tier: tier,
+    });
+    console.log(`Recorded promo code usage: ${promoCode} for user ${userId}`);
   }
 
   user.stripeCustomerId = session.customer as string;
@@ -186,9 +224,18 @@ async function handleAddonCheckoutComplete(
   purchase.stripePaymentId = session.payment_intent as string;
   await purchase.save();
 
-  // Update listing with add-on flags if applicable
+  // PART 6 RULE 1: Purchasing an add-on MUST NOT auto-apply to a listing
+  // The listing flags are set when user selects a listing via /api/addons/assign
+  // We only update the listing if:
+  // 1. A listingId was explicitly provided AND
+  // 2. The purchase already has a listingId set (meaning user pre-selected during checkout)
+  // For visibility add-ons (featured/premium/elite), user must select via dashboard
+  const isVisibilityAddon = VISIBILITY_ADDONS.includes(type as typeof VISIBILITY_ADDONS[number]);
   const targetListingId = listingId || purchase.listingId?.toString();
-  if (targetListingId) {
+  
+  // Only auto-apply for non-visibility add-ons (AI enhancement, spec sheet)
+  // OR if the purchase already had a listingId pre-set
+  if (targetListingId && (!isVisibilityAddon || purchase.listingId)) {
     const updateData: Record<string, unknown> = {};
     
     if (type === ADD_ON_TYPES.FEATURED) {
@@ -316,6 +363,19 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     user.contractorSubscriptionStatus = 'canceled';
     user.contractorSubscriptionId = null;
     
+    // CRITICAL: Remove verified badge from ContractorProfile
+    const ContractorProfile = (await import('@/models/ContractorProfile')).default;
+    await ContractorProfile.findOneAndUpdate(
+      { userId: user._id },
+      {
+        $set: {
+          verificationStatus: 'expired',
+          verifiedBadgePurchased: false,
+        },
+      }
+    );
+    console.log(`Contractor verified badge removed for user ${user._id}`);
+    
     // Downgrade role if they have no active seller subscription
     if (user.role === 'contractor' && !user.sellerSubscriptionId) {
       user.role = 'buyer';
@@ -386,6 +446,92 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   }
 
   await user.save();
+}
+
+// #15 fix: Handle charge refunds
+async function handleRefund(charge: Stripe.Charge) {
+  // Get metadata from the charge or payment intent
+  const metadata = charge.metadata || {};
+  const { purchaseType, purchaseId, userId, subscriptionType } = metadata;
+
+  console.log(`Processing refund for charge ${charge.id}, amount: ${charge.amount_refunded}`);
+
+  // Handle add-on purchase refunds
+  if (purchaseType === 'addon' && purchaseId) {
+    const purchase = await AddOnPurchase.findById(purchaseId);
+    if (purchase) {
+      // Mark the add-on as cancelled
+      purchase.status = 'cancelled';
+      purchase.cancelledAt = new Date();
+      purchase.cancelReason = 'refunded';
+      await purchase.save();
+
+      // If the add-on was applied to a listing, remove the badge
+      if (purchase.listingId) {
+        const listing = await Listing.findById(purchase.listingId);
+        if (listing && listing.premiumAddOns) {
+          const addonType = purchase.type as 'featured' | 'premium' | 'elite';
+          if (listing.premiumAddOns[addonType]) {
+            listing.premiumAddOns[addonType] = {
+              active: false,
+              expiresAt: undefined,
+              purchasedAt: undefined,
+            };
+          }
+          await listing.save();
+        }
+      }
+
+      console.log(`Add-on purchase ${purchaseId} cancelled due to refund`);
+    }
+    return;
+  }
+
+  // Handle subscription refunds (if partial refund, may need to downgrade)
+  if (userId && subscriptionType) {
+    const user = await User.findById(userId);
+    if (user) {
+      // For full refunds, we typically rely on subscription.deleted event
+      // But we can log it here for audit purposes
+      console.log(`Refund processed for user ${userId}, subscription type: ${subscriptionType}`);
+    }
+  }
+
+  // Also check if we can find the add-on purchase by payment intent
+  if (charge.payment_intent) {
+    const paymentIntentId = typeof charge.payment_intent === 'string' 
+      ? charge.payment_intent 
+      : charge.payment_intent.id;
+    
+    const purchase = await AddOnPurchase.findOne({ 
+      stripePaymentIntentId: paymentIntentId 
+    });
+    
+    if (purchase && purchase.status !== 'cancelled') {
+      purchase.status = 'cancelled';
+      purchase.cancelledAt = new Date();
+      purchase.cancelReason = 'refunded';
+      await purchase.save();
+
+      // Remove badge from listing if applied
+      if (purchase.listingId) {
+        const listing = await Listing.findById(purchase.listingId);
+        if (listing && listing.premiumAddOns) {
+          const addonType = purchase.type as 'featured' | 'premium' | 'elite';
+          if (listing.premiumAddOns[addonType]) {
+            listing.premiumAddOns[addonType] = {
+              active: false,
+              expiresAt: undefined,
+              purchasedAt: undefined,
+            };
+          }
+          await listing.save();
+        }
+      }
+
+      console.log(`Add-on purchase ${purchase._id} cancelled due to refund (found by payment intent)`);
+    }
+  }
 }
 
 // ============================================================================

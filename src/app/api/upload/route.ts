@@ -15,6 +15,7 @@ interface UploadRequest {
   contentType: string;
   fileSize: number;
   folder: 'contractors' | 'listings' | 'documents' | 'avatars';
+  subfolder?: string; // Optional subfolder (e.g., 'verification' for contractor documents)
   fileType?: 'image' | 'document';
 }
 
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: UploadRequest = await request.json();
-    const { fileName, contentType, fileSize, folder, fileType = 'image' } = body;
+    const { fileName, contentType, fileSize, folder, subfolder, fileType = 'image' } = body;
 
     // Validate required fields
     if (!fileName || !contentType || !fileSize || !folder) {
@@ -45,6 +46,14 @@ export async function POST(request: NextRequest) {
     if (!allowedFolders.includes(folder)) {
       return NextResponse.json(
         { success: false, error: 'Invalid folder' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate subfolder if provided (only alphanumeric and hyphens allowed)
+    if (subfolder && !/^[a-zA-Z0-9-]+$/.test(subfolder)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid subfolder name' },
         { status: 400 }
       );
     }
@@ -74,8 +83,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate presigned URL
+    // SECURE PATH: /contractors/<userId>/verification/ for verification documents
+    const basePath = subfolder 
+      ? `${folder}/${session.user.id}/${subfolder}`
+      : `${folder}/${session.user.id}`;
+    
     const { uploadUrl, fileUrl, key } = await generatePresignedUploadUrl({
-      folder: `${folder}/${session.user.id}`,
+      folder: basePath,
       fileName,
       contentType,
       fileSize,

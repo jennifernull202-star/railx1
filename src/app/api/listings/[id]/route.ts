@@ -123,6 +123,15 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       );
     }
 
+    // PHOTO LIMIT: Maximum 20 photos per listing
+    const MAX_PHOTOS = 20;
+    if (body.media && Array.isArray(body.media) && body.media.length > MAX_PHOTOS) {
+      return NextResponse.json(
+        { success: false, error: `Maximum photo limit reached: Up to ${MAX_PHOTOS} images allowed per listing.` },
+        { status: 400 }
+      );
+    }
+
     // Allowed fields for update
     const allowedFields = [
       'title',

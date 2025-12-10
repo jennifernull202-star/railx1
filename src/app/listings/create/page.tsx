@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -105,6 +105,61 @@ export default function CreateListingPage() {
   const [media, setMedia] = useState<UploadedImage[]>([]);
   const [specifications, setSpecifications] = useState<Specification[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const [draftRestored, setDraftRestored] = useState(false);
+  
+  // #8 fix: localStorage key for draft auto-save
+  const DRAFT_STORAGE_KEY = 'railx-listing-draft';
+  
+  // #8 fix: Restore draft from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed.formData) setFormData(parsed.formData);
+        if (parsed.media) setMedia(parsed.media);
+        if (parsed.specifications) setSpecifications(parsed.specifications);
+        if (parsed.currentStep) setCurrentStep(parsed.currentStep);
+        setDraftRestored(true);
+      }
+    } catch (e) {
+      console.error('Failed to restore draft:', e);
+    }
+  }, []);
+  
+  // #8 fix: Auto-save draft to localStorage on changes
+  const saveDraft = useCallback(() => {
+    try {
+      const draftData = {
+        formData,
+        media: media.filter(m => !m.uploading && !m.error), // Only save completed uploads
+        specifications,
+        currentStep,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
+    } catch (e) {
+      console.error('Failed to save draft:', e);
+    }
+  }, [formData, media, specifications, currentStep]);
+  
+  // #8 fix: Debounced auto-save on form changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      saveDraft();
+    }, 1000); // Save 1 second after last change
+    
+    return () => clearTimeout(timeoutId);
+  }, [saveDraft]);
+  
+  // #8 fix: Clear draft from localStorage after successful submission
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch (e) {
+      console.error('Failed to clear draft:', e);
+    }
+  };
 
   const updateFormData = (updates: Partial<ListingFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -255,6 +310,9 @@ export default function CreateListingPage() {
         throw new Error(data.error || 'Failed to create listing');
       }
 
+      // #8 fix: Clear draft from localStorage on successful submission
+      clearDraft();
+      
       // Redirect to listing page or dashboard
       router.push(`/listings/${data.data.slug}`);
     } catch (err) {
@@ -307,6 +365,36 @@ export default function CreateListingPage() {
               List your rail equipment, materials, or services for sale.
             </p>
           </div>
+
+          {/* #8 fix: Draft Restored Banner */}
+          {draftRestored && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-blue-800">Your previous draft has been restored.</span>
+              </div>
+              <button
+                onClick={() => {
+                  clearDraft();
+                  setFormData({
+                    title: '', description: '', category: '', subcategory: '', condition: '',
+                    priceType: 'fixed', priceAmount: '', city: '', state: '', zipCode: '',
+                    quantity: '1', quantityUnit: '', localPickup: true, sellerShips: false,
+                    buyerArranges: true, tags: [],
+                  });
+                  setMedia([]);
+                  setSpecifications([]);
+                  setCurrentStep(1);
+                  setDraftRestored(false);
+                }}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Discard Draft
+              </button>
+            </div>
+          )}
 
           {/* Progress Steps */}
           <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 mb-8">

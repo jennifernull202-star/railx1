@@ -1,98 +1,367 @@
 /**
  * THE RAIL EXCHANGE™ — Admin Dashboard Layout
  * 
- * Layout for admin section with navigation sidebar.
+ * Unified layout for admin section matching the main Dashboard structure.
+ * Includes mobile-responsive sidebar, collapsible sections, and real-time features.
  * Requires admin role to access.
  */
 
-import { redirect } from 'next/navigation';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import Link from 'next/link';
+"use client";
 
-export default async function AdminLayout({
+import React, { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
+import {
+  Home,
+  Users,
+  Package,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  User,
+  Shield,
+  ChevronDown,
+  ChevronRight,
+  ArrowLeft,
+  CreditCard,
+  BarChart3,
+  Wrench,
+  DollarSign,
+  Bot,
+  FileCheck,
+  AlertTriangle,
+  Crown,
+  Activity,
+  TrendingUp,
+  Receipt,
+  Tag,
+} from "lucide-react";
+
+interface NavSection {
+  title: string;
+  icon: React.ElementType;
+  items: NavItem[];
+}
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  badge?: string;
+}
+
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<string[]>([
+    "overview",
+    "management",
+  ]);
+  const [pendingCounts, setPendingCounts] = useState({
+    listings: 0,
+    contractors: 0,
+  });
 
   // Redirect non-admins
-  if (!session?.user || session.user.role !== 'admin') {
-    redirect('/');
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.role !== "admin") {
+      router.push("/dashboard");
+    } else if (status === "unauthenticated") {
+      router.push("/auth/login");
+    }
+  }, [status, session, router]);
+
+  // Fetch pending counts for badges
+  useEffect(() => {
+    const fetchPendingCounts = async () => {
+      try {
+        const [listingsRes, contractorsRes] = await Promise.all([
+          fetch("/api/admin/listings?status=pending&countOnly=true"),
+          fetch("/api/admin/contractors?status=pending&countOnly=true"),
+        ]);
+
+        if (listingsRes.ok) {
+          const data = await listingsRes.json();
+          setPendingCounts((prev) => ({ ...prev, listings: data.count || 0 }));
+        }
+        if (contractorsRes.ok) {
+          const data = await contractorsRes.json();
+          setPendingCounts((prev) => ({ ...prev, contractors: data.count || 0 }));
+        }
+      } catch (error) {
+        // Silently fail - badges just won't show
+      }
+    };
+
+    if (session?.user?.role === "admin") {
+      fetchPendingCounts();
+      const interval = setInterval(fetchPendingCounts, 60000); // Refresh every minute
+      return () => clearInterval(interval);
+    }
+  }, [session]);
+
+  if (status === "loading") {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" />
+      </div>
+    );
   }
 
-  const navItems = [
-    { href: '/admin', label: 'Overview', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-    { href: '/admin/users', label: 'Users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
-    { href: '/admin/listings', label: 'Listings', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
-    { href: '/admin/contractors', label: 'Contractors', icon: 'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z' },
-    { href: '/admin/addons', label: 'Add-Ons', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { href: '/admin/analytics', label: 'Analytics', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-    { href: '/admin/settings', label: 'Settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
+  if (!session?.user || session.user.role !== "admin") {
+    return null;
+  }
+
+  const user = session.user;
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) =>
+      prev.includes(sectionId)
+        ? prev.filter((id) => id !== sectionId)
+        : [...prev, sectionId]
+    );
+  };
+
+  // Navigation sections for admin
+  const navigationSections: NavSection[] = [
+    {
+      title: "Overview",
+      icon: Home,
+      items: [
+        { label: "Admin Dashboard", href: "/admin", icon: Home },
+        { label: "Platform Analytics", href: "/admin/analytics", icon: BarChart3 },
+        { label: "Settings", href: "/admin/settings", icon: Settings },
+      ],
+    },
+    {
+      title: "Management",
+      icon: Shield,
+      items: [
+        { label: "User Management", href: "/admin/users", icon: Users },
+        { label: "Listing Audit", href: "/admin/listings", icon: Package, badge: pendingCounts.listings > 0 ? String(pendingCounts.listings) : undefined },
+        { label: "Contractor Verification", href: "/admin/contractors", icon: Wrench, badge: pendingCounts.contractors > 0 ? String(pendingCounts.contractors) : undefined },
+        { label: "Verifications", href: "/admin/verifications", icon: FileCheck },
+      ],
+    },
+    {
+      title: "Revenue & Billing",
+      icon: DollarSign,
+      items: [
+        { label: "Add-On Analytics", href: "/admin/addons", icon: Tag },
+        { label: "Stripe Monitoring", href: "/admin/stripe", icon: CreditCard },
+        { label: "Subscription Reports", href: "/admin/subscriptions", icon: Crown },
+        { label: "Promo Codes", href: "/admin/promo-codes", icon: Receipt },
+      ],
+    },
+    {
+      title: "Platform Health",
+      icon: Activity,
+      items: [
+        { label: "AI Analytics", href: "/admin/ai-analytics", icon: Bot },
+        { label: "System Metrics", href: "/admin/metrics", icon: TrendingUp },
+        { label: "Error Logs", href: "/admin/errors", icon: AlertTriangle },
+      ],
+    },
   ];
 
-  return (
-    <div className="min-h-screen bg-surface-secondary">
-      {/* Admin Header */}
-      <header className="bg-navy-900 text-white">
-        <div className="container-rail py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center">
-              <span className="text-heading-md font-bold">The Rail</span>
-              <span className="text-heading-md font-bold text-rail-orange ml-1">Exchange</span>
-              <span className="text-rail-orange text-xs font-medium ml-0.5">™</span>
-            </Link>
-            <span className="px-2 py-1 bg-rail-orange text-white text-xs font-semibold rounded">
-              ADMIN
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-body-sm text-white/70">
-              {session.user.name || session.user.email}
-            </span>
-            <Link
-              href="/dashboard"
-              className="text-body-sm text-white/70 hover:text-white"
-            >
-              Exit Admin
-            </Link>
-          </div>
-        </div>
-      </header>
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/" });
+  };
 
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 min-h-[calc(100vh-60px)] bg-white border-r border-surface-border">
-          <nav className="p-4 space-y-1">
-            {navItems.map((item) => (
-              <Link
+  const SidebarLink = ({
+    href,
+    icon: Icon,
+    children,
+    badge,
+  }: {
+    href: string;
+    icon: React.ElementType;
+    children: React.ReactNode;
+    badge?: string;
+  }) => {
+    const isActive = pathname === href;
+
+    return (
+      <Link
+        href={href}
+        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+          isActive
+            ? "bg-purple-100 text-purple-700 font-medium"
+            : "text-gray-700 hover:bg-gray-100"
+        }`}
+        onClick={() => setSidebarOpen(false)}
+      >
+        <Icon className="h-5 w-5" />
+        <span className="flex-1">{children}</span>
+        {badge && (
+          <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">
+            {badge}
+          </span>
+        )}
+      </Link>
+    );
+  };
+
+  const SidebarSection = ({ section }: { section: NavSection }) => {
+    const isExpanded = expandedSections.includes(section.title.toLowerCase());
+    const Icon = section.icon;
+
+    return (
+      <div className="mb-2">
+        <button
+          onClick={() => toggleSection(section.title.toLowerCase())}
+          className="w-full flex items-center gap-2 px-3 py-2 text-sm font-semibold text-gray-900 rounded-lg hover:bg-gray-100 transition-colors"
+        >
+          <Icon className="h-4 w-4" />
+          <span className="flex-1 text-left">{section.title}</span>
+          {isExpanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </button>
+        {isExpanded && (
+          <div className="mt-1 ml-2 space-y-1">
+            {section.items.map((item) => (
+              <SidebarLink
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-3 px-4 py-3 text-body-md font-medium text-text-secondary hover:text-navy-900 hover:bg-surface-secondary rounded-lg transition-colors"
+                icon={item.icon}
+                badge={item.badge}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d={item.icon}
-                  />
-                </svg>
                 {item.label}
+              </SidebarLink>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile header with back button and menu */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-purple-900 text-white px-4 py-3 flex items-center gap-3">
+        <button
+          onClick={() => router.back()}
+          className="p-2 rounded-lg hover:bg-purple-800 text-white/80 hover:text-white"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <Link href="/admin" className="flex-1 flex items-center gap-2">
+          <span className="text-lg font-bold">RailX</span>
+          <span className="bg-purple-600 text-white text-xs font-semibold px-2 py-0.5 rounded">
+            ADMIN
+          </span>
+        </Link>
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 rounded-lg hover:bg-purple-800"
+        >
+          {sidebarOpen ? (
+            <X className="h-6 w-6" />
+          ) : (
+            <Menu className="h-6 w-6" />
+          )}
+        </button>
+      </div>
+
+      {/* Spacer for mobile header */}
+      <div className="lg:hidden h-14" />
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-72 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0`}
+      >
+        <div className="flex flex-col h-full">
+          {/* Logo with Admin badge */}
+          <div className="p-6 border-b bg-purple-900">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.back()}
+                className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-purple-800 hover:bg-purple-700 text-white/80 hover:text-white transition-colors"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <Link href="/admin" className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-white">RailX</span>
+                <span className="bg-purple-600 text-white text-xs font-semibold px-2 py-0.5 rounded">
+                  ADMIN
+                </span>
               </Link>
+            </div>
+          </div>
+
+          {/* Admin user info */}
+          <div className="p-4 border-b bg-gray-50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                <Shield className="h-5 w-5 text-purple-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 truncate">
+                  {user.name || "Admin"}
+                </p>
+                <div className="flex items-center gap-1 text-xs">
+                  <span className="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
+                    Administrator
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto p-4">
+            {navigationSections.map((section) => (
+              <SidebarSection key={section.title} section={section} />
             ))}
           </nav>
-        </aside>
 
-        {/* Main Content */}
-        <main className="flex-1 p-8">{children}</main>
-      </div>
+          {/* Bottom actions */}
+          <div className="p-4 border-t space-y-2">
+            <Link
+              href="/dashboard"
+              className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all"
+            >
+              <Home className="h-4 w-4" />
+              Exit to Dashboard
+            </Link>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-3 w-full px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <LogOut className="h-5 w-5" />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Overlay for mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main content */}
+      <main className="lg:ml-72 min-h-screen">
+        <div className="p-6 lg:p-8">{children}</div>
+      </main>
     </div>
   );
 }

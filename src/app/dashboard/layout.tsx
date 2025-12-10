@@ -208,6 +208,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       items: [
         { label: "My Listings", href: "/dashboard/listings", icon: Package },
         { label: "Create Listing", href: "/listings/create", icon: FileText },
+        { label: "My Add-Ons", href: "/dashboard/addons", icon: Star },
         { label: "Leads & Inquiries", href: "/dashboard/leads", icon: MessageSquare },
         { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
       ],
@@ -222,11 +223,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       requiresSubscription: isVerifiedContractor ? undefined : "contractor",
       items: [
         { label: "My Services", href: "/dashboard/contractor", icon: Wrench },
-        { label: "Contractor Profile", href: "/dashboard/contractor/profile", icon: User },
+        { label: "Contractor Profile", href: "/dashboard/contractor/setup", icon: User },
         { label: "Service Leads", href: "/dashboard/contractor/leads", icon: MessageSquare },
         ...(isVerifiedContractor
           ? [{ label: "Verified Badge", href: "/dashboard/contractor/verified", icon: Shield }]
-          : [{ label: "Get Verified", href: "/dashboard/contractor/apply", icon: Star }]),
+          : [{ label: "Get Verified", href: "/dashboard/contractor/verify", icon: Star }]),
       ],
     });
   }

@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { tier, type, billingPeriod = 'monthly' } = body;
+    const { tier, type, billingPeriod = 'monthly', promoCode } = body;
 
     // Validate type
     if (!['seller', 'contractor'].includes(type)) {
@@ -224,7 +224,8 @@ export async function POST(request: NextRequest) {
     // Create checkout session
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     
-    const checkoutSession = await stripe.checkout.sessions.create({
+    // Build checkout session config
+    const checkoutConfig: Stripe.Checkout.SessionCreateParams = {
       customer: customerId,
       mode: 'subscription',
       payment_method_types: ['card'],
@@ -238,6 +239,7 @@ export async function POST(request: NextRequest) {
         userId: user._id.toString(),
         subscriptionType: type,
         tier: tier,
+        promoCode: promoCode || '', // Track promo code in metadata
       },
       success_url: `${baseUrl}/dashboard?subscription=success&tier=${tier}`,
       cancel_url: `${baseUrl}/pricing?canceled=true`,
@@ -246,9 +248,34 @@ export async function POST(request: NextRequest) {
           userId: user._id.toString(),
           subscriptionType: type,
           tier: tier,
+          promoCode: promoCode || '', // Also track in subscription metadata
         },
       },
-    });
+      // Allow promo codes to be entered at checkout
+      allow_promotion_codes: true,
+    };
+
+    // If a specific promo code was provided, apply it directly
+    if (promoCode) {
+      try {
+        // Look up the promotion code
+        const promoCodes = await stripe.promotionCodes.list({
+          code: promoCode,
+          active: true,
+          limit: 1,
+        });
+        if (promoCodes.data.length > 0) {
+          checkoutConfig.discounts = [{ promotion_code: promoCodes.data[0].id }];
+          delete checkoutConfig.allow_promotion_codes; // Can't use both
+          console.log(`Applying promo code ${promoCode} to checkout for user ${user._id}`);
+        }
+      } catch (promoError) {
+        console.log('Promo code lookup failed:', promoError);
+        // Continue without the promo code
+      }
+    }
+
+    const checkoutSession = await stripe.checkout.sessions.create(checkoutConfig);
 
     return NextResponse.json({ 
       sessionId: checkoutSession.id,
@@ -361,14 +388,19 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      // Get new price ID
+      // Get current subscription to determine billing period
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const currentPrice = subscription.items.data[0].price;
+      
+      // Determine if current subscription is yearly by checking interval
+      const isYearly = currentPrice.recurring?.interval === 'year';
+      
+      // Get new price ID using same billing period as current subscription
       let newPriceId;
       if (type === 'seller') {
-        const tierConfig = SELLER_TIER_CONFIG[newTier as SellerTier];
-        newPriceId = tierConfig?.stripePriceIdMonthly;
+        newPriceId = getStripePriceId('seller', newTier, isYearly ? 'yearly' : 'monthly');
       } else {
-        const tierConfig = CONTRACTOR_TIER_CONFIG[newTier as ContractorTier];
-        newPriceId = tierConfig?.stripePriceIdMonthly;
+        newPriceId = getStripePriceId('contractor', newTier, isYearly ? 'yearly' : 'monthly');
       }
 
       if (!newPriceId) {
@@ -377,9 +409,6 @@ export async function PATCH(request: NextRequest) {
           { status: 400 }
         );
       }
-
-      // Get current subscription
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       
       // Update subscription with new price
       await stripe.subscriptions.update(subscriptionId, {

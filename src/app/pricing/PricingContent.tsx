@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   SELLER_TIER_CONFIG,
@@ -15,12 +16,17 @@ import {
   formatAddOnDuration,
 } from '@/config/pricing';
 import SiteHeader from '@/components/SiteHeader';
-import { Check, Zap, Shield, TrendingUp, Crown, Star, Sparkles, FileText } from 'lucide-react';
+import PricingCheckoutButton from '@/components/PricingCheckoutButton';
+import { Check, Zap, Shield, TrendingUp, Crown, Star, Sparkles, FileText, Gift, Tag } from 'lucide-react';
 
 export default function PricingContent() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const isLoggedIn = !!session?.user;
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  
+  // Get promo code from URL (e.g., /pricing?promo=RAILXFREE)
+  const promoCode = searchParams.get('promo') || undefined;
 
   const sellerTiers = [
     SELLER_TIER_CONFIG[SELLER_TIERS.BASIC],
@@ -79,6 +85,22 @@ export default function PricingContent() {
     <>
       <SiteHeader />
       <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-white">
+      
+      {/* Promo Code Banner - Show when promo code is in URL */}
+      {promoCode && (
+        <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 px-4">
+          <div className="container-rail">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <Gift className="w-5 h-5" />
+              <span className="font-semibold">Promo Code Active: {promoCode.toUpperCase()}</span>
+              <span className="text-green-100">—</span>
+              <span className="text-green-50">First month FREE on Seller Pro!</span>
+              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full ml-2">Applied at checkout</span>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Hero Section */}
       <section className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-navy-900/5 via-transparent to-rail-orange/5" />
@@ -210,16 +232,49 @@ export default function PricingContent() {
                       ))}
                     </ul>
 
-                    <Link
-                      href="/auth/register"
-                      className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
-                        tier.isPopular 
-                          ? 'bg-rail-orange text-white hover:bg-[#e55f15] shadow-lg shadow-rail-orange/25' 
-                          : 'bg-navy-900 text-white hover:bg-navy-800'
-                      }`}
-                    >
-                      Get Started
-                    </Link>
+                    {isLoggedIn ? (
+                      /* LOGGED IN: Go directly to Stripe checkout or dashboard upgrade */
+                      tier.priceMonthly === 0 ? (
+                        <Link
+                          href="/dashboard"
+                          className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                            tier.isPopular 
+                              ? 'bg-rail-orange text-white hover:bg-[#e55f15] shadow-lg shadow-rail-orange/25' 
+                              : 'bg-navy-900 text-white hover:bg-navy-800'
+                          }`}
+                        >
+                          Go to Dashboard
+                        </Link>
+                      ) : (
+                        <PricingCheckoutButton
+                          tier={tier.id}
+                          type="seller"
+                          billingPeriod={billingPeriod}
+                          promoCode={promoCode}
+                          className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                            tier.isPopular 
+                              ? 'bg-rail-orange text-white hover:bg-[#e55f15] shadow-lg shadow-rail-orange/25' 
+                              : 'bg-navy-900 text-white hover:bg-navy-800'
+                          }`}
+                        >
+                          {promoCode && tier.id === 'pro' ? 'Get First Month FREE' : 'Upgrade Now'}
+                        </PricingCheckoutButton>
+                      )
+                    ) : (
+                      /* NOT LOGGED IN: Redirect to signup */
+                      <Link
+                        href={promoCode && tier.id === 'pro' 
+                          ? `/auth/register?redirect=/dashboard/upgrade?promo=${promoCode}` 
+                          : "/auth/register"}
+                        className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                          tier.isPopular 
+                            ? 'bg-rail-orange text-white hover:bg-[#e55f15] shadow-lg shadow-rail-orange/25' 
+                            : 'bg-navy-900 text-white hover:bg-navy-800'
+                        }`}
+                      >
+                        {promoCode && tier.id === 'pro' ? 'Get First Month FREE' : 'Get Started'}
+                      </Link>
+                    )}
                   </div>
                 </div>
               );
@@ -364,16 +419,46 @@ export default function PricingContent() {
                     ))}
                   </ul>
 
-                  <Link
-                    href={tier.priceMonthly === 0 ? '/contractors/onboard' : '/auth/register'}
-                    className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
-                      isVerified 
-                        ? 'bg-green-600 text-white hover:bg-green-700' 
-                        : 'bg-slate-100 text-navy-900 hover:bg-slate-200'
-                    }`}
-                  >
-                    {tier.priceMonthly === 0 ? 'Get Started Free' : 'Get Verified'}
-                  </Link>
+                  {isLoggedIn ? (
+                    /* LOGGED IN: Go directly to Stripe checkout or contractor setup */
+                    tier.priceMonthly === 0 ? (
+                      <Link
+                        href="/dashboard/contractor/setup"
+                        className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                          isVerified 
+                            ? 'bg-green-600 text-white hover:bg-green-700' 
+                            : 'bg-slate-100 text-navy-900 hover:bg-slate-200'
+                        }`}
+                      >
+                        Set Up Profile
+                      </Link>
+                    ) : (
+                      <PricingCheckoutButton
+                        tier={tier.id}
+                        type="contractor"
+                        billingPeriod={billingPeriod}
+                        className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                          isVerified 
+                            ? 'bg-green-600 text-white hover:bg-green-700' 
+                            : 'bg-slate-100 text-navy-900 hover:bg-slate-200'
+                        }`}
+                      >
+                        Get Verified Now
+                      </PricingCheckoutButton>
+                    )
+                  ) : (
+                    /* NOT LOGGED IN: Redirect to signup or onboarding */
+                    <Link
+                      href={tier.priceMonthly === 0 ? '/contractors/onboard' : '/auth/register'}
+                      className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                        isVerified 
+                          ? 'bg-green-600 text-white hover:bg-green-700' 
+                          : 'bg-slate-100 text-navy-900 hover:bg-slate-200'
+                      }`}
+                    >
+                      {tier.priceMonthly === 0 ? 'Get Started Free' : 'Get Verified'}
+                    </Link>
+                  )}
                 </div>
               );
             })}

@@ -279,6 +279,10 @@ export async function POST(request: NextRequest) {
     // Create checkout session for one-time payment
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     
+    // PART 6 RULE 1: Purchasing an add-on MUST NOT auto-apply to a listing
+    // After checkout, redirect to addons page for listing selection
+    // If listingId was provided at purchase time, we still redirect to selection
+    // to confirm the choice and allow changing it
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'payment', // One-time payment, not subscription
@@ -294,11 +298,13 @@ export async function POST(request: NextRequest) {
         purchaseId: purchase._id.toString(),
         purchaseType: 'addon',
         addonType: type,
-        listingId: listingId || '',
+        // Don't include listingId in metadata - user must select after payment
+        listingId: '', // Intentionally empty - selection happens post-checkout
         contractorId: contractorId || '',
       },
-      success_url: `${baseUrl}/dashboard/listings${listingId ? `/${listingId}` : ''}?addon=success&type=${type}`,
-      cancel_url: `${baseUrl}/dashboard/listings${listingId ? `/${listingId}` : ''}?addon=canceled`,
+      // Redirect to My Add-Ons page for listing selection (PART 6 RULE 1)
+      success_url: `${baseUrl}/dashboard/addons?addon=success&type=${type}`,
+      cancel_url: `${baseUrl}/dashboard/upgrade?addon=canceled`,
     });
 
     // Save stripe session ID to purchase

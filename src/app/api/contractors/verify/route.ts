@@ -24,6 +24,7 @@ const getOpenAI = () => {
 
 // ============================================================================
 // GET - Get verification status
+// CRITICAL: Contractors must NOT see AI summaries, admin notes, or internal flags
 // ============================================================================
 
 export async function GET() {
@@ -40,10 +41,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Contractor profile not found' }, { status: 404 });
     }
 
+    // SECURITY: Only return contractor-safe fields
+    // DO NOT return: verificationResult (contains AI analysis), admin notes, internal flags
     return NextResponse.json({
       verificationStatus: profile.verificationStatus,
       verificationDocuments: profile.verificationDocuments,
-      verificationResult: profile.verificationResult,
+      // verificationResult is OMITTED — contractors must NOT see AI summaries
       verifiedAt: profile.verifiedAt,
       verifiedBadgePurchased: profile.verifiedBadgePurchased,
       verifiedBadgeExpiresAt: profile.verifiedBadgeExpiresAt,
@@ -111,67 +114,41 @@ export async function POST(request: NextRequest) {
     profile.verificationStatus = 'pending';
     await profile.save();
 
-    // Run AI verification asynchronously
+    // Run AI analysis for ADMIN REVIEW ONLY
+    // CRITICAL: AI is ASSIST ONLY — it CANNOT approve, deny, or change verification status
+    // All AI output is labeled "AI REVIEW SUMMARY — ADMIN MUST MAKE FINAL DECISION"
     try {
       const result = await runAIVerification(profile);
       
-      // Update profile with AI result
+      // Store AI analysis for ADMIN VIEWING ONLY
+      // Status ALWAYS stays 'pending' — only admin can change it
       profile.verificationResult = {
-        status: result.status,
+        status: 'needs_review', // AI can NEVER set approved/rejected — always needs_review
         confidence: result.confidence,
-        notes: result.notes,
+        notes: `AI REVIEW SUMMARY — ADMIN MUST MAKE FINAL DECISION.\n\n${result.notes}`,
         reviewedAt: new Date(),
         reviewedBy: 'ai',
+        aiRecommendation: result.status, // Store AI recommendation for admin reference only
       };
 
-      if (result.status === 'approved') {
-        profile.verificationStatus = 'ai_approved';
-        
-        // Create notification for payment
-        await Notification.create({
-          userId: session.user.id,
-          type: 'verification_approved',
-          title: '🎉 Verification Approved!',
-          message: 'Your contractor verification has been approved! Complete payment to activate your Verified badge.',
-          data: {
-            action: 'complete_payment',
-            url: '/dashboard/contractor/verify/payment',
-          },
-          read: false,
-        });
-      } else if (result.status === 'rejected') {
-        profile.verificationStatus = 'rejected';
-        
-        await Notification.create({
-          userId: session.user.id,
-          type: 'verification_rejected',
-          title: 'Verification Not Approved',
-          message: `Your verification was not approved: ${result.notes}. You can resubmit with updated documents.`,
-          data: {
-            reason: result.notes,
-          },
-          read: false,
-        });
-      } else {
-        // needs_review - stays pending for admin
-        await Notification.create({
-          userId: session.user.id,
-          type: 'verification_pending',
-          title: 'Verification Under Review',
-          message: 'Your documents are being reviewed by our team. We\'ll notify you within 24-48 hours.',
-          read: false,
-        });
-      }
-
+      // Status ALWAYS stays 'pending' — only admin can approve
+      // AI CANNOT change verificationStatus under any circumstances
       await profile.save();
 
+      // Notify contractor that submission is under review
+      await Notification.create({
+        userId: session.user.id,
+        type: 'verification_pending',
+        title: 'Verification Submitted',
+        message: 'Your documents have been submitted for review. Our team will review them within 24-48 hours.',
+        read: false,
+      });
+
+      // Contractor sees ONLY that status is pending — NOT AI analysis
       return NextResponse.json({
         success: true,
-        verificationStatus: profile.verificationStatus,
-        result: {
-          status: result.status,
-          notes: result.notes,
-        },
+        verificationStatus: 'pending',
+        message: 'Documents submitted for admin review.',
       });
     } catch (aiError) {
       console.error('AI verification error:', aiError);

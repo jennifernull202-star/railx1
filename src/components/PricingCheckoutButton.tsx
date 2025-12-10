@@ -14,6 +14,7 @@ interface PricingCheckoutButtonProps {
   tier: SellerTier | ContractorTier;
   type: 'seller' | 'contractor';
   billingPeriod?: 'monthly' | 'yearly';
+  promoCode?: string;
   children: React.ReactNode;
   className?: string;
 }
@@ -22,6 +23,7 @@ export default function PricingCheckoutButton({
   tier,
   type,
   billingPeriod = 'monthly',
+  promoCode,
   children,
   className = '',
 }: PricingCheckoutButtonProps) {
@@ -41,6 +43,7 @@ export default function PricingCheckoutButton({
           tier,
           type,
           billingPeriod,
+          promoCode,
         }),
       });
 

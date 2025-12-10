@@ -95,31 +95,49 @@ const US_STATES = [
 ];
 
 interface FormData {
-  // Business Info
+  // Business Information (PART 4-A)
   businessName: string;
+  dba: string; // Optional DBA
   businessDescription: string;
+  contactName: string; // Required Contact Name
   businessPhone: string;
   businessEmail: string;
   website: string;
-  yearsInBusiness: string;
-  numberOfEmployees: string;
   // Address
   street: string;
   city: string;
   state: string;
   zipCode: string;
-  // Services
+  // Identity & Compliance (PART 4-B)
+  einTaxId: string; // EIN / Tax ID
+  stateOfIncorporation: string;
+  yearsInBusiness: string;
+  numberOfEmployees: string;
+  safetyCertifications: string[]; // MSHA, OSHA, FRA
+  // Services (PART 4-C)
   services: string[];
   serviceDescription: string;
-  // Regions
+  // Regions (PART 4-D)
   regionsServed: string[];
-  // Documents
+  serviceRadius: string; // Optional radius input
+  // Documents (PART 4-E)
   documents: UploadedImage[];
+  certificateOfInsurance: UploadedImage[]; // COI - Required
+  w9: UploadedImage[]; // W-9 - Required
+  safetyManual: UploadedImage[]; // Safety manual - Required
+  complianceDocs: UploadedImage[]; // Compliance documents
+  certifications: UploadedImage[]; // Certifications
   // Equipment
   equipmentOwned: string[];
+  equipmentPhotos: UploadedImage[]; // Optional equipment photos
   // Photos
   logo: UploadedImage[];
   photos: UploadedImage[];
+  // Experience Summary (PART 4-F)
+  yearsExperience: string;
+  pastClients: string; // Past railroad clients
+  notableProjects: string;
+  capabilities: string;
 }
 
 const STEPS = [
@@ -138,24 +156,48 @@ export default function ContractorSetupPage() {
   const [error, setError] = React.useState<string | null>(null);
   
   const [formData, setFormData] = React.useState<FormData>({
+    // Business Information
     businessName: '',
+    dba: '',
     businessDescription: '',
+    contactName: session?.user?.name || '',
     businessPhone: '',
     businessEmail: session?.user?.email || '',
     website: '',
-    yearsInBusiness: '',
-    numberOfEmployees: '',
     street: '',
     city: '',
     state: '',
     zipCode: '',
+    // Identity & Compliance
+    einTaxId: '',
+    stateOfIncorporation: '',
+    yearsInBusiness: '',
+    numberOfEmployees: '',
+    safetyCertifications: [],
+    // Services
     services: [],
     serviceDescription: '',
+    // Regions
     regionsServed: [],
+    serviceRadius: '',
+    // Documents (REQUIRED: COI, W-9, Safety Manual)
     documents: [],
+    certificateOfInsurance: [],
+    w9: [],
+    safetyManual: [],
+    complianceDocs: [],
+    certifications: [],
+    // Equipment
     equipmentOwned: [],
+    equipmentPhotos: [],
+    // Photos
     logo: [],
     photos: [],
+    // Experience Summary
+    yearsExperience: '',
+    pastClients: '',
+    notableProjects: '',
+    capabilities: '',
   });
 
   const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {

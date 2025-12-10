@@ -11,6 +11,7 @@ import connectDB from '@/lib/db';
 import Listing from '@/models/Listing';
 import Notification, { NOTIFICATION_TYPES } from '@/models/Notification';
 import { Types } from 'mongoose';
+import { deleteFile, extractKeyFromUrl } from '@/lib/s3';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -117,11 +118,38 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     await connectDB();
 
-    const listing = await Listing.findByIdAndDelete(id);
+    // First fetch the listing to get image URLs
+    const listing = await Listing.findById(id);
 
     if (!listing) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
     }
+
+    // Clean up S3 images in background (don't block deletion)
+    const mediaItems = listing.media || [];
+    const imageUrls = mediaItems
+      .filter((m: { type: string }) => m.type === 'image')
+      .map((m: { url: string }) => m.url);
+    
+    if (imageUrls.length > 0) {
+      // Fire and forget - don't wait for S3 cleanup
+      Promise.all(
+        imageUrls.map(async (url: string) => {
+          try {
+            const key = extractKeyFromUrl(url);
+            if (key) {
+              await deleteFile(key);
+              console.log(`Deleted S3 file: ${key}`);
+            }
+          } catch (error) {
+            console.error(`Failed to delete S3 file for URL ${url}:`, error);
+          }
+        })
+      ).catch(console.error);
+    }
+
+    // Delete the listing
+    await Listing.findByIdAndDelete(id);
 
     return NextResponse.json({
       success: true,

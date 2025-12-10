@@ -2,7 +2,33 @@
 
 import { useState, useCallback, useRef, DragEvent } from 'react';
 import Image from 'next/image';
-import { Upload, X, GripVertical, Star, Loader2, ImageIcon, AlertCircle } from 'lucide-react';
+import { Upload, X, GripVertical, Star, Loader2, ImageIcon, AlertCircle, CheckCircle } from 'lucide-react';
+
+// #11 fix: Concurrency limiter for uploads (prevents browser overload)
+async function asyncPool<T, R>(
+  poolLimit: number,
+  array: T[],
+  iteratorFn: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const ret: Promise<R>[] = [];
+  const executing: Promise<void>[] = [];
+
+  for (let i = 0; i < array.length; i++) {
+    const p = Promise.resolve().then(() => iteratorFn(array[i], i));
+    ret.push(p);
+
+    if (poolLimit <= array.length) {
+      const e: Promise<void> = p.then(() => {
+        executing.splice(executing.indexOf(e), 1);
+      });
+      executing.push(e);
+      if (executing.length >= poolLimit) {
+        await Promise.race(executing);
+      }
+    }
+  }
+  return Promise.all(ret);
+}
 
 export interface UploadedImage {
   id: string;
@@ -17,6 +43,7 @@ interface BulkPhotoUploadProps {
   images: UploadedImage[];
   onChange: (images: UploadedImage[]) => void;
   folder: 'listings' | 'contractors';
+  subfolder?: string; // e.g., 'images' for listing photos
   maxImages?: number;
   maxFileSize?: number; // in MB
   className?: string;
@@ -26,16 +53,44 @@ export default function BulkPhotoUpload({
   images,
   onChange,
   folder,
+  subfolder = 'images', // Default to 'images' subfolder for secure storage
   maxImages = 20,
   maxFileSize = 10,
   className = '',
 }: BulkPhotoUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{ completed: number; total: number } | null>(null);
+  const [truncationWarning, setTruncationWarning] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragItemRef = useRef<number | null>(null);
 
   const generateId = () => Math.random().toString(36).substring(2, 9);
+
+  // #2.2 fix: Retry helper with exponential backoff
+  const retryWithBackoff = async <T,>(
+    fn: () => Promise<T>,
+    maxRetries: number = 3,
+    baseDelayMs: number = 1000
+  ): Promise<T> => {
+    let lastError: Error | undefined;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        if (attempt < maxRetries) {
+          // Exponential backoff: 1s, 2s, 4s
+          const delay = baseDelayMs * Math.pow(2, attempt);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    
+    throw lastError;
+  };
 
   const uploadFile = async (file: File): Promise<{ url: string; error?: string }> => {
     try {
@@ -49,46 +104,73 @@ export default function BulkPhotoUpload({
         return { url: '', error: `File must be under ${maxFileSize}MB` };
       }
 
-      // Get presigned URL
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileName: file.name,
-          contentType: file.type,
-          fileSize: file.size,
-          folder,
-          fileType: 'image',
-        }),
+      // Get presigned URL with retry - SECURE PATH: /<folder>/<userId>/<subfolder>/
+      const data = await retryWithBackoff(async () => {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: file.name,
+            contentType: file.type,
+            fileSize: file.size,
+            folder,
+            subfolder,
+            fileType: 'image',
+          }),
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to get upload URL');
+        }
+        return result;
       });
 
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to get upload URL');
-      }
+      // Upload to S3 with retry
+      await retryWithBackoff(async () => {
+        const uploadResponse = await fetch(data.data.uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': file.type },
+        });
 
-      // Upload to S3
-      const uploadResponse = await fetch(data.data.uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: { 'Content-Type': file.type },
+        if (!uploadResponse.ok) {
+          throw new Error(`S3 upload failed: ${uploadResponse.status}`);
+        }
       });
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload to S3');
-      }
 
       return { url: data.data.fileUrl };
     } catch (error) {
-      return { url: '', error: error instanceof Error ? error.message : 'Upload failed' };
+      return { url: '', error: error instanceof Error ? error.message : 'Upload failed after retries' };
     }
   };
 
   const handleFiles = useCallback(
     async (files: FileList) => {
-      const fileArray = Array.from(files).slice(0, maxImages - images.length);
+      const allSelectedFiles = Array.from(files);
+      const availableSlots = maxImages - images.length;
       
-      if (fileArray.length === 0) return;
+      // #7 fix: Show warning if files were truncated
+      if (allSelectedFiles.length > availableSlots) {
+        const truncatedCount = allSelectedFiles.length - availableSlots;
+        setTruncationWarning(
+          `${truncatedCount} photo${truncatedCount > 1 ? 's were' : ' was'} not added because the ${maxImages}-photo limit was reached.`
+        );
+        setTimeout(() => setTruncationWarning(null), 5000);
+      }
+      
+      const fileArray = allSelectedFiles.slice(0, availableSlots);
+      
+      if (fileArray.length === 0) {
+        if (availableSlots === 0) {
+          setTruncationWarning(`Maximum photo limit reached: Up to ${maxImages} images allowed per listing.`);
+          setTimeout(() => setTruncationWarning(null), 5000);
+        }
+        return;
+      }
+
+      // #6 fix: Initialize upload progress
+      setUploadProgress({ completed: 0, total: fileArray.length });
 
       // Create placeholder entries for uploading files
       const newImages: UploadedImage[] = fileArray.map((file, index) => ({
@@ -102,13 +184,14 @@ export default function BulkPhotoUpload({
       const allImages = [...images, ...newImages];
       onChange(allImages);
 
-      // Upload files in parallel
-      const uploadPromises = fileArray.map(async (file, index) => {
+      // #11 fix: Upload files with concurrency limit (4 at a time)
+      let completedCount = 0;
+      const results = await asyncPool(4, fileArray, async (file, index) => {
         const result = await uploadFile(file);
+        completedCount++;
+        setUploadProgress({ completed: completedCount, total: fileArray.length });
         return { index, result };
       });
-
-      const results = await Promise.all(uploadPromises);
 
       // Update images with results - compute from allImages we created above
       const updatedImages = allImages.map((img, i) => {
@@ -131,7 +214,21 @@ export default function BulkPhotoUpload({
         return img;
       });
       
+      // #16 fix: Ensure at least one image is primary if images exist
+      const hasValidImages = updatedImages.some(img => !img.error && !img.uploading);
+      const hasPrimary = updatedImages.some(img => img.isPrimary && !img.error);
+      
+      if (hasValidImages && !hasPrimary) {
+        const firstValidIndex = updatedImages.findIndex(img => !img.error && !img.uploading);
+        if (firstValidIndex >= 0) {
+          updatedImages[firstValidIndex].isPrimary = true;
+        }
+      }
+      
       onChange(updatedImages);
+      
+      // Clear progress after short delay
+      setTimeout(() => setUploadProgress(null), 1000);
     },
     [images, maxImages, folder, onChange]
   );
@@ -160,9 +257,12 @@ export default function BulkPhotoUpload({
 
   const handleRemove = (id: string) => {
     const newImages = images.filter((img) => img.id !== id);
-    // If we removed the primary, make the first one primary
-    if (newImages.length > 0 && !newImages.some((img) => img.isPrimary)) {
-      newImages[0].isPrimary = true;
+    // #16 fix: If we removed the primary, make the first valid one primary
+    if (newImages.length > 0 && !newImages.some((img) => img.isPrimary && !img.error)) {
+      const firstValidIndex = newImages.findIndex(img => !img.error && !img.uploading);
+      if (firstValidIndex >= 0) {
+        newImages[firstValidIndex].isPrimary = true;
+      }
     }
     // Reorder
     newImages.forEach((img, index) => {
@@ -212,6 +312,42 @@ export default function BulkPhotoUpload({
 
   return (
     <div className={`space-y-4 ${className}`}>
+      {/* #7 fix: Truncation Warning */}
+      {truncationWarning && (
+        <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          <span>{truncationWarning}</span>
+          <button 
+            onClick={() => setTruncationWarning(null)}
+            className="ml-auto text-amber-600 hover:text-amber-800"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* #6 fix: Upload Progress Indicator */}
+      {uploadProgress && uploadProgress.total > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+          <div className="flex-1">
+            <div className="flex items-center justify-between text-sm text-blue-800 mb-1">
+              <span>Uploading photos...</span>
+              <span>{uploadProgress.completed} of {uploadProgress.total}</span>
+            </div>
+            <div className="h-2 bg-blue-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-blue-600 transition-all duration-300"
+                style={{ width: `${(uploadProgress.completed / uploadProgress.total) * 100}%` }}
+              />
+            </div>
+          </div>
+          {uploadProgress.completed === uploadProgress.total && (
+            <CheckCircle className="w-4 h-4 text-green-600" />
+          )}
+        </div>
+      )}
+
       {/* Drop Zone */}
       <div
         onDrop={handleDrop}
@@ -265,6 +401,11 @@ export default function BulkPhotoUpload({
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-navy-900">
               {images.length} of {maxImages} images
+              {images.filter(img => img.uploading).length > 0 && (
+                <span className="text-slate-500 ml-2">
+                  ({images.filter(img => img.uploading).length} uploading...)
+                </span>
+              )}
             </p>
             <p className="text-xs text-slate-500">
               Drag to reorder • Star = Primary image

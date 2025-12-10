@@ -264,14 +264,22 @@ const ListingSchema = new Schema<IListingDocument, IListingModel>(
       },
     },
     
-    // Media
-    media: [{
-      url: { type: String, required: true },
-      type: { type: String, enum: ['image', 'video', 'document'], default: 'image' },
-      caption: String,
-      isPrimary: { type: Boolean, default: false },
-      order: { type: Number, default: 0 },
-    }],
+    // Media - Maximum 20 photos per listing
+    media: {
+      type: [{
+        url: { type: String, required: true },
+        type: { type: String, enum: ['image', 'video', 'document'], default: 'image' },
+        caption: String,
+        isPrimary: { type: Boolean, default: false },
+        order: { type: Number, default: 0 },
+      }],
+      validate: {
+        validator: function(v: unknown[]) {
+          return !v || v.length <= 20;
+        },
+        message: 'Maximum photo limit reached: Up to 20 images allowed per listing.',
+      },
+    },
     primaryImageUrl: String,
     
     // Specifications
@@ -418,6 +426,13 @@ ListingSchema.pre('save', async function () {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 90);
     this.expiresAt = expiresAt;
+  }
+  
+  // #14 fix: Sync isActive with status for consistency
+  // isActive should be true only when status is 'active' or 'pending'
+  // This ensures queries using either field return consistent results
+  if (this.isModified('status')) {
+    this.isActive = ['active', 'pending'].includes(this.status);
   }
 });
 

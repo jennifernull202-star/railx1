@@ -300,6 +300,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // PHOTO LIMIT: Maximum 20 photos per listing
+    const MAX_PHOTOS = 20;
+    if (body.media && Array.isArray(body.media) && body.media.length > MAX_PHOTOS) {
+      return NextResponse.json(
+        { success: false, error: `Maximum photo limit reached: Up to ${MAX_PHOTOS} images allowed per listing.` },
+        { status: 400 }
+      );
+    }
+
     // Validate category
     if (!LISTING_CATEGORIES.includes(body.category)) {
       return NextResponse.json(

@@ -71,22 +71,31 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     switch (action) {
       case 'verify':
-        contractor.set('verificationStatus', 'verified');
-        contractor.set('verifiedAt', new Date());
-        notificationType = 'contractor_verified';
-        notificationTitle = 'Contractor Profile Verified';
-        notificationMessage = `Congratulations! Your contractor profile for ${businessName} has been verified. You now have access to all contractor features.`;
-        emailSubject = 'Your Contractor Profile Has Been Verified - Rail Exchange';
+        // Admin approval sets status to 'approved' - user must still pay to become 'verified'
+        contractor.set('verificationStatus', 'approved');
+        contractor.set('verificationResult', {
+          status: 'approved',
+          notes: 'Approved by admin review',
+          reviewedAt: new Date(),
+          reviewedBy: 'admin',
+          adminId: session.user.id,
+        });
+        notificationType = 'contractor_approved';
+        notificationTitle = 'Verification Approved - Payment Required';
+        notificationMessage = `Your contractor profile for ${businessName} has been approved! Complete payment to activate your Verified badge.`;
+        emailSubject = 'Verification Approved - Complete Payment | Rail Exchange';
         emailBody = `
-          <h2>Congratulations!</h2>
-          <p>Your contractor profile for <strong>${businessName}</strong> has been verified.</p>
-          <p>You now have access to all contractor features on Rail Exchange, including:</p>
+          <h2>Your Verification Has Been Approved!</h2>
+          <p>Great news! Your contractor profile for <strong>${businessName}</strong> has been approved by our team.</p>
+          <p><strong>Next Step:</strong> Complete your subscription payment to activate your Verified badge.</p>
+          <p><a href="${process.env.NEXTAUTH_URL}/dashboard/contractor/verify/payment">Click here to complete payment</a></p>
+          <p>Once payment is complete, your Verified badge will appear on:</p>
           <ul>
-            <li>Premium visibility in contractor directory</li>
-            <li>Ability to respond to service requests</li>
-            <li>Verified badge on your profile</li>
+            <li>Your contractor profile</li>
+            <li>Search results</li>
+            <li>Contractor directory</li>
+            <li>Google Maps markers</li>
           </ul>
-          <p>Thank you for being a part of Rail Exchange!</p>
         `;
         break;
 

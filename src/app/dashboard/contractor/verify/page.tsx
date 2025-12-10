@@ -96,12 +96,13 @@ export default function ContractorVerifyPage() {
   }
 
   // Upload document handler
+  // SECURE: Documents stored in /contractors/<userId>/verification/
   const handleDocumentUpload = async (file: File, type: 'license' | 'insurance' | 'photo') => {
     setUploadingDoc(type);
     setError('');
 
     try {
-      // Get presigned URL
+      // Get presigned URL - SECURE PATH for verification documents
       const presignRes = await fetch('/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,6 +111,7 @@ export default function ContractorVerifyPage() {
           contentType: file.type,
           fileSize: file.size,
           folder: 'contractors',
+          subfolder: 'verification', // SECURE: /contractors/<userId>/verification/
           fileType: 'document',
         }),
       });

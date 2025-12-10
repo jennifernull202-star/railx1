@@ -3,6 +3,7 @@
  * 
  * Generates professional PDF specification sheets for equipment listings.
  * Uses pdf-lib for PDF creation with The Rail Exchange branding.
+ * Uploads generated PDFs to S3 for persistent storage.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -12,6 +13,20 @@ import connectDB from '@/lib/db';
 import Listing from '@/models/Listing';
 import { Types } from 'mongoose';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+
+// S3 client initialization
+const getS3Client = () => {
+  return new S3Client({
+    region: process.env.AWS_REGION || 'us-east-1',
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+    },
+  });
+};
+
+const BUCKET_NAME = process.env.AWS_S3_BUCKET || process.env.AWS_S3_BUCKET_NAME || 'railexchange-uploads';
 
 // Brand colors
 const NAVY = rgb(10 / 255, 26 / 255, 47 / 255); // #0A1A2F
@@ -415,27 +430,64 @@ export async function POST(request: NextRequest) {
     // Serialize PDF
     const pdfBytes = await pdfDoc.save();
 
-    // In production, you would upload to S3 and return URL
-    // For now, return the PDF as base64
-    const base64Pdf = Buffer.from(pdfBytes).toString('base64');
-
-    // Update listing with spec sheet info
-    await Listing.findByIdAndUpdate(listingId, {
-      $set: {
-        'premiumAddOns.specSheet': {
-          generated: true,
-          generatedAt: new Date(),
-          // In production: url: s3Url
+    // Upload to S3
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const key = `spec-sheets/${listing._id}-${timestamp}-${randomId}.pdf`;
+    
+    try {
+      const s3Client = getS3Client();
+      await s3Client.send(new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+        Body: Buffer.from(pdfBytes),
+        ContentType: 'application/pdf',
+        ContentDisposition: `attachment; filename="spec-sheet-${listing._id}.pdf"`,
+      }));
+      
+      // Construct the public URL
+      const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+      
+      // Update listing with spec sheet info and URL
+      await Listing.findByIdAndUpdate(listingId, {
+        $set: {
+          'premiumAddOns.specSheet': {
+            generated: true,
+            generatedAt: new Date(),
+            url: s3Url,
+          },
         },
-      },
-    });
+      });
 
-    return NextResponse.json({
-      success: true,
-      pdf: base64Pdf,
-      filename: `spec-sheet-${listing._id}.pdf`,
-      message: 'Spec sheet generated successfully',
-    });
+      return NextResponse.json({
+        success: true,
+        url: s3Url,
+        filename: `spec-sheet-${listing._id}.pdf`,
+        message: 'Spec sheet generated and uploaded successfully',
+      });
+    } catch (s3Error) {
+      console.error('S3 upload error:', s3Error);
+      
+      // Fallback: return as base64 if S3 upload fails
+      const base64Pdf = Buffer.from(pdfBytes).toString('base64');
+      
+      // Still mark as generated, but without URL
+      await Listing.findByIdAndUpdate(listingId, {
+        $set: {
+          'premiumAddOns.specSheet': {
+            generated: true,
+            generatedAt: new Date(),
+          },
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        pdf: base64Pdf,
+        filename: `spec-sheet-${listing._id}.pdf`,
+        message: 'Spec sheet generated (S3 upload unavailable)',
+      });
+    }
   } catch (error) {
     console.error('Spec sheet generation error:', error);
     return NextResponse.json(

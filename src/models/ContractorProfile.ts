@@ -27,6 +27,7 @@ export interface IVerificationResult {
   reviewedAt: Date;
   reviewedBy: 'ai' | 'admin';
   adminId?: Types.ObjectId;
+  aiRecommendation?: 'approved' | 'rejected' | 'needs_review'; // AI's recommendation for admin reference only
 }
 
 export type ServiceCategory = 
@@ -54,6 +55,10 @@ export interface IAddress {
   state: string;
   zipCode: string;
   country: string;
+  coordinates?: {
+    type: 'Point';
+    coordinates: [number, number]; // [longitude, latitude]
+  };
 }
 
 export interface IDocument {
@@ -141,6 +146,10 @@ const AddressSchema = new Schema<IAddress>(
     state: { type: String, required: true, trim: true },
     zipCode: { type: String, required: true, trim: true },
     country: { type: String, required: true, default: 'USA', trim: true },
+    coordinates: {
+      type: { type: String, enum: ['Point'], default: 'Point' },
+      coordinates: { type: [Number], default: undefined },
+    },
   },
   { _id: false }
 );
@@ -302,6 +311,7 @@ const ContractorProfileSchema = new Schema<
       reviewedAt: { type: Date },
       reviewedBy: { type: String, enum: ['ai', 'admin'] },
       adminId: { type: Schema.Types.ObjectId, ref: 'User' },
+      aiRecommendation: { type: String, enum: ['approved', 'rejected', 'needs_review'] },
     },
     verifiedAt: {
       type: Date,
@@ -375,6 +385,7 @@ ContractorProfileSchema.index({ isPublished: 1, isActive: 1 });
 ContractorProfileSchema.index({ 'address.state': 1 });
 ContractorProfileSchema.index({ 'address.city': 1 });
 ContractorProfileSchema.index({ verifiedBadgePurchased: 1, verificationStatus: 1 });
+ContractorProfileSchema.index({ 'address.coordinates': '2dsphere' });
 
 // ============================================
 // INSTANCE METHODS

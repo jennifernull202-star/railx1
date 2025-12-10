@@ -6,13 +6,13 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import BulkPhotoUpload, { UploadedImage } from '@/components/forms/BulkPhotoUpload';
 import { US_STATES } from '@/lib/constants';
-import { Building2, Phone, Mail, MapPin, Briefcase, Camera, Check, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Building2, Phone, Mail, MapPin, Briefcase, Camera, Check, ArrowRight, ArrowLeft, AlertCircle, X } from 'lucide-react';
 
 const SERVICE_CATEGORIES = [
   { id: 'track-construction', label: 'Track Construction' },
@@ -47,6 +47,7 @@ export default function ContractorOnboardingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [draftRestored, setDraftRestored] = useState(false);
 
   const [form, setForm] = useState({
     businessName: '',
@@ -65,6 +66,82 @@ export default function ContractorOnboardingPage() {
 
   const [portfolioImages, setPortfolioImages] = useState<UploadedImage[]>([]);
   const [equipmentImages, setEquipmentImages] = useState<UploadedImage[]>([]);
+
+  // #3.2 fix: localStorage key for draft auto-save
+  const DRAFT_STORAGE_KEY = 'railx-contractor-onboard-draft';
+
+  // #3.2 fix: Restore draft from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed.form) setForm(parsed.form);
+        if (parsed.portfolioImages) setPortfolioImages(parsed.portfolioImages);
+        if (parsed.equipmentImages) setEquipmentImages(parsed.equipmentImages);
+        if (parsed.currentStep) setCurrentStep(parsed.currentStep);
+        setDraftRestored(true);
+      }
+    } catch (e) {
+      console.error('Failed to restore contractor draft:', e);
+    }
+  }, []);
+
+  // #3.2 fix: Auto-save draft to localStorage on changes
+  const saveDraft = useCallback(() => {
+    try {
+      const draftData = {
+        form,
+        portfolioImages: portfolioImages.filter(img => !img.uploading && !img.error),
+        equipmentImages: equipmentImages.filter(img => !img.uploading && !img.error),
+        currentStep,
+        savedAt: new Date().toISOString(),
+      };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftData));
+    } catch (e) {
+      console.error('Failed to save contractor draft:', e);
+    }
+  }, [form, portfolioImages, equipmentImages, currentStep]);
+
+  // #3.2 fix: Debounced auto-save on form changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      saveDraft();
+    }, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [saveDraft]);
+
+  // #3.2 fix: Clear draft from localStorage after successful submission
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch (e) {
+      console.error('Failed to clear contractor draft:', e);
+    }
+  };
+
+  // #3.2 fix: Discard draft and reset form
+  const discardDraft = () => {
+    clearDraft();
+    setForm({
+      businessName: '',
+      businessDescription: '',
+      businessPhone: '',
+      businessEmail: '',
+      website: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      yearsInBusiness: '',
+      numberOfEmployees: '',
+      services: [],
+      regionsServed: ['Nationwide'],
+    });
+    setPortfolioImages([]);
+    setEquipmentImages([]);
+    setCurrentStep(1);
+    setDraftRestored(false);
+  };
 
   if (status === 'loading') {
     return (
@@ -194,6 +271,9 @@ export default function ContractorOnboardingPage() {
         throw new Error(data.error || `HTTP ${response.status}`);
       }
 
+      // #3.2 fix: Clear draft on successful submission
+      clearDraft();
+
       // Redirect to contractor dashboard after successful registration
       router.push('/dashboard/contractor');
     } catch (err) {
@@ -232,6 +312,23 @@ export default function ContractorOnboardingPage() {
               Complete your profile to start receiving project inquiries
             </p>
           </div>
+
+          {/* #3.2 fix: Draft Restored Banner */}
+          {draftRestored && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-blue-600" />
+                <span className="text-blue-800">Your previous progress has been restored.</span>
+              </div>
+              <button
+                onClick={discardDraft}
+                className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                <X className="w-4 h-4" />
+                Discard
+              </button>
+            </div>
+          )}
 
           {/* Progress Steps */}
           <div className="flex items-center justify-center gap-4 mb-10">

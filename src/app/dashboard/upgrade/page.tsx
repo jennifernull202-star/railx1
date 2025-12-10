@@ -7,9 +7,9 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   SELLER_TIER_CONFIG,
@@ -36,7 +36,10 @@ import {
   Zap,
   ArrowLeft,
   Package,
+  Tag,
+  Gift,
 } from 'lucide-react';
+import PromoCodeInput, { PromoDiscount } from '@/components/PromoCodeInput';
 
 interface CartItem {
   id: string;
@@ -65,9 +68,10 @@ const addonIcons: Record<string, typeof Star> = {
   [ADD_ON_TYPES.SPEC_SHEET]: FileText,
 };
 
-export default function UpgradePage() {
+function UpgradePageContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -76,6 +80,11 @@ export default function UpgradePage() {
   const [selectedListingForAddon, setSelectedListingForAddon] = useState<string>('');
   const [showAddonsSection, setShowAddonsSection] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [appliedPromo, setAppliedPromo] = useState<PromoDiscount | null>(null);
+  const [promoCode, setPromoCode] = useState<string>('');
+  
+  // Get promo code from URL (e.g., /dashboard/upgrade?promo=RAILXFREE)
+  const initialPromoCode = searchParams.get('promo') || '';
 
   // Fetch user's listings for add-ons
   useEffect(() => {
@@ -200,11 +209,26 @@ export default function UpgradePage() {
     setCart(cart.filter(item => item.id !== itemId));
   }
 
-  // Calculate totals
+  // Calculate totals with promo discount
   const subscriptionTotal = cart.filter(i => i.type === 'subscription').reduce((sum, i) => sum + i.price, 0);
   const addonsTotal = cart.filter(i => i.type === 'addon').reduce((sum, i) => sum + i.price, 0);
-  const cartTotal = subscriptionTotal + addonsTotal;
   const hasSubscription = cart.some(i => i.type === 'subscription');
+  
+  // Apply promo discount to subscription (promos only apply to subscriptions)
+  const promoDiscount = appliedPromo && hasSubscription && appliedPromo.percentOff === 100
+    ? subscriptionTotal // Full discount for first month
+    : appliedPromo?.percentOff && hasSubscription
+    ? subscriptionTotal * (appliedPromo.percentOff / 100)
+    : 0;
+  
+  const cartTotal = subscriptionTotal + addonsTotal - promoDiscount;
+  const cartTotalAfterFirstMonth = subscriptionTotal + addonsTotal; // For display
+  
+  // Handle promo code application
+  function handlePromoApplied(code: string, discount: PromoDiscount | null) {
+    setPromoCode(code);
+    setAppliedPromo(discount);
+  }
 
   // Checkout handler
   async function handleCheckout() {
@@ -223,6 +247,7 @@ export default function UpgradePage() {
             tier: sub.tier,
             type: 'seller',
             billingPeriod: sub.period,
+            promoCode: promoCode || undefined, // Pass promo code to checkout
           }),
         });
 
@@ -244,6 +269,7 @@ export default function UpgradePage() {
             addonType: item.addonType,
             listingId: item.listingId,
           })),
+          promoCode: promoCode || undefined, // Pass promo code to cart checkout
         }),
       });
 
@@ -608,16 +634,50 @@ export default function UpgradePage() {
 
               {cart.length > 0 && (
                 <>
+                  {/* PROMO CODE INPUT - Always visible for Seller Pro */}
+                  {hasSubscription && cart.some(i => i.tier === 'pro') && (
+                    <div className="px-6 py-4 border-t border-slate-100">
+                      <PromoCodeInput
+                        onPromoApplied={handlePromoApplied}
+                        targetTier="pro"
+                        initialCode={initialPromoCode}
+                        disabled={isCheckingOut}
+                      />
+                    </div>
+                  )}
+
                   <div className="px-6 py-4 bg-slate-50 border-t border-slate-100">
                     {hasSubscription && (
                       <div className="flex justify-between text-sm mb-2">
                         <span className="text-slate-600">Subscription</span>
-                        <span className="font-medium text-navy-900">
+                        <span className={`font-medium ${promoDiscount > 0 ? 'text-slate-400 line-through' : 'text-navy-900'}`}>
                           {formatPrice(subscriptionTotal)}
                           {cart.find(i => i.type === 'subscription')?.period === 'monthly' && '/mo'}
                         </span>
                       </div>
                     )}
+                    
+                    {/* Promo Discount Display */}
+                    {promoDiscount > 0 && appliedPromo && (
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-green-600 flex items-center gap-1">
+                          <Gift className="w-3 h-3" />
+                          Promo: {appliedPromo.code}
+                        </span>
+                        <span className="font-medium text-green-600">
+                          -{formatPrice(promoDiscount)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* First Month Free indicator */}
+                    {appliedPromo?.percentOff === 100 && hasSubscription && (
+                      <div className="flex justify-between text-sm mb-2 bg-green-50 -mx-6 px-6 py-2">
+                        <span className="text-green-700 font-medium">Month 1 Total</span>
+                        <span className="font-bold text-green-700">$0.00</span>
+                      </div>
+                    )}
+                    
                     {addonsTotal > 0 && (
                       <div className="flex justify-between text-sm mb-2">
                         <span className="text-slate-600">Add-ons (one-time)</span>
@@ -628,6 +688,13 @@ export default function UpgradePage() {
                       <span className="text-navy-900">Total Due Today</span>
                       <span className="text-navy-900">{formatPrice(cartTotal)}</span>
                     </div>
+                    
+                    {/* After first month info */}
+                    {appliedPromo?.percentOff === 100 && hasSubscription && (
+                      <div className="text-xs text-slate-500 mt-2">
+                        After month 1: {formatPrice(cartTotalAfterFirstMonth)}/mo
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-6 pt-0">
@@ -659,5 +726,26 @@ export default function UpgradePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback for the upgrade page
+function UpgradePageLoading() {
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="animate-pulse flex flex-col items-center gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-rail-orange" />
+        <p className="text-slate-500">Loading upgrade options...</p>
+      </div>
+    </div>
+  );
+}
+
+// Export with Suspense wrapper for useSearchParams
+export default function UpgradePage() {
+  return (
+    <Suspense fallback={<UpgradePageLoading />}>
+      <UpgradePageContent />
+    </Suspense>
   );
 }

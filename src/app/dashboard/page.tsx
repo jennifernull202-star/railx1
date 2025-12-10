@@ -14,6 +14,7 @@ import User from '@/models/User';
 import { Types } from 'mongoose';
 
 import WelcomeMessage from '@/components/dashboard/WelcomeMessage';
+import SessionRefresher from '@/components/dashboard/SessionRefresher';
 
 export const metadata: Metadata = {
   title: 'Dashboard | The Rail Exchange',
@@ -42,6 +43,7 @@ async function getDashboardData(userId: string): Promise<{
   recentListings: RecentListing[];
   hasSubscription: boolean;
   isContractor: boolean;
+  sellerTier: string | null;
 }> {
   await connectDB();
 
@@ -67,7 +69,7 @@ async function getDashboardData(userId: string): Promise<{
       .sort({ createdAt: -1 })
       .limit(5)
       .lean(),
-    User.findById(userId).select('sellerTier role').lean(),
+    User.findById(userId).select('sellerTier role contractorTier').lean(),
   ]);
 
   const stats = statsResult[0] || {
@@ -82,7 +84,8 @@ async function getDashboardData(userId: string): Promise<{
     stats,
     recentListings: recentListings as unknown as RecentListing[],
     hasSubscription: !!(user?.sellerTier && user.sellerTier !== 'buyer'),
-    isContractor: user?.role === 'contractor' || false,
+    isContractor: user?.role === 'contractor' || user?.contractorTier === 'verified' || false,
+    sellerTier: user?.sellerTier || null,
   };
 }
 
@@ -93,10 +96,15 @@ export default async function DashboardPage() {
     return null;
   }
 
-  const { stats, recentListings, hasSubscription, isContractor } = await getDashboardData(session.user.id);
+  const { stats, recentListings, hasSubscription, isContractor, sellerTier } = await getDashboardData(session.user.id);
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Session Sync - Updates session when subscription changes */}
+      <SessionRefresher 
+        currentTier={sellerTier || undefined} 
+        isContractor={isContractor} 
+      />
       {/* Welcome Message for New Users */}
       <WelcomeMessage
         userName={session.user.name?.split(' ')[0] || 'there'}

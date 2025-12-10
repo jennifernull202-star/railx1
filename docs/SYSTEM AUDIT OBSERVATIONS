@@ -1,0 +1,280 @@
+# THE RAIL EXCHANGE™ — SYSTEM AUDIT OBSERVATIONS
+## Senior Engineering Advisory Review
+**Date:** December 10, 2025
+**Reviewer Role:** Principal Full-Stack Engineer / Senior Systems Architect
+
+---
+
+## 🏗️ ARCHITECTURE OBSERVATIONS
+
+### 1. Duplicate Codebase Structure
+**Issue:** There are two parallel codebases: `/workspaces/railx1/src/` and `/workspaces/railx1/railx1/src/`
+
+**Why it matters:** This creates confusion about which is the canonical source, risks divergent code paths, increases maintenance burden, and could lead to deploying the wrong version.
+
+**Where it impacts:** Entire project structure, CI/CD, developer onboarding
+
+**Recommended path:** Determine which is authoritative and remove the duplicate folder entirely.
+
+**Priority:** 🟠 High
+
+---
+
+### 2. Add-On Purchase Flow — Incomplete Post-Selection Refresh
+**Issue:** After assigning an add-on to a listing in `/dashboard/addons`, the page fetches updated listings but the listing cards elsewhere in the app won't reflect the new badge until a full page refresh.
+
+**Why it matters:** Users expect instant visual feedback. Badges appearing "eventually" feels broken.
+
+**Where it impacts:** `/dashboard/addons`, `/dashboard/listings`, listing cards site-wide
+
+**Recommended path:** Consider implementing a global state/context for active add-ons, or use SWR/React Query with cache invalidation on mutation.
+
+**Priority:** 🟡 Medium
+
+---
+
+### 3. BulkPhotoUpload — Subfolder Parameter Not Passed ⚠️ CRITICAL
+**Issue:** The `subfolder` prop was added to `BulkPhotoUpload` but the `uploadFile` function inside the component does not include `subfolder` in the API request body.
+
+**Why it matters:** Photos will be uploaded to `/listings/<userId>/` instead of `/listings/<userId>/images/` as intended by PART 3 secure storage rules.
+
+**Where it impacts:** `/src/components/forms/BulkPhotoUpload.tsx`, S3 storage paths
+
+**Recommended path:** Pass `subfolder` to the `/api/upload` POST request body inside `uploadFile()`.
+
+**Priority:** 🔴 Critical
+
+---
+
+### 4. Cron Job Not Configured ⚠️ CRITICAL
+**Issue:** The `/api/cron/expire-addons` endpoint exists but there's no `vercel.json` cron configuration to actually trigger it.
+
+**Why it matters:** Expired add-ons will never be automatically cleaned up. Badges and ranking boosts will persist indefinitely after expiration.
+
+**Where it impacts:** Add-on expiration logic, listing rankings, badge display accuracy
+
+**Recommended path:** Add a `vercel.json` with cron configuration, or use an external scheduler (e.g., GitHub Actions, cron-job.org).
+
+**Priority:** 🔴 Critical
+
+---
+
+## 🎨 UX/UI OBSERVATIONS
+
+### 5. My Add-Ons Page — No Visual Hierarchy for Urgency
+**Issue:** Unassigned add-ons are shown in an amber box, but there's no countdown or urgency indicator showing "this add-on will expire in X days if not assigned."
+
+**Why it matters:** Users may forget they purchased an add-on and let it expire without ever using it. This is a revenue and experience issue.
+
+**Where it impacts:** `/dashboard/addons`
+
+**Recommended path:** Add a "Use within X days" countdown or expiration warning for unassigned add-ons.
+
+**Priority:** 🟡 Medium
+
+---
+
+### 6. Photo Upload — No Progress Indicator
+**Issue:** During parallel uploads, users see a spinning loader on each thumbnail, but there's no overall progress bar (e.g., "3 of 5 uploaded").
+
+**Why it matters:** For bulk uploads of 10-20 photos, users may think the upload stalled.
+
+**Where it impacts:** `/src/components/forms/BulkPhotoUpload.tsx`
+
+**Recommended path:** Add a summary progress indicator at the top of the upload zone.
+
+**Priority:** 🟡 Medium
+
+---
+
+### 7. Photo Limit Error — Silent Truncation ⚠️ HIGH PRIORITY
+**Issue:** If a user selects 25 photos, the component silently takes the first 20 (via `.slice(0, maxImages - images.length)`). No warning is shown.
+
+**Why it matters:** Users may not realize some photos were ignored. They'll submit thinking all photos are included.
+
+**Where it impacts:** `handleFiles()` in `BulkPhotoUpload.tsx`
+
+**Recommended path:** Show a toast or inline warning: "5 photos were not added because the 20-photo limit was reached."
+
+**Priority:** 🟠 High
+
+---
+
+### 8. Listing Creation — No Draft Auto-Save
+**Issue:** The multi-step listing creation form has no auto-save. If a user accidentally navigates away or the browser crashes, all progress is lost.
+
+**Why it matters:** Creating a listing with specs, photos, and descriptions can take 10-15 minutes. Losing that work creates frustration and abandonment.
+
+**Where it impacts:** `/src/app/listings/create/page.tsx`
+
+**Recommended path:** Implement localStorage auto-save on form field changes, or server-side draft persistence.
+
+**Priority:** 🟡 Medium
+
+---
+
+## 🔐 SECURITY OBSERVATIONS
+
+### 9. S3 URLs Are Publicly Guessable
+**Issue:** The S3 file URL structure (`https://<bucket>.s3.<region>.amazonaws.com/<folder>/<userId>/<timestamp>-<random>-<filename>`) is deterministic once you know the components.
+
+**Why it matters:** While presigned URLs are used for downloads, the direct S3 URLs are stored in the database. If S3 bucket ACLs are misconfigured, files could be publicly accessible.
+
+**Where it impacts:** `/src/lib/s3.ts`, all stored media URLs
+
+**Recommended path:** Ensure S3 bucket has "Block Public Access" enabled. Consider using CloudFront with signed URLs for additional security layer.
+
+**Priority:** 🟡 Medium
+
+---
+
+### 10. Admin Photo Deletion — No Audit Trail Persistence
+**Issue:** Admin photo deletions are logged to `console.log` but there's no persistent audit trail in the database.
+
+**Why it matters:** For compliance and dispute resolution, you need a permanent record of admin actions.
+
+**Where it impacts:** `/src/app/api/admin/listings/[id]/photos/route.ts`
+
+**Recommended path:** Create an `AdminAuditLog` model to persist all admin moderation actions.
+
+**Priority:** 🟡 Medium
+
+---
+
+## ⚡ PERFORMANCE OBSERVATIONS
+
+### 11. Parallel Photo Uploads — No Concurrency Limit ⚠️ HIGH PRIORITY
+**Issue:** `Promise.all(uploadPromises)` uploads all selected files simultaneously. Selecting 20 large files will spawn 20 concurrent HTTP requests.
+
+**Why it matters:** This can overwhelm the browser, cause timeouts, and create poor UX on slower connections.
+
+**Where it impacts:** `handleFiles()` in `BulkPhotoUpload.tsx`
+
+**Recommended path:** Use a concurrency limiter (e.g., p-limit) to upload 3-5 files at a time.
+
+**Priority:** 🟠 High
+
+---
+
+### 12. Add-Ons Purchases Query — N+1 Pattern
+**Issue:** In `/api/addons/purchases`, listing titles are fetched in a second query after purchases are retrieved. This is fine, but the pattern could become N+1 if done per-purchase.
+
+**Why it matters:** Currently acceptable, but watch for performance degradation as purchase volume grows.
+
+**Where it impacts:** `/src/app/api/addons/purchases/route.ts`
+
+**Recommended path:** Consider using MongoDB aggregation with `$lookup` for a single query.
+
+**Priority:** 🟢 Low
+
+---
+
+## 🔄 FLOW INCONSISTENCIES
+
+### 13. Add-On Types — Inconsistent Naming
+**Issue:** Add-on types are sometimes referenced as `'featured'`, `'premium'`, `'elite'` (strings) and sometimes via `ADD_ON_TYPES.FEATURED`, `ADD_ON_TYPES.PREMIUM`, etc.
+
+**Why it matters:** String literals risk typos. Inconsistent usage makes refactoring harder.
+
+**Where it impacts:** Multiple files across `/api/addons/`, `/api/subscriptions/webhook/`, `/dashboard/addons/`
+
+**Recommended path:** Enforce usage of `ADD_ON_TYPES` constants everywhere via ESLint rule or code review.
+
+**Priority:** 🟢 Low
+
+---
+
+### 14. Listing Status Check — Inconsistent
+**Issue:** Some places check `listing.status === 'active'`, others check `listing.isActive === true`. These are separate fields with potentially different meanings.
+
+**Why it matters:** A listing could have `status: 'active'` but `isActive: false`, creating undefined behavior.
+
+**Where it impacts:** `/api/addons/assign`, `/api/listings`, listing queries
+
+**Recommended path:** Document the distinction clearly. Consider consolidating into a single source of truth.
+
+**Priority:** 🟡 Medium
+
+---
+
+## 📋 MISSING LOGIC
+
+### 15. Add-On Refund Handling — Not Implemented
+**Issue:** The `AddOnPurchase` model has a `'refunded'` status, but there's no webhook handler or admin action to actually process refunds.
+
+**Why it matters:** If Stripe issues a refund, the add-on will remain active on the listing.
+
+**Where it impacts:** `/api/subscriptions/webhook/`, Stripe refund events
+
+**Recommended path:** Add handler for `charge.refunded` webhook event to deactivate add-ons.
+
+**Priority:** 🟡 Medium
+
+---
+
+### 16. Primary Image Auto-Selection — Edge Case
+**Issue:** If a user uploads photos, deletes the primary, uploads more, the logic for auto-selecting a new primary may not fire correctly in all scenarios.
+
+**Why it matters:** Listings could end up with no primary image, affecting display in cards.
+
+**Where it impacts:** `handleRemove()` in `BulkPhotoUpload.tsx`
+
+**Recommended path:** Add defensive logic in the API to ensure listings always have a primary image if any images exist.
+
+**Priority:** 🟢 Low
+
+---
+
+## 📊 SUMMARY
+
+| Category | Issues Found |
+|----------|--------------|
+| Architecture | 2 |
+| UX/UI | 4 |
+| Security | 2 |
+| Performance | 2 |
+| Flow Consistency | 2 |
+| Missing Logic | 2 |
+| **Total** | **16** |
+
+---
+
+## 🎯 PRIORITY ACTION ITEMS
+
+### 🔴 CRITICAL (Fix Immediately)
+1. **#3** — BulkPhotoUpload subfolder not passed to API
+2. **#4** — Cron job for add-on expiration not configured
+
+### 🟠 HIGH (Fix This Sprint)
+3. **#7** — Silent photo truncation with no user warning
+4. **#11** — No upload concurrency limit
+5. **#1** — Duplicate codebase structure
+
+### 🟡 MEDIUM (Backlog Priority)
+6. **#2** — Add-on badge refresh delay
+7. **#5** — No urgency indicator for unassigned add-ons
+8. **#6** — No overall upload progress indicator
+9. **#8** — No draft auto-save
+10. **#9** — S3 URL security review
+11. **#10** — Admin audit trail persistence
+12. **#14** — Listing status field inconsistency
+13. **#15** — Refund handling not implemented
+
+### 🟢 LOW (Technical Debt)
+14. **#12** — N+1 query pattern
+15. **#13** — Inconsistent add-on type naming
+16. **#16** — Primary image edge case
+
+---
+
+## NEXT STEPS
+
+To implement any of these recommendations, respond with:
+
+**"IMPLEMENT #[number]"** — to fix a specific issue
+**"IMPLEMENT CRITICAL"** — to fix all critical issues
+**"IMPLEMENT ALL"** — to fix everything
+
+---
+
+*This audit was generated in ADVISORY-ONLY SENIOR ENGINEER MODE.*

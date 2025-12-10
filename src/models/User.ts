@@ -69,6 +69,14 @@ export interface IUser {
     checkoutSessionId?: string;
   }[];
   
+  // Promo code tracking
+  usedPromoCodes?: {
+    code: string;
+    usedAt: Date;
+    subscriptionType?: string;
+    tier?: string;
+  }[];
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -270,6 +278,19 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
         addonType: { type: String },
         listingId: { type: String },
         checkoutSessionId: { type: String },
+      }],
+      default: [],
+    },
+    
+    // ============================================
+    // PROMO CODE TRACKING
+    // ============================================
+    usedPromoCodes: {
+      type: [{
+        code: { type: String, required: true },
+        usedAt: { type: Date, default: Date.now },
+        subscriptionType: { type: String }, // 'seller' or 'contractor'
+        tier: { type: String }, // The tier it was applied to
       }],
       default: [],
     },
