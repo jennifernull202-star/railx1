@@ -225,7 +225,9 @@ function SearchPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<SearchResults | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'map'>(
+    searchParams.get('view') === 'map' ? 'map' : 'list'
+  );
 
   // Perform search
   const performSearch = useCallback(async () => {
@@ -252,12 +254,12 @@ function SearchPageContent() {
     }
   }, [query, searchType, category, condition, state]);
 
-  // Search on mount and when URL changes
+  // Search on mount and when URL changes - also fetch if coming with view=map
   useEffect(() => {
-    if (query || category || condition || state) {
+    if (query || category || condition || state || searchParams.get('view') === 'map') {
       performSearch();
     }
-  }, [query, category, condition, state, searchType, performSearch]);
+  }, [query, category, condition, state, searchType, performSearch, searchParams]);
 
   // Handle search submit
   const handleSubmit = (e: React.FormEvent) => {

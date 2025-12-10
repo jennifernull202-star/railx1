@@ -11,7 +11,6 @@ import HeroSearch from "@/components/HeroSearch";
 import { FeaturedListingPromoCard } from "@/components/cards";
 import connectDB from "@/lib/db";
 import Listing from "@/models/Listing";
-import ContractorProfile from "@/models/ContractorProfile";
 import { EQUIPMENT_TYPES } from "@/lib/constants";
 
 interface FeaturedListing {
@@ -104,19 +103,12 @@ async function getHomeData() {
         .limit(6)
         .lean();
     }
-
-    const [listingCount, contractorCount] = await Promise.all([
-      Listing.countDocuments({ status: 'active' }),
-      ContractorProfile.countDocuments({ verificationStatus: 'verified' }),
-    ]);
     
     return { 
-      listingCount, 
-      contractorCount,
       featuredListings: listings as unknown as FeaturedListing[],
     };
   } catch {
-    return { listingCount: 0, contractorCount: 0, featuredListings: [] };
+    return { featuredListings: [] };
   }
 }
 
@@ -137,7 +129,7 @@ function formatPrice(price: FeaturedListing['price']): string {
 }
 
 export default async function HomePage() {
-  const { listingCount, contractorCount, featuredListings } = await getHomeData();
+  const { featuredListings } = await getHomeData();
 
   return (
     <>
@@ -232,25 +224,21 @@ export default async function HomePage() {
               {/* Search Module - Perfectly Centered */}
               <div className="max-w-3xl mx-auto px-4 md:px-0">
                 <HeroSearch />
-              </div>
-
-              {/* Stats Container - Premium Cards */}
-              <div className="flex flex-wrap justify-center gap-6 md:gap-8 mt-14">
-                <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl px-8 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-                  <p className="text-[28px] md:text-[32px] font-bold text-navy-900 tracking-tight">
-                    {listingCount > 0 ? listingCount.toLocaleString() : '—'}
-                  </p>
-                  <p className="text-[13px] font-medium text-slate-500 mt-0.5">Active Listings</p>
-                </div>
-                <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl px-8 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-                  <p className="text-[28px] md:text-[32px] font-bold text-navy-900 tracking-tight">
-                    {contractorCount > 0 ? contractorCount.toLocaleString() : '—'}
-                  </p>
-                  <p className="text-[13px] font-medium text-slate-500 mt-0.5">Verified Contractors</p>
-                </div>
-                <div className="bg-white/80 backdrop-blur-sm border border-slate-100 rounded-2xl px-8 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-                  <p className="text-[28px] md:text-[32px] font-bold text-navy-900 tracking-tight">50</p>
-                  <p className="text-[13px] font-medium text-slate-500 mt-0.5">States Covered</p>
+                
+                {/* Map CTA */}
+                <div className="mt-6 flex justify-center">
+                  <Link 
+                    href="/search?view=map" 
+                    className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-rail-orange transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    <span>Explore Listings on Map</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
                 </div>
               </div>
             </div>

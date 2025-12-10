@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import AuthProvider from "@/components/providers/AuthProvider";
+import AIChatWidget from "@/components/AIChatWidget";
 
 export const metadata: Metadata = {
   title: "The Rail Exchange™ | Premium Rail Industry Marketplace",
@@ -58,6 +59,8 @@ export default function RootLayout({
           <div className="flex flex-col min-h-screen">
             {children}
           </div>
+          {/* AI Chat Widget - Available Site-Wide */}
+          <AIChatWidget />
         </AuthProvider>
       </body>
     </html>

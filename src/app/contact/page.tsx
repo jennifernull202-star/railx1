@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import SiteHeader from '@/components/SiteHeader';
 
 interface FormData {
   name: string;
@@ -126,7 +127,9 @@ export default function ContactPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <>
+      <SiteHeader />
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       {/* Hero Header */}
       <section className="relative py-20 px-6 bg-gradient-to-br from-navy-900 via-navy-800 to-slate-900 overflow-hidden">
         {/* Subtle pattern overlay */}
@@ -424,5 +427,6 @@ export default function ContactPage() {
         </div>
       </section>
     </main>
+    </>
   );
 }
