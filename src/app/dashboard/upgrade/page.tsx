@@ -479,90 +479,97 @@ function UpgradePageContent() {
 
               {showAddonsSection && (
                 <div className="mt-6 pt-6 border-t border-slate-100">
+                  {/* Always show all 5 add-ons */}
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    {addons.map((addon) => {
+                      const Icon = addonIcons[addon.type] || Star;
+                      const selectedListing = listings.find(l => l._id === selectedListingForAddon);
+                      const isInCart = cart.some(
+                        item => item.addonType === addon.type && item.listingId === selectedListingForAddon
+                      );
+                      const canAddToCart = selectedListingForAddon && selectedListing && !isInCart;
+                      
+                      return (
+                        <button
+                          key={addon.type}
+                          onClick={() => {
+                            if (canAddToCart) {
+                              addAddonToCart(addon.type, selectedListingForAddon, selectedListing.title);
+                            }
+                          }}
+                          disabled={!canAddToCart}
+                          className={`text-left p-4 rounded-xl border transition-all ${
+                            isInCart
+                              ? 'border-green-300 bg-green-50'
+                              : canAddToCart
+                              ? 'border-slate-200 hover:border-purple-300 hover:bg-purple-50/50'
+                              : 'border-slate-200 bg-slate-50/50 opacity-75'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className={`p-2 rounded-lg ${isInCart ? 'bg-green-100' : 'bg-purple-100'}`}>
+                              <Icon className={`w-4 h-4 ${isInCart ? 'text-green-600' : 'text-purple-600'}`} />
+                            </div>
+                            <span className="font-semibold text-navy-900">{addon.name}</span>
+                          </div>
+                          <p className="text-xs text-slate-600 mb-2">{addon.shortDescription}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-navy-900">{formatPrice(addon.price)}</span>
+                            <span className="text-xs text-slate-500">{formatAddOnDuration(addon.type)}</span>
+                          </div>
+                          {isInCart && (
+                            <div className="mt-2 flex items-center gap-1 text-xs text-green-600">
+                              <Check className="w-3 h-3" />
+                              Added to cart
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Listing selector or CTA based on whether user has listings */}
                   {loadingListings ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-slate-400 mr-2" />
+                      <span className="text-sm text-slate-500">Loading your listings...</span>
                     </div>
                   ) : listings.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-slate-600 mb-4">You don&apos;t have any listings yet.</p>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <p className="text-sm text-amber-800 mb-3">
+                        <strong>Note:</strong> Create a listing first to apply add-ons.
+                      </p>
                       <Link
                         href="/listings/create"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-rail-orange text-white rounded-lg font-medium hover:bg-[#e55f15] transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-rail-orange text-white rounded-lg font-medium hover:bg-[#e55f15] transition-colors text-sm"
                       >
                         Create Your First Listing
                         <ArrowRight className="w-4 h-4" />
                       </Link>
                     </div>
                   ) : (
-                    <>
-                      {/* Select Listing */}
-                      <div className="mb-6">
-                        <label className="block text-sm font-medium text-slate-700 mb-2">
-                          Select a listing to boost:
-                        </label>
-                        <select
-                          value={selectedListingForAddon}
-                          onChange={(e) => setSelectedListingForAddon(e.target.value)}
-                          className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rail-orange/20 focus:border-rail-orange"
-                        >
-                          <option value="">Choose a listing...</option>
-                          {listings.map((listing) => (
-                            <option key={listing._id} value={listing._id}>
-                              {listing.title}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Add-on Options */}
-                      {selectedListingForAddon && (
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {addons.map((addon) => {
-                            const Icon = addonIcons[addon.type] || Star;
-                            const selectedListing = listings.find(l => l._id === selectedListingForAddon);
-                            const isInCart = cart.some(
-                              item => item.addonType === addon.type && item.listingId === selectedListingForAddon
-                            );
-                            
-                            return (
-                              <button
-                                key={addon.type}
-                                onClick={() => {
-                                  if (!isInCart && selectedListing) {
-                                    addAddonToCart(addon.type, selectedListingForAddon, selectedListing.title);
-                                  }
-                                }}
-                                disabled={isInCart}
-                                className={`text-left p-4 rounded-xl border transition-all ${
-                                  isInCart
-                                    ? 'border-green-300 bg-green-50'
-                                    : 'border-slate-200 hover:border-purple-300 hover:bg-purple-50/50'
-                                }`}
-                              >
-                                <div className="flex items-center gap-3 mb-2">
-                                  <div className={`p-2 rounded-lg ${isInCart ? 'bg-green-100' : 'bg-purple-100'}`}>
-                                    <Icon className={`w-4 h-4 ${isInCart ? 'text-green-600' : 'text-purple-600'}`} />
-                                  </div>
-                                  <span className="font-semibold text-navy-900">{addon.name}</span>
-                                </div>
-                                <p className="text-xs text-slate-600 mb-2">{addon.shortDescription}</p>
-                                <div className="flex items-center justify-between">
-                                  <span className="font-bold text-navy-900">{formatPrice(addon.price)}</span>
-                                  <span className="text-xs text-slate-500">{formatAddOnDuration(addon.type)}</span>
-                                </div>
-                                {isInCart && (
-                                  <div className="mt-2 flex items-center gap-1 text-xs text-green-600">
-                                    <Check className="w-3 h-3" />
-                                    Added to cart
-                                  </div>
-                                )}
-                              </button>
-                            );
-                          })}
-                        </div>
+                    <div className="bg-slate-50 rounded-lg p-4">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Select a listing to apply add-ons:
+                      </label>
+                      <select
+                        value={selectedListingForAddon}
+                        onChange={(e) => setSelectedListingForAddon(e.target.value)}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rail-orange/20 focus:border-rail-orange bg-white"
+                      >
+                        <option value="">Choose a listing...</option>
+                        {listings.map((listing) => (
+                          <option key={listing._id} value={listing._id}>
+                            {listing.title}
+                          </option>
+                        ))}
+                      </select>
+                      {!selectedListingForAddon && (
+                        <p className="text-xs text-slate-500 mt-2">
+                          Select a listing above to enable add-on purchases
+                        </p>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
               )}

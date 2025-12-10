@@ -237,9 +237,9 @@ export const ADD_ON_RANKING_BOOST = {
 // ============================================================================
 
 export const STRIPE_ADDON_PRICE_IDS = {
-  [ADD_ON_TYPES.FEATURED]: process.env.STRIPE_PRICE_FEATURED || '',
-  [ADD_ON_TYPES.PREMIUM]: process.env.STRIPE_PRICE_PREMIUM || '',
-  [ADD_ON_TYPES.ELITE]: process.env.STRIPE_PRICE_ELITE || '',
+  [ADD_ON_TYPES.FEATURED]: process.env.STRIPE_PRICE_FEATURED_LISTING || '',
+  [ADD_ON_TYPES.PREMIUM]: process.env.STRIPE_PRICE_PREMIUM_PLACEMENT || '',
+  [ADD_ON_TYPES.ELITE]: process.env.STRIPE_PRICE_ELITE_PLACEMENT || '',
   [ADD_ON_TYPES.AI_ENHANCEMENT]: process.env.STRIPE_PRICE_AI_ENHANCEMENT || '',
   [ADD_ON_TYPES.SPEC_SHEET]: process.env.STRIPE_PRICE_SPEC_SHEET || '',
 } as const;
