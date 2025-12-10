@@ -56,6 +56,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     "marketplace",
   ]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [userPreferences, setUserPreferences] = useState({
     showSellerSection: true,
     showContractorSection: true,
@@ -109,6 +110,41 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [session]);
 
+  // Fetch unread messages count from inquiries
+  useEffect(() => {
+    const fetchUnreadMessages = async () => {
+      try {
+        // Fetch both as seller and buyer to get total unread
+        const [sellerRes, buyerRes] = await Promise.all([
+          fetch("/api/inquiries?role=seller&status=all"),
+          fetch("/api/inquiries?role=buyer&status=all"),
+        ]);
+        
+        let totalUnread = 0;
+        
+        if (sellerRes.ok) {
+          const sellerData = await sellerRes.json();
+          totalUnread += sellerData.unreadCount || 0;
+        }
+        
+        if (buyerRes.ok) {
+          const buyerData = await buyerRes.json();
+          totalUnread += buyerData.unreadCount || 0;
+        }
+        
+        setUnreadMessagesCount(totalUnread);
+      } catch (error) {
+        console.error("Failed to fetch unread messages:", error);
+      }
+    };
+
+    if (session?.user) {
+      fetchUnreadMessages();
+      const interval = setInterval(fetchUnreadMessages, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [session]);
+
   if (status === "loading") {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
@@ -141,8 +177,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       icon: Home,
       items: [
         { label: "Dashboard", href: "/dashboard", icon: Home },
-        { label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: unreadCount > 0 ? String(unreadCount) : undefined },
-        { label: "Notifications", href: "/dashboard/settings", icon: Bell },
+        { label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: unreadMessagesCount > 0 ? String(unreadMessagesCount) : undefined },
+        { label: "Notifications", href: "/dashboard/settings", icon: Bell, badge: unreadCount > 0 ? String(unreadCount) : undefined },
         { label: "Profile", href: "/dashboard/profile", icon: User },
         { label: "Upgrade", href: "/dashboard/upgrade", icon: Crown },
         { label: "Billing", href: "/dashboard/billing", icon: CreditCard },
