@@ -500,10 +500,10 @@ export default async function HomePage() {
                     Browse Contractors
                   </Link>
                   <Link 
-                    href="/contractors/onboard" 
+                    href="/auth/register" 
                     className="inline-flex items-center justify-center h-12 px-7 bg-white border-2 border-navy-900 text-navy-900 text-[15px] font-semibold rounded-xl hover:bg-navy-900 hover:text-white transition-all duration-200"
                   >
-                    Join as Contractor
+                    Sign Up Today
                   </Link>
                 </div>
               </div>

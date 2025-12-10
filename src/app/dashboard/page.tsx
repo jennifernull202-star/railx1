@@ -10,7 +10,10 @@ import Link from 'next/link';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db';
 import Listing from '@/models/Listing';
+import User from '@/models/User';
 import { Types } from 'mongoose';
+
+import WelcomeMessage from '@/components/dashboard/WelcomeMessage';
 
 export const metadata: Metadata = {
   title: 'Dashboard | The Rail Exchange',
@@ -37,13 +40,15 @@ interface RecentListing {
 async function getDashboardData(userId: string): Promise<{
   stats: UserListingStats;
   recentListings: RecentListing[];
+  hasSubscription: boolean;
+  isContractor: boolean;
 }> {
   await connectDB();
 
   const userObjectId = new Types.ObjectId(userId);
 
-  // Get listing stats
-  const [statsResult, recentListings] = await Promise.all([
+  // Get listing stats and user info
+  const [statsResult, recentListings, user] = await Promise.all([
     Listing.aggregate([
       { $match: { sellerId: userObjectId } },
       {
@@ -62,6 +67,7 @@ async function getDashboardData(userId: string): Promise<{
       .sort({ createdAt: -1 })
       .limit(5)
       .lean(),
+    User.findById(userId).select('sellerTier role').lean(),
   ]);
 
   const stats = statsResult[0] || {
@@ -75,6 +81,8 @@ async function getDashboardData(userId: string): Promise<{
   return {
     stats,
     recentListings: recentListings as unknown as RecentListing[],
+    hasSubscription: user?.sellerTier && user.sellerTier !== 'buyer',
+    isContractor: user?.role === 'contractor',
   };
 }
 
@@ -85,10 +93,18 @@ export default async function DashboardPage() {
     return null;
   }
 
-  const { stats, recentListings } = await getDashboardData(session.user.id);
+  const { stats, recentListings, hasSubscription, isContractor } = await getDashboardData(session.user.id);
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Welcome Message for New Users */}
+      <WelcomeMessage
+        userName={session.user.name?.split(' ')[0] || 'there'}
+        hasListings={stats.total > 0}
+        hasSubscription={hasSubscription}
+        isContractor={isContractor}
+      />
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="heading-xl mb-2">Welcome back, {session.user.name?.split(' ')[0] || 'there'}!</h1>
