@@ -349,30 +349,32 @@ export default function ContractorOnboardingPage() {
                     <MapPin className="w-4 h-4 inline mr-2" />
                     Business Address *
                   </label>
-                  <div className="grid grid-cols-3 gap-4">
-                    <input
-                      type="text"
-                      value={form.city}
-                      onChange={(e) => setForm({ ...form, city: e.target.value })}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rail-orange focus:border-rail-orange"
-                      placeholder="City"
-                    />
-                    <select
-                      value={form.state}
-                      onChange={(e) => setForm({ ...form, state: e.target.value })}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rail-orange focus:border-rail-orange"
-                    >
-                      <option value="">State</option>
-                      {US_STATES.map(state => (
-                        <option key={state} value={state}>{state}</option>
-                      ))}
-                    </select>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        value={form.city}
+                        onChange={(e) => setForm({ ...form, city: e.target.value })}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rail-orange focus:border-rail-orange"
+                        placeholder="City *"
+                      />
+                      <select
+                        value={form.state}
+                        onChange={(e) => setForm({ ...form, state: e.target.value })}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rail-orange focus:border-rail-orange"
+                      >
+                        <option value="">Select State *</option>
+                        {US_STATES.map(state => (
+                          <option key={state} value={state}>{state}</option>
+                        ))}
+                      </select>
+                    </div>
                     <input
                       type="text"
                       value={form.zipCode}
                       onChange={(e) => setForm({ ...form, zipCode: e.target.value })}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rail-orange focus:border-rail-orange"
-                      placeholder="ZIP"
+                      className="w-full sm:w-1/3 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rail-orange focus:border-rail-orange"
+                      placeholder="ZIP Code *"
                     />
                   </div>
                 </div>
