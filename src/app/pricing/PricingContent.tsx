@@ -14,7 +14,6 @@ import {
   formatPrice,
   formatAddOnDuration,
 } from '@/config/pricing';
-import PricingCheckoutButton from '@/components/PricingCheckoutButton';
 import SiteHeader from '@/components/SiteHeader';
 import { Check, Zap, Shield, TrendingUp, Crown, Star, Sparkles, FileText } from 'lucide-react';
 
@@ -211,31 +210,16 @@ export default function PricingContent() {
                       ))}
                     </ul>
 
-                    {isLoggedIn ? (
-                      <PricingCheckoutButton
-                        tier={tier.id}
-                        type="seller"
-                        billingPeriod={billingPeriod}
-                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
-                          tier.isPopular 
-                            ? 'bg-rail-orange text-white hover:bg-[#e55f15] shadow-lg shadow-rail-orange/25' 
-                            : 'bg-navy-900 text-white hover:bg-navy-800'
-                        }`}
-                      >
-                        Get Started
-                      </PricingCheckoutButton>
-                    ) : (
-                      <Link
-                        href="/auth/register"
-                        className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
-                          tier.isPopular 
-                            ? 'bg-rail-orange text-white hover:bg-[#e55f15] shadow-lg shadow-rail-orange/25' 
-                            : 'bg-navy-900 text-white hover:bg-navy-800'
-                        }`}
-                      >
-                        Get Started
-                      </Link>
-                    )}
+                    <Link
+                      href="/auth/register"
+                      className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                        tier.isPopular 
+                          ? 'bg-rail-orange text-white hover:bg-[#e55f15] shadow-lg shadow-rail-orange/25' 
+                          : 'bg-navy-900 text-white hover:bg-navy-800'
+                      }`}
+                    >
+                      Get Started
+                    </Link>
                   </div>
                 </div>
               );
@@ -380,31 +364,16 @@ export default function PricingContent() {
                     ))}
                   </ul>
 
-                  {isLoggedIn ? (
-                    <PricingCheckoutButton
-                      tier={tier.id}
-                      type="contractor"
-                      billingPeriod={billingPeriod}
-                      className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
-                        isVerified 
-                          ? 'bg-green-600 text-white hover:bg-green-700' 
-                          : 'bg-slate-100 text-navy-900 hover:bg-slate-200'
-                      }`}
-                    >
-                      {tier.priceMonthly === 0 ? 'Get Started Free' : 'Get Verified'}
-                    </PricingCheckoutButton>
-                  ) : (
-                    <Link
-                      href={tier.priceMonthly === 0 ? '/contractors/onboard' : '/auth/register'}
-                      className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
-                        isVerified 
-                          ? 'bg-green-600 text-white hover:bg-green-700' 
-                          : 'bg-slate-100 text-navy-900 hover:bg-slate-200'
-                      }`}
-                    >
-                      {tier.priceMonthly === 0 ? 'Get Started Free' : 'Get Verified'}
-                    </Link>
-                  )}
+                  <Link
+                    href={tier.priceMonthly === 0 ? '/contractors/onboard' : '/auth/register'}
+                    className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
+                      isVerified 
+                        ? 'bg-green-600 text-white hover:bg-green-700' 
+                        : 'bg-slate-100 text-navy-900 hover:bg-slate-200'
+                    }`}
+                  >
+                    {tier.priceMonthly === 0 ? 'Get Started Free' : 'Get Verified'}
+                  </Link>
                 </div>
               );
             })}
