@@ -44,6 +44,49 @@ export default function AIChatWidget() {
     }
   }, [isOpen]);
 
+  // Handle escalation to human support
+  const handleEscalate = async () => {
+    if (isLoading || messages.length < 2) return;
+    
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          escalate: true,
+        }),
+      });
+
+      const data = await response.json();
+
+      const escalationMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: data.escalated 
+          ? "I've sent your conversation to our support team. They'll review it and get back to you within 24 hours via email. In the meantime, is there anything else I can help you with?"
+          : "I wasn't able to escalate right now. Please email support@therailexchange.com directly or call during business hours.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, escalationMessage]);
+    } catch {
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: "I wasn't able to escalate right now. Please email support@therailexchange.com directly.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -206,6 +249,15 @@ export default function AIChatWidget() {
                 )}
               </button>
             </div>
+            {/* Escalate Button */}
+            <button
+              type="button"
+              onClick={handleEscalate}
+              disabled={isLoading || messages.length < 2}
+              className="w-full mt-2 px-3 py-2 text-xs text-slate-500 hover:text-navy-900 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Need more help? Talk to a human →
+            </button>
           </form>
         </div>
       )}
