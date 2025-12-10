@@ -194,7 +194,8 @@ export default function ContractorOnboardingPage() {
         throw new Error(data.error || `HTTP ${response.status}`);
       }
 
-      router.push(`/contractors/${data.profile._id}`);
+      // Redirect to contractor dashboard after successful registration
+      router.push('/dashboard/contractor');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create profile');
     } finally {
