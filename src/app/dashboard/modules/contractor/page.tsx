@@ -70,9 +70,26 @@ export default function ContractorDashboard() {
     fetchData();
   }, []);
 
-  const handlePurchaseVerification = () => {
-    // Redirect to Stripe checkout for $24/month verification
-    window.location.href = '/api/subscriptions/checkout?plan=contractor-verified';
+  const handlePurchaseVerification = async () => {
+    // Create checkout session for contractor verification
+    try {
+      const response = await fetch('/api/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tier: 'verified',
+          type: 'contractor',
+          billingPeriod: 'monthly',
+        }),
+      });
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+      if (data.url) window.location.href = data.url;
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert(error instanceof Error ? error.message : 'Failed to start checkout');
+    }
   };
 
   const handleManageSubscription = () => {
