@@ -243,8 +243,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error creating checkout session:', error);
+    
+    // Return more detailed error for debugging
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const stripeError = (error as { type?: string; code?: string }).type || (error as { type?: string; code?: string }).code;
+    
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      { 
+        error: 'Failed to create checkout session',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+        stripeError: stripeError || undefined,
+      },
       { status: 500 }
     );
   }
