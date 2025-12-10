@@ -3,12 +3,14 @@
  * 
  * Google Maps wrapper with lazy loading and error handling.
  * Provides base map functionality for contractor and listing maps.
+ * Uses centralized GoogleMapsProvider for script loading.
  */
 
 'use client';
 
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { useGoogleMaps } from '@/components/providers/GoogleMapsProvider';
 
 export interface MapWrapperProps {
   center?: { lat: number; lng: number };
@@ -31,42 +33,9 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
 }) => {
   const mapRef = React.useRef<HTMLDivElement>(null);
   const [map, setMap] = React.useState<google.maps.Map | null>(null);
-  const [isLoaded, setIsLoaded] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const { isLoaded, loadError } = useGoogleMaps();
 
-  // Load Google Maps script
-  React.useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    
-    if (!apiKey) {
-      setError('Google Maps API key not configured');
-      return;
-    }
-
-    // Check if already loaded
-    if (window.google?.maps) {
-      setIsLoaded(true);
-      return;
-    }
-
-    // Check if script is already loading
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-    if (existingScript) {
-      existingScript.addEventListener('load', () => setIsLoaded(true));
-      return;
-    }
-
-    // Load script
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setIsLoaded(true);
-    script.onerror = () => setError('Failed to load Google Maps');
-    document.head.appendChild(script);
-  }, []);
-
-  // Initialize map
+  // Initialize map when script is loaded
   React.useEffect(() => {
     if (!isLoaded || !mapRef.current || map) return;
 
@@ -91,7 +60,6 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       onMapLoad?.(newMap);
     } catch (err) {
       console.error('Map initialization error:', err);
-      setError('Failed to initialize map');
     }
   }, [isLoaded, center, zoom, map, onMapLoad]);
 
@@ -109,7 +77,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
     }
   }, [map, zoom]);
 
-  if (error) {
+  if (loadError) {
     return (
       <div className={cn(
         "flex items-center justify-center bg-surface-secondary rounded-xl border border-surface-border",
@@ -121,7 +89,7 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <p className="text-sm text-text-secondary">{error}</p>
+          <p className="text-sm text-text-secondary">{loadError.message}</p>
         </div>
       </div>
     );

@@ -153,31 +153,41 @@ export default function EditListingPage() {
 
     try {
       for (const file of Array.from(files)) {
-        // Get presigned URL
+        // Get presigned URL with all required fields
         const res = await fetch('/api/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            filename: file.name,
+            fileName: file.name,
             contentType: file.type,
+            fileSize: file.size,
+            folder: 'listings',
+            fileType: 'image',
           }),
         });
 
-        if (!res.ok) throw new Error('Failed to get upload URL');
+        const result = await res.json();
+        if (!res.ok || !result.success) {
+          throw new Error(result.error || 'Failed to get upload URL');
+        }
 
-        const { uploadUrl, fileUrl } = await res.json();
+        const { uploadUrl, fileUrl } = result.data;
 
         // Upload to S3
-        await fetch(uploadUrl, {
+        const uploadRes = await fetch(uploadUrl, {
           method: 'PUT',
           headers: { 'Content-Type': file.type },
           body: file,
         });
 
+        if (!uploadRes.ok) {
+          throw new Error('Failed to upload to S3');
+        }
+
         setImages(prev => [...prev, { url: fileUrl, alt: title || 'Listing image' }]);
       }
-    } catch {
-      setError('Failed to upload image. Please try again.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload image. Please try again.');
     } finally {
       setIsUploading(false);
     }

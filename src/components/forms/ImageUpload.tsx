@@ -31,6 +31,8 @@ export interface ImageUploadProps {
   required?: boolean;
   disabled?: boolean;
   className?: string;
+  folder?: 'contractors' | 'listings' | 'documents' | 'avatars';
+  subfolder?: string;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -45,6 +47,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   required,
   disabled,
   className,
+  folder = 'listings',
+  subfolder,
 }) => {
   const [isDragging, setIsDragging] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
@@ -73,19 +77,31 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
   const uploadFile = async (file: File): Promise<UploadedImage | null> => {
     try {
-      // Get presigned URL
+      // Get presigned URL with all required fields
       const presignRes = await fetch('/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fileName: file.name,
-          fileType: file.type,
+          contentType: file.type,
+          fileSize: file.size,
+          folder,
+          subfolder,
+          fileType: 'image',
         }),
       });
 
-      if (!presignRes.ok) throw new Error('Failed to get upload URL');
+      if (!presignRes.ok) {
+        const errorData = await presignRes.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to get upload URL');
+      }
 
-      const { uploadUrl, fileUrl, key } = await presignRes.json();
+      const result = await presignRes.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to get upload URL');
+      }
+
+      const { uploadUrl, fileUrl, key } = result.data;
 
       // Upload to S3
       const uploadRes = await fetch(uploadUrl, {

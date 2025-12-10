@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import AuthProvider from "@/components/providers/AuthProvider";
+import { GoogleMapsProvider } from "@/components/providers/GoogleMapsProvider";
 import AIChatWidget from "@/components/AIChatWidget";
 
 export const metadata: Metadata = {
@@ -55,12 +56,14 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className="font-sans antialiased bg-surface-primary text-text-primary min-h-screen">
         <AuthProvider>
-          {/* Main Application */}
-          <div className="flex flex-col min-h-screen">
-            {children}
-          </div>
-          {/* AI Chat Widget - Available Site-Wide */}
-          <AIChatWidget />
+          <GoogleMapsProvider>
+            {/* Main Application */}
+            <div className="flex flex-col min-h-screen">
+              {children}
+            </div>
+            {/* AI Chat Widget - Available Site-Wide */}
+            <AIChatWidget />
+          </GoogleMapsProvider>
         </AuthProvider>
       </body>
     </html>

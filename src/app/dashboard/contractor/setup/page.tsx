@@ -506,6 +506,8 @@ export default function ContractorSetupPage() {
                 maxImages={10}
                 acceptedTypes={['image/jpeg', 'image/png', 'application/pdf']}
                 helperText="Upload your insurance certificates, safety certifications, and licenses. PDF and images accepted."
+                folder="contractors"
+                subfolder="documents"
               />
               <div className="p-4 bg-status-info/10 rounded-lg">
                 <p className="text-sm text-status-info">
@@ -524,6 +526,8 @@ export default function ContractorSetupPage() {
                 onChange={(logo) => updateField('logo', logo)}
                 maxImages={1}
                 helperText="Upload your company logo. Square format recommended."
+                folder="contractors"
+                subfolder="logos"
               />
               <ImageUpload
                 label="Portfolio Photos"
@@ -531,6 +535,8 @@ export default function ContractorSetupPage() {
                 onChange={(photos) => updateField('photos', photos)}
                 maxImages={20}
                 helperText="Add photos of your work, equipment, and team."
+                folder="contractors"
+                subfolder="portfolio"
               />
             </div>
           )}

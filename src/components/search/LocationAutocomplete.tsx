@@ -3,12 +3,14 @@
  * 
  * Google Places Autocomplete input for location selection.
  * Returns city, state, coordinates, and formatted address.
+ * Uses centralized GoogleMapsProvider for script loading.
  */
 
 'use client';
 
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { useGoogleMaps } from '@/components/providers/GoogleMapsProvider';
 
 export interface LocationResult {
   formattedAddress: string;
@@ -45,39 +47,8 @@ export default function LocationAutocomplete({
 }: LocationAutocompleteProps) {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const autocompleteRef = React.useRef<google.maps.places.Autocomplete | null>(null);
-  const [isLoaded, setIsLoaded] = React.useState(false);
   const [inputValue, setInputValue] = React.useState(value);
-
-  // Load Google Maps script
-  React.useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    
-    if (!apiKey) {
-      console.warn('Google Maps API key not configured');
-      return;
-    }
-
-    // Check if already loaded
-    if (window.google?.maps?.places) {
-      setIsLoaded(true);
-      return;
-    }
-
-    // Check if script is already loading
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-    if (existingScript) {
-      existingScript.addEventListener('load', () => setIsLoaded(true));
-      return;
-    }
-
-    // Load script
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setIsLoaded(true);
-    document.head.appendChild(script);
-  }, []);
+  const { isLoaded } = useGoogleMaps();
 
   // Initialize autocomplete
   React.useEffect(() => {

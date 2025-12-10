@@ -58,20 +58,37 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
     setUploading(documentType);
     
     try {
-      const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
-      formDataUpload.append('type', 'document');
-
+      // Get presigned URL with all required fields (JSON, not FormData)
       const response = await fetch('/api/upload', {
         method: 'POST',
-        body: formDataUpload,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type,
+          fileSize: file.size,
+          folder: 'contractors',
+          subfolder: 'documents',
+          fileType: 'document',
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error('Upload failed');
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to get upload URL');
       }
 
-      const { url } = await response.json();
+      // Upload to S3
+      const uploadRes = await fetch(result.data.uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error('Upload to storage failed');
+      }
+
+      const url = result.data.fileUrl;
       
       const updatedDocs = formData.documents.filter((d) => d.type !== documentType);
       updatedDocs.push({
@@ -83,7 +100,7 @@ const DocumentsForm: React.FC<DocumentsFormProps> = ({
       onUpdate({ documents: updatedDocs });
     } catch (error) {
       console.error('Upload error:', error);
-      setErrors((prev) => ({ ...prev, [documentType]: 'Upload failed. Please try again.' }));
+      setErrors((prev) => ({ ...prev, [documentType]: error instanceof Error ? error.message : 'Upload failed. Please try again.' }));
     } finally {
       setUploading(null);
     }
