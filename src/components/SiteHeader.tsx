@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ArrowLeft } from 'lucide-react';
 
 interface SiteHeaderProps {
   variant?: 'default' | 'transparent';
@@ -28,9 +28,13 @@ export default function SiteHeader({
 }: SiteHeaderProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isActive = (href: string) => pathname === href;
+  
+  // Don't show back button on homepage
+  const showBackButton = pathname !== '/';
 
   return (
     <header
@@ -42,16 +46,27 @@ export default function SiteHeader({
     >
       <nav className="container-rail">
         <div className="flex items-center justify-between h-[72px]">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-1.5 group">
-            <span className="text-[22px] font-bold text-navy-900 tracking-tight">
-              The Rail
-            </span>
-            <span className="text-[22px] font-bold text-rail-orange tracking-tight">
-              Exchange
-            </span>
-            <span className="text-rail-orange text-[11px] font-semibold -mt-2">™</span>
-          </Link>
+          {/* Back Button + Logo */}
+          <div className="flex items-center gap-3">
+            {showBackButton && (
+              <button
+                onClick={() => router.back()}
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-navy-900 transition-colors"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
+            <Link href="/" className="flex items-center gap-1.5 group">
+              <span className="text-[22px] font-bold text-navy-900 tracking-tight">
+                The Rail
+              </span>
+              <span className="text-[22px] font-bold text-rail-orange tracking-tight">
+                Exchange
+              </span>
+              <span className="text-rail-orange text-[11px] font-semibold -mt-2">™</span>
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-10">

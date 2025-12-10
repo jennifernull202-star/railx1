@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import AIChatWidget from "@/components/AIChatWidget";
 import {
   Home,
   Package,
@@ -26,6 +27,7 @@ import {
   ChevronRight,
   Crown,
   Lock,
+  ArrowLeft,
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -349,11 +351,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
+      {/* Mobile header with back button and menu */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
+        <button
+          onClick={() => window.history.back()}
+          className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <Link href="/" className="flex-1">
+          <span className="text-lg font-bold text-orange-600">RailX</span>
+        </Link>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 bg-white rounded-lg shadow-md"
+          className="p-2 rounded-lg hover:bg-gray-100"
         >
           {sidebarOpen ? (
             <X className="h-6 w-6" />
@@ -363,6 +375,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </button>
       </div>
 
+      {/* Spacer for mobile header */}
+      <div className="lg:hidden h-14" />
+
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-72 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
@@ -370,11 +385,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         } lg:translate-x-0`}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
+          {/* Logo with back button */}
           <div className="p-6 border-b">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl font-bold text-orange-600">RailX</span>
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.history.back()}
+                className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 transition-colors"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <Link href="/" className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-orange-600">RailX</span>
+              </Link>
+            </div>
           </div>
 
           {/* User info */}
@@ -451,6 +475,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <main className="lg:ml-72 min-h-screen">
         <div className="p-6 lg:p-8">{children}</div>
       </main>
+
+      {/* AI Chat Widget */}
+      <AIChatWidget />
     </div>
   );
 }
