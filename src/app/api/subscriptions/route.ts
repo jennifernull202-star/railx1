@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Failed to create checkout session',
-        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+        details: errorMessage, // Show in production temporarily for debugging
         stripeError: stripeError || undefined,
       },
       { status: 500 }
