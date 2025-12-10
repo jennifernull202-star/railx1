@@ -201,12 +201,17 @@ export default async function HomePage() {
           <div className="container-rail max-w-[1280px] mx-auto px-6 md:px-8 py-14 md:py-20 lg:py-24">
             <div className="max-w-4xl mx-auto text-center">
               
-              {/* Premium Badge - Tighter, Refined */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-rail-orange/8 border border-rail-orange/20 rounded-full mb-10">
-                <span className="w-1.5 h-1.5 bg-rail-orange rounded-full animate-pulse" />
-                <span className="text-[13px] font-semibold text-rail-orange tracking-wide">
+              {/* Premium Badge - Eye-catching Navy Design */}
+              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-navy-900 rounded-full mb-10 shadow-lg">
+                <span className="flex items-center justify-center w-5 h-5 bg-rail-orange rounded-full">
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                </span>
+                <span className="text-[14px] font-bold text-white tracking-wide">
                   #1 Rail Industry Marketplace
                 </span>
+                <span className="w-1.5 h-1.5 bg-rail-orange rounded-full animate-pulse" />
               </div>
 
               {/* Headline - Premium Spacing */}
@@ -503,23 +508,44 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              {/* Map Placeholder - Premium Styling */}
+              {/* US Map with Contractor Markers */}
               <div className="relative">
-                <div className="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-50 rounded-2xl overflow-hidden border border-slate-200/60 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
-                      <svg className="w-14 h-14 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                <div className="aspect-[4/3] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200/60 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+                  {/* Static US Map */}
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d12587726.902398996!2d-109.67765073816428!3d39.54883771905045!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x54eab584e432360b%3A0x1c3bb99243deb742!2sUnited%20States!5e0!3m2!1sen!2sus!4v1702123456789!5m2!1sen!2sus"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="absolute inset-0"
+                  />
+                  {/* Overlay with CTA */}
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <Link 
+                      href="/contractors"
+                      className="flex items-center justify-between w-full px-5 py-3 bg-white/95 backdrop-blur rounded-xl shadow-lg hover:bg-white transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-navy-900 rounded-lg flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-[14px] font-semibold text-navy-900">Explore All Contractors</p>
+                          <p className="text-[12px] text-slate-500">Nationwide coverage</p>
+                        </div>
+                      </div>
+                      <svg className="w-5 h-5 text-rail-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                      <p className="text-[14px] text-slate-400 font-medium">
-                        Interactive Map Coming Soon
-                      </p>
-                    </div>
+                    </Link>
                   </div>
                 </div>
-
-
               </div>
             </div>
           </div>
