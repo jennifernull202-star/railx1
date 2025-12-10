@@ -34,7 +34,6 @@ const getStripe = () => {
   if (!key) {
     throw new Error('STRIPE_SECRET_KEY not configured');
   }
-  // @ts-expect-error - Stripe types require specific API version
   return new Stripe(key);
 };
 
