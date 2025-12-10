@@ -225,19 +225,16 @@ export default async function HomePage() {
               <div className="max-w-3xl mx-auto px-4 md:px-0">
                 <HeroSearch />
                 
-                {/* Map CTA */}
+                {/* Map CTA Button */}
                 <div className="mt-6 flex justify-center">
                   <Link 
                     href="/search?view=map" 
-                    className="inline-flex items-center gap-2 text-[14px] font-medium text-slate-600 hover:text-rail-orange transition-colors"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-full text-[14px] font-medium text-navy-900 hover:bg-rail-orange hover:text-white hover:border-rail-orange shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                     </svg>
                     <span>Explore Listings on Map</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
                   </Link>
                 </div>
               </div>
