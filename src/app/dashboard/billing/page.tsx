@@ -74,7 +74,7 @@ export default async function BillingPage() {
                 You&apos;re currently on a free buyer account. Upgrade to start selling!
               </p>
               <Link
-                href="/pricing"
+                href="/dashboard/upgrade"
                 className="btn-primary inline-block"
               >
                 View Plans
@@ -117,7 +117,7 @@ export default async function BillingPage() {
             Need more listings or better visibility? Explore our plans.
           </p>
           <Link
-            href="/pricing"
+            href="/dashboard/upgrade"
             className="btn-secondary inline-block"
           >
             View All Plans

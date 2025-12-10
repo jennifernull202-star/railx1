@@ -56,9 +56,9 @@ export default function WelcomeMessage({
     },
     {
       id: 'seller',
-      title: 'Start Selling',
+      title: 'Want to Upgrade?',
       description: 'Choose a plan to list your equipment',
-      href: '/pricing',
+      href: '/dashboard/upgrade',
       icon: CreditCard,
       completed: hasSubscription,
     },

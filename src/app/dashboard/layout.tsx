@@ -318,7 +318,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <span className="flex-1 text-left">{section.title}</span>
           {isLocked && (
             <Link
-              href={section.requiresSubscription === "seller" ? "/pricing" : "/contractors/onboard"}
+              href={section.requiresSubscription === "seller" ? "/dashboard/upgrade" : "/contractors/onboard"}
               className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full hover:bg-orange-200"
               onClick={(e) => e.stopPropagation()}
             >
@@ -446,7 +446,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="p-4 border-t space-y-2">
             {!hasSellerSubscription && (
               <Link
-                href="/pricing"
+                href="/dashboard/upgrade"
                 className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all"
               >
                 <Crown className="h-4 w-4" />
