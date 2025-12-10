@@ -266,10 +266,10 @@ export default function ConversationPage() {
               </p>
               {inquiry.listing.price && (
                 <p className="text-caption text-text-secondary">
-                  ${typeof inquiry.listing.price === 'object' && inquiry.listing.price.amount 
-                    ? inquiry.listing.price.amount.toLocaleString() 
+                  ${typeof inquiry.listing.price === 'object' && 'amount' in inquiry.listing.price && inquiry.listing.price.amount 
+                    ? Number(inquiry.listing.price.amount).toLocaleString() 
                     : typeof inquiry.listing.price === 'number' 
-                      ? inquiry.listing.price.toLocaleString()
+                      ? Number(inquiry.listing.price).toLocaleString()
                       : 'Contact for price'}
                 </p>
               )}
