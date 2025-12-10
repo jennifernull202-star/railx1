@@ -21,9 +21,7 @@ import {
   ADD_ON_PRICING,
 } from '@/config/pricing';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 interface CartItem {
   type: 'subscription' | 'addon';
