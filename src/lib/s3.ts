@@ -15,7 +15,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // Initialize S3 client
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-1',
+  region: process.env.AWS_REGION || 'us-east-2',
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
@@ -77,17 +77,18 @@ export async function generatePresignedUploadUrl(
   const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
   const key = `${folder}/${timestamp}-${randomId}-${sanitizedFileName}`;
 
-  // Create presigned URL
+  // Create presigned URL with public-read ACL for direct access
   const command = new PutObjectCommand({
     Bucket: BUCKET_NAME,
     Key: key,
     ContentType: contentType,
+    ACL: 'public-read',
   });
 
   const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
 
-  // Construct the public URL
-  const fileUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+  // Construct the public URL (works because ACL is public-read)
+  const fileUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-2'}.amazonaws.com/${key}`;
 
   return {
     uploadUrl,

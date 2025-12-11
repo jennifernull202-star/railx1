@@ -18,7 +18,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 // S3 client initialization
 const getS3Client = () => {
   return new S3Client({
-    region: process.env.AWS_REGION || 'us-east-1',
+    region: process.env.AWS_REGION || 'us-east-2',
     credentials: {
       accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
@@ -446,7 +446,7 @@ export async function POST(request: NextRequest) {
       }));
       
       // Construct the public URL
-      const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com/${key}`;
+      const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-2'}.amazonaws.com/${key}`;
       
       // Update listing with spec sheet info and URL
       await Listing.findByIdAndUpdate(listingId, {
