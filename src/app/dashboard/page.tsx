@@ -257,11 +257,11 @@ export default async function DashboardPage() {
       </div>
 
       {/* Premium Add-ons Promo */}
-      <div className="mt-8 bg-gradient-to-r from-navy-900 to-navy-800 rounded-2xl p-8 text-white">
+      <div className="mt-8 bg-gradient-to-r from-navy-700 to-navy-600 rounded-2xl p-8 text-white">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h2 className="heading-lg mb-2">Boost Your Visibility</h2>
-            <p className="text-body-md text-white/80 max-w-xl">
+            <p className="text-body-md text-white/90 max-w-xl">
               Get more views and inquiries with premium add-ons. Feature your listings, highlight them in search, and generate professional PDF spec sheets.
             </p>
           </div>
