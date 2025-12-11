@@ -129,7 +129,7 @@ export default function AdminISOPage() {
   }, [pagination.page, pagination.limit, categoryFilter, statusFilter]);
 
   useEffect(() => {
-    if (authStatus === 'authenticated' && session?.user?.role === 'admin') {
+    if (authStatus === 'authenticated' && session?.user?.isAdmin) {
       fetchRequests();
     }
   }, [authStatus, session, fetchRequests]);
@@ -198,7 +198,7 @@ export default function AdminISOPage() {
     );
   }
 
-  if (session?.user?.role !== 'admin') {
+  if (!session?.user?.isAdmin) {
     return null;
   }
 

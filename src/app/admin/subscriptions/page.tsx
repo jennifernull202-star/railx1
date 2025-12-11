@@ -62,7 +62,7 @@ export default function AdminSubscriptionsPage() {
 
   // Redirect non-admins
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.role !== "admin") {
+    if (status === "authenticated" && !session?.user?.isAdmin) {
       router.push("/dashboard");
     } else if (status === "unauthenticated") {
       router.push("/auth/login");
@@ -87,7 +87,7 @@ export default function AdminSubscriptionsPage() {
   };
 
   useEffect(() => {
-    if (session?.user?.role === "admin") {
+    if (session?.user?.isAdmin) {
       fetchMetrics();
     }
   }, [session, timeRange]);

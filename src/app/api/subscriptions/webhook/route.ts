@@ -176,10 +176,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
       user.subscriptionCurrentPeriodEnd = currentPeriodEnd;
     }
     
-    // Update role if they were a buyer
-    if (user.role === 'buyer') {
-      user.role = 'seller';
-    }
+    // isSeller is true by default - no role update needed
   } else if (subscriptionType === 'contractor') {
     user.contractorTier = tier as ContractorTierType;
     user.contractorSubscriptionStatus = subscriptionStatus;
@@ -188,10 +185,8 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
       user.subscriptionCurrentPeriodEnd = currentPeriodEnd;
     }
     
-    // Update role if needed
-    if (user.role === 'buyer') {
-      user.role = 'contractor';
-    }
+    // Set isContractor capability flag
+    user.isContractor = true;
     
     // CRITICAL: Update ContractorProfile to activate verified badge
     if (tier === 'verified') {
@@ -223,6 +218,12 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
       tier: tier,
     });
     console.log(`Recorded promo code usage: ${promoCode} for user ${userId}`);
+    
+    // CRITICAL: Set sellerProActive for seller promo checkouts
+    if (subscriptionType === 'seller') {
+      user.sellerProActive = true;
+      console.log(`sellerProActive set to true for user ${userId} via promo code`);
+    }
   }
 
   user.stripeCustomerId = session.customer as string;
@@ -499,10 +500,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     user.sellerSubscriptionStatus = 'canceled';
     user.sellerSubscriptionId = null;
     
-    // Downgrade role if they have no active contractor subscription
-    if (user.role === 'seller' && !user.contractorSubscriptionId) {
-      user.role = 'buyer';
-    }
+    // isSeller remains true - capability based, not subscription based
   } else if (user.contractorSubscriptionId === subscription.id) {
     user.contractorTier = 'free';
     user.contractorSubscriptionStatus = 'canceled';
@@ -521,10 +519,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     );
     console.log(`Contractor verified badge removed for user ${user._id}`);
     
-    // Downgrade role if they have no active seller subscription
-    if (user.role === 'contractor' && !user.sellerSubscriptionId) {
-      user.role = 'buyer';
-    }
+    // isContractor remains true - capability based, not subscription based
   }
 
   user.subscriptionCancelAtPeriodEnd = false;

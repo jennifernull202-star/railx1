@@ -84,9 +84,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Update allowed fields
+    // Update capability flags based on role selection
+    // Legacy role field kept for admin filtering UI
     if (role && ['buyer', 'seller', 'contractor', 'admin'].includes(role)) {
       user.role = role;
+      // Set capability flags
+      user.isAdmin = role === 'admin';
+      user.isContractor = role === 'contractor' || user.isContractor;
+      // isSeller remains true by default
     }
 
     if (typeof isActive === 'boolean') {

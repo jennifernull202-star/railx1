@@ -84,7 +84,7 @@ async function getDashboardData(userId: string): Promise<{
     stats,
     recentListings: recentListings as unknown as RecentListing[],
     hasSubscription: !!(user?.sellerTier && user.sellerTier !== 'buyer'),
-    isContractor: user?.role === 'contractor' || user?.contractorTier === 'verified' || false,
+    isContractor: user?.isContractor || user?.contractorTier === 'verified' || false,
     sellerTier: user?.sellerTier || null,
   };
 }

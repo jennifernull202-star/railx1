@@ -84,9 +84,9 @@ export async function POST(request: NextRequest) {
 
     await profile.save();
 
-    // Update user role to contractor if not already
-    if (session.user.role !== 'contractor') {
-      await User.findByIdAndUpdate(session.user.id, { role: 'contractor' });
+    // Set isContractor capability flag
+    if (!session.user.isContractor) {
+      await User.findByIdAndUpdate(session.user.id, { isContractor: true });
     }
 
     return NextResponse.json(

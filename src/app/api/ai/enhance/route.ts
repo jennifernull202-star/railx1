@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       // Verify ownership
       if (
         existingListing.sellerId.toString() !== session.user.id &&
-        session.user.role !== 'admin'
+        !session.user.isAdmin
       ) {
         return NextResponse.json(
           { error: 'Not authorized to enhance this listing' },
@@ -220,7 +220,7 @@ export async function PUT(request: NextRequest) {
     // Verify ownership
     if (
       listing.sellerId.toString() !== session.user.id &&
-      session.user.role !== 'admin'
+      !session.user.isAdmin
     ) {
       return NextResponse.json(
         { error: 'Not authorized to update this listing' },

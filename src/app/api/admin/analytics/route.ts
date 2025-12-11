@@ -11,7 +11,7 @@ import AddOnPurchase from '@/models/AddOnPurchase';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || session.user.role !== 'admin') {
+    if (!session?.user || !session.user.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

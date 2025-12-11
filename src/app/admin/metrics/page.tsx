@@ -71,7 +71,7 @@ export default function AdminMetricsPage() {
 
   // Redirect non-admins
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.role !== "admin") {
+    if (status === "authenticated" && !session?.user?.isAdmin) {
       router.push("/dashboard");
     } else if (status === "unauthenticated") {
       router.push("/auth/login");
@@ -96,7 +96,7 @@ export default function AdminMetricsPage() {
   };
 
   useEffect(() => {
-    if (session?.user?.role === "admin") {
+    if (session?.user?.isAdmin) {
       fetchMetrics();
       // Auto-refresh every 30 seconds
       const interval = setInterval(() => fetchMetrics(), 30000);

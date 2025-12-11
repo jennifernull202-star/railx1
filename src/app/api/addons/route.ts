@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (listing.sellerId.toString() !== session.user.id && session.user.role !== 'admin') {
+      if (listing.sellerId.toString() !== session.user.id && !session.user.isAdmin) {
         return NextResponse.json(
           { error: 'Not authorized to purchase add-ons for this listing' },
           { status: 403 }

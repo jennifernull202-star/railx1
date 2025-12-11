@@ -163,10 +163,7 @@ export async function POST(request: NextRequest) {
       if (type === 'seller') {
         user.sellerTier = tier;
         user.sellerSubscriptionStatus = null;
-        // Also update role if they were a buyer
-        if (user.role === 'buyer') {
-          user.role = 'seller';
-        }
+        // isSeller is already true by default
       } else {
         user.contractorTier = tier;
         user.contractorSubscriptionStatus = null;

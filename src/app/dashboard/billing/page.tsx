@@ -34,8 +34,8 @@ export default async function BillingPage() {
   }
 
   const hasStripeCustomer = !!user.stripeCustomerId;
-  const isSeller = user.role === 'seller';
-  const isContractor = user.role === 'contractor';
+  const isSeller = user.isSeller;
+  const isContractor = user.isContractor;
 
   return (
     <div className="max-w-4xl mx-auto">

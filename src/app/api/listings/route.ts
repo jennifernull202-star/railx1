@@ -334,7 +334,7 @@ export async function POST(request: NextRequest) {
       condition: body.condition,
       status: body.status || 'draft',
       sellerId: session.user.id,
-      sellerType: session.user.role === 'contractor' ? 'contractor' : 'individual',
+      sellerType: session.user.isContractor ? 'contractor' : 'individual',
       price: body.price || { type: 'contact', currency: 'USD' },
       location: {
         city: body.location.city,

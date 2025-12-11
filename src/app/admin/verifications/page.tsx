@@ -136,7 +136,7 @@ export default function AdminVerificationsPage() {
     );
   }
 
-  if (session?.user?.role !== 'admin') {
+  if (!session?.user?.isAdmin) {
     return null;
   }
 

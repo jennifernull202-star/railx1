@@ -33,6 +33,9 @@ interface UserDetail {
   email: string;
   role: 'buyer' | 'seller' | 'contractor' | 'admin';
   isActive: boolean;
+  isSeller?: boolean;
+  isContractor?: boolean;
+  isAdmin?: boolean;
   createdAt: string;
   updatedAt: string;
   sellerTier?: string;
@@ -277,7 +280,7 @@ export default function AdminUserDetailPage() {
         {/* Details Grid */}
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Subscription Info */}
-          {(user.role === 'seller' || user.sellerTier) && (
+          {(user.isSeller || user.sellerTier) && (
             <div className="space-y-3">
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-purple-600" />

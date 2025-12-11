@@ -22,7 +22,7 @@ async function makeAdmin() {
 
     const result = await mongoose.connection.db.collection('users').findOneAndUpdate(
       { email: email.toLowerCase() },
-      { $set: { role: 'admin' } },
+      { $set: { role: 'admin', isAdmin: true } },
       { returnDocument: 'after' }
     );
 
@@ -31,7 +31,8 @@ async function makeAdmin() {
       console.log('User:', {
         email: result.email,
         name: result.name,
-        role: result.role
+        role: result.role,
+        isAdmin: result.isAdmin
       });
     } else {
       console.log(`❌ User with email ${email} not found`);

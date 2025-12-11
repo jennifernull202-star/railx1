@@ -99,7 +99,7 @@ export default function AdminUsersPage() {
   }, [pagination.page, pagination.limit, search, roleFilter]);
 
   useEffect(() => {
-    if (session?.user?.role === 'admin') {
+    if (session?.user?.isAdmin) {
       fetchUsers();
     }
   }, [fetchUsers, session]);
@@ -146,7 +146,7 @@ export default function AdminUsersPage() {
     });
   };
 
-  if (status === 'loading' || (status === 'authenticated' && session?.user?.role !== 'admin')) {
+  if (status === 'loading' || (status === 'authenticated' && !session?.user?.isAdmin)) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" />

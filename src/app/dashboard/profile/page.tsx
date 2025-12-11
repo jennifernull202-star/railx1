@@ -59,7 +59,7 @@ export default async function ContractorProfilePage() {
     redirect('/auth/login');
   }
 
-  if (session.user.role !== 'contractor') {
+  if (!session.user.isContractor) {
     redirect('/dashboard');
   }
 
