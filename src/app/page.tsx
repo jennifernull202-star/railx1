@@ -8,6 +8,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import HeroSearch from "@/components/HeroSearch";
+import SiteHeader from "@/components/SiteHeader";
 import { getImageUrl } from "@/lib/utils";
 import { FeaturedListingPromoCard } from "@/components/cards";
 import connectDB from "@/lib/db";
@@ -134,67 +135,8 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Navigation - Premium Glass Effect */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-2xl border-b border-slate-100">
-        <nav className="container-rail">
-          <div className="flex items-center justify-between h-[72px]">
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-1.5 group">
-              <span className="text-[22px] font-bold text-navy-900 tracking-tight">
-                The Rail
-              </span>
-              <span className="text-[22px] font-bold text-rail-orange tracking-tight">
-                Exchange
-              </span>
-              <span className="text-rail-orange text-[11px] font-semibold -mt-2">™</span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-10">
-              <Link
-                href="/listings"
-                className="text-[15px] font-medium text-slate-600 hover:text-navy-900 transition-colors duration-200"
-              >
-                Marketplace
-              </Link>
-              <Link
-                href="/contractors"
-                className="text-[15px] font-medium text-slate-600 hover:text-navy-900 transition-colors duration-200"
-              >
-                Contractors
-              </Link>
-              <Link
-                href="/how-it-works"
-                className="text-[15px] font-medium text-slate-600 hover:text-navy-900 transition-colors duration-200"
-              >
-                How It Works
-              </Link>
-              <Link
-                href="/pricing"
-                className="text-[15px] font-medium text-slate-600 hover:text-navy-900 transition-colors duration-200"
-              >
-                Pricing
-              </Link>
-            </div>
-
-            {/* Auth Buttons */}
-            <div className="flex items-center gap-5">
-              <Link
-                href="/auth/login"
-                className="hidden sm:inline-flex text-[15px] font-medium text-navy-900 hover:text-rail-orange transition-colors duration-200"
-              >
-                Sign In
-              </Link>
-              <Link 
-                href="/auth/register" 
-                className="inline-flex items-center justify-center h-10 px-5 bg-rail-orange text-white text-[14px] font-semibold rounded-[10px] shadow-sm hover:bg-[#e55f15] hover:shadow-md transition-all duration-200"
-              >
-                Get Started
-              </Link>
-            </div>
-          </div>
-        </nav>
-      </header>
+      {/* Navigation with Mobile Menu */}
+      <SiteHeader showCTA={false} />
 
       <main className="flex-1">
         {/* Hero Section - Premium Gradient */}
