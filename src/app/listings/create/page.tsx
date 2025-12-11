@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getImageUrl } from '@/lib/utils';
 import { LISTING_CATEGORIES, LISTING_CONDITIONS } from '@/lib/listing-constants';
 import { US_STATES } from '@/lib/constants';
 import LocationAutocomplete, { LocationResult } from '@/components/search/LocationAutocomplete';
@@ -841,7 +842,7 @@ export default function CreateListingPage() {
                   {media.length > 0 && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={media.find(m => m.isPrimary)?.url || media[0].url}
+                      src={getImageUrl(media.find(m => m.isPrimary)?.url || media[0].url)}
                       alt={formData.title}
                       className="w-full h-64 object-cover"
                     />

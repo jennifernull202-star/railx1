@@ -11,6 +11,7 @@ import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/utils';
 
 interface InquiryUser {
   _id: string;
@@ -247,7 +248,7 @@ export default function ConversationPage() {
             <div className="relative w-12 h-12 bg-white rounded-lg overflow-hidden flex-shrink-0">
               {inquiry.listing.images?.[0] ? (
                 <Image
-                  src={inquiry.listing.images[0].url}
+                  src={getImageUrl(inquiry.listing.images[0].url)}
                   alt={inquiry.listing.title}
                   fill
                   className="object-cover"

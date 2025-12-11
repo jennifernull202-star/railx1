@@ -8,6 +8,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import HeroSearch from "@/components/HeroSearch";
+import { getImageUrl } from "@/lib/utils";
 import { FeaturedListingPromoCard } from "@/components/cards";
 import connectDB from "@/lib/db";
 import Listing from "@/models/Listing";
@@ -378,7 +379,7 @@ export default async function HomePage() {
                     <div className="aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-50 relative overflow-hidden">
                       {listing.images?.[0]?.url ? (
                         <Image
-                          src={listing.images[0].url}
+                          src={getImageUrl(listing.images[0].url)}
                           alt={listing.images[0].alt || listing.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"

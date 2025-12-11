@@ -9,7 +9,7 @@
 
 import * as React from 'react';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
+import { cn, getImageUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
 export interface UploadedImage {
@@ -266,7 +266,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               )}
             >
               <Image
-                src={image.url}
+                src={getImageUrl(image.url)}
                 alt={image.alt || `Image ${index + 1}`}
                 fill
                 className="object-cover"

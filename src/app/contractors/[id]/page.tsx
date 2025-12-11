@@ -7,6 +7,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getImageUrl } from '@/lib/utils';
 import connectDB from '@/lib/db';
 import ContractorProfile from '@/models/ContractorProfile';
 import { SERVICE_CATEGORIES } from '@/lib/constants';
@@ -77,7 +78,7 @@ export default async function ContractorProfilePage({ params }: PageProps) {
           {contractor.coverImage && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={contractor.coverImage}
+              src={getImageUrl(contractor.coverImage)}
               alt={`${contractor.businessName} cover`}
               className="w-full h-full object-cover opacity-50"
             />
@@ -95,7 +96,7 @@ export default async function ContractorProfilePage({ params }: PageProps) {
                     {contractor.logo ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={contractor.logo}
+                        src={getImageUrl(contractor.logo)}
                         alt={contractor.businessName}
                         className="w-full h-full object-cover"
                       />

@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, DragEvent } from 'react';
 import Image from 'next/image';
 import { Upload, X, GripVertical, Star, Loader2, ImageIcon, AlertCircle, CheckCircle } from 'lucide-react';
+import { getImageUrl } from '@/lib/utils';
 
 // #11 fix: Concurrency limiter for uploads (prevents browser overload)
 async function asyncPool<T, R>(
@@ -434,7 +435,7 @@ export default function BulkPhotoUpload({
                 {/* Image */}
                 {image.url && !image.error && (
                   <Image
-                    src={image.url}
+                    src={getImageUrl(image.url)}
                     alt={`Upload ${index + 1}`}
                     fill
                     className="object-cover"

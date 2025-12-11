@@ -8,6 +8,7 @@
 
 import * as React from 'react';
 import { useSession } from 'next-auth/react';
+import { getImageUrl } from '@/lib/utils';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -225,7 +226,7 @@ export default function SellerDashboard() {
                     <div className="w-16 h-12 bg-surface-secondary rounded overflow-hidden flex-shrink-0">
                       {listing.images?.[0] ? (
                         <img
-                          src={listing.images[0]}
+                          src={getImageUrl(listing.images[0])}
                           alt={listing.title}
                           className="w-full h-full object-cover"
                         />

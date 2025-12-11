@@ -8,6 +8,7 @@ import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import Link from 'next/link';
 import { authOptions } from '@/lib/auth';
+import { getImageUrl } from '@/lib/utils';
 import connectDB from '@/lib/db';
 import WatchlistItem from '@/models/WatchlistItem';
 import SavedSearch from '@/models/SavedSearch';
@@ -125,7 +126,7 @@ export default async function SavedPage() {
                     {listing.media?.[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img 
-                        src={listing.media[0].url} 
+                        src={getImageUrl(listing.media[0].url)} 
                         alt={listing.title}
                         className="w-full h-full object-cover"
                       />

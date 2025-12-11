@@ -7,7 +7,7 @@
 'use client';
 
 import * as React from 'react';
-import { cn } from '@/lib/utils';
+import { cn, getImageUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -111,7 +111,7 @@ const NewMessageComposer: React.FC<NewMessageComposerProps> = ({
               {listing.images?.[0] && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={listing.images[0].url}
+                  src={getImageUrl(listing.images[0].url)}
                   alt={listing.title}
                   className="w-12 h-12 rounded-lg object-cover"
                 />

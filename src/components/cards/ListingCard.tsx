@@ -10,7 +10,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
+import { cn, getImageUrl } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -96,14 +96,16 @@ const ListingCard: React.FC<ListingCardProps> = ({
       ? `/listings/${slug}` 
       : `/listings/${id}`;
   
-  // Handle multiple image formats
-  let imageUrl = '/placeholders/listing-no-image.png';
+  // Handle multiple image formats and convert S3 URLs to proxy URLs
+  let rawImageUrl = '/placeholders/listing-no-image.png';
   if (image) {
-    imageUrl = image;
+    rawImageUrl = image;
   } else if (images && images.length > 0) {
     const firstImage = images[0];
-    imageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url || imageUrl;
+    rawImageUrl = typeof firstImage === 'string' ? firstImage : firstImage?.url || rawImageUrl;
   }
+  // Convert S3 URLs to proxy URLs
+  const imageUrl = getImageUrl(rawImageUrl);
   
   // Handle location formats
   const locationStr = typeof location === 'string' 

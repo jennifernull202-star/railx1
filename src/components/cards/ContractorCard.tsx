@@ -10,7 +10,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
+import { cn, getImageUrl } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,7 +75,7 @@ const ContractorCard: React.FC<ContractorCardProps> = ({
             )}>
               {logo ? (
                 <Image
-                  src={logo}
+                  src={getImageUrl(logo)}
                   alt={businessName}
                   width={64}
                   height={64}

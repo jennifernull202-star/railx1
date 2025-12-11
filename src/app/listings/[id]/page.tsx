@@ -7,6 +7,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getImageUrl } from '@/lib/utils';
 import connectDB from '@/lib/db';
 import Listing from '@/models/Listing';
 import mongoose from 'mongoose';
@@ -249,7 +250,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
                   {primaryImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={primaryImage.url}
+                      src={getImageUrl(primaryImage.url)}
                       alt={listing.title}
                       className="w-full h-full object-contain"
                     />
@@ -325,7 +326,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={img.url}
+                            src={getImageUrl(img.url)}
                             alt={`${listing.title} ${index + 1}`}
                             className="w-full h-full object-cover"
                           />

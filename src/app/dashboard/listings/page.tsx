@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/utils';
 import { EQUIPMENT_TYPES } from '@/lib/constants';
 
 interface Listing {
@@ -306,7 +307,7 @@ export default function MyListingsPage() {
                     <div className="relative w-20 h-20 bg-surface-secondary rounded-lg overflow-hidden flex-shrink-0">
                       {listing.images[0] ? (
                         <Image
-                          src={listing.images[0].url}
+                          src={getImageUrl(listing.images[0].url)}
                           alt={listing.images[0].alt || listing.title}
                           fill
                           className="object-cover"

@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/utils';
 
 interface InquiryListing {
   _id: string;
@@ -218,7 +219,7 @@ export default function InboxPage() {
                     <div className="relative w-14 h-14 bg-surface-secondary rounded-lg overflow-hidden flex-shrink-0">
                       {inquiry.listing.images?.[0] ? (
                         <Image
-                          src={inquiry.listing.images[0].url}
+                          src={getImageUrl(inquiry.listing.images[0].url)}
                           alt={inquiry.listing.title}
                           fill
                           className="object-cover"

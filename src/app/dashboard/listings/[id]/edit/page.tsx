@@ -13,6 +13,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { EQUIPMENT_TYPES, US_STATES, CONDITIONS } from '@/lib/constants';
+import { getImageUrl } from '@/lib/utils';
 
 interface ListingImage {
   url: string;
@@ -496,7 +497,7 @@ export default function EditListingPage() {
                   <div key={index} className="relative group">
                     <div className="aspect-square bg-surface-secondary rounded-xl overflow-hidden">
                       <Image
-                        src={image.url}
+                        src={getImageUrl(image.url)}
                         alt={image.alt}
                         fill
                         className="object-cover"
