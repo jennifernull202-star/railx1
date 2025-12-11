@@ -21,6 +21,11 @@ const nextConfig = {
         hostname: '*.amazonaws.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.therailexchange.com',
+        pathname: '/api/s3-image/**',
+      },
     ],
   },
 };

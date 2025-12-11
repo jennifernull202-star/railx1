@@ -141,11 +141,33 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     return;
   }
 
+  // Get the actual subscription from Stripe to check trial status
+  const stripe = getStripe();
+  let subscriptionStatus: SubscriptionStatusType = 'active';
+  let currentPeriodEnd: Date | null = null;
+  
+  if (session.subscription) {
+    try {
+      const stripeSubscription = await stripe.subscriptions.retrieve(session.subscription as string) as Stripe.Subscription;
+      subscriptionStatus = mapStripeStatus(stripeSubscription.status);
+      // Get current_period_end from the first subscription item
+      if (stripeSubscription.items?.data?.[0]?.current_period_end) {
+        currentPeriodEnd = new Date(stripeSubscription.items.data[0].current_period_end * 1000);
+      }
+      console.log(`Subscription ${session.subscription} status from Stripe: ${stripeSubscription.status} -> ${subscriptionStatus}`);
+    } catch (err) {
+      console.error('Failed to retrieve subscription from Stripe:', err);
+    }
+  }
+
   // Update user's subscription info
   if (subscriptionType === 'seller') {
     user.sellerTier = tier as SellerTierType;
-    user.sellerSubscriptionStatus = 'active';
+    user.sellerSubscriptionStatus = subscriptionStatus;
     user.sellerSubscriptionId = session.subscription as string;
+    if (currentPeriodEnd) {
+      user.subscriptionCurrentPeriodEnd = currentPeriodEnd;
+    }
     
     // Update role if they were a buyer
     if (user.role === 'buyer') {
@@ -153,8 +175,11 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     }
   } else if (subscriptionType === 'contractor') {
     user.contractorTier = tier as ContractorTierType;
-    user.contractorSubscriptionStatus = 'active';
+    user.contractorSubscriptionStatus = subscriptionStatus;
     user.contractorSubscriptionId = session.subscription as string;
+    if (currentPeriodEnd) {
+      user.subscriptionCurrentPeriodEnd = currentPeriodEnd;
+    }
     
     // Update role if needed
     if (user.role === 'buyer') {

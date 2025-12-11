@@ -1,8 +1,9 @@
 /**
  * THE RAIL EXCHANGE™ — S3 Image Proxy API
  * 
- * Proxies S3 images using presigned GET URLs.
+ * Proxies S3 images by streaming directly from S3.
  * This allows images to be served even when the bucket blocks public access.
+ * Streams the image directly instead of redirecting for Next.js Image compatibility.
  * 
  * GET /api/s3-image?key=<s3-key>
  */
@@ -21,7 +22,7 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET || process.env.AWS_S3_BUCKET_NAME || 'railexchange-uploads';
 
-// Cache presigned URLs for 1 hour (they expire in 1 hour)
+// Cache presigned URLs for 55 minutes (they expire in 1 hour)
 const urlCache = new Map<string, { url: string; expires: number }>();
 
 export async function GET(request: NextRequest) {
@@ -37,12 +38,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Sanitize key to prevent path traversal
-    const sanitizedKey = key.replace(/\.\./g, '');
+    const sanitizedKey = decodeURIComponent(key).replace(/\.\./g, '');
 
     // Check cache
     const cached = urlCache.get(sanitizedKey);
     if (cached && cached.expires > Date.now()) {
-      return NextResponse.redirect(cached.url);
+      // Fetch the image and return it directly (no redirect)
+      const imageResponse = await fetch(cached.url);
+      const imageBuffer = await imageResponse.arrayBuffer();
+      return new Response(imageBuffer, {
+        status: 200,
+        headers: {
+          'Content-Type': imageResponse.headers.get('Content-Type') || 'image/jpeg',
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
     }
 
     // Generate presigned URL
@@ -51,21 +61,41 @@ export async function GET(request: NextRequest) {
       Key: sanitizedKey,
     });
 
-    const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
+    const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
 
     // Cache the URL
     urlCache.set(sanitizedKey, {
       url: presignedUrl,
-      expires: Date.now() + 50 * 60 * 1000, // Cache for 50 minutes
+      expires: Date.now() + 55 * 60 * 1000, // 55 minutes
     });
 
-    // Redirect to the presigned URL
-    return NextResponse.redirect(presignedUrl);
+    // Clean old cache entries periodically
+    if (urlCache.size > 500) {
+      const now = Date.now();
+      const keysToDelete: string[] = [];
+      urlCache.forEach((value, cacheKey) => {
+        if (value.expires < now) {
+          keysToDelete.push(cacheKey);
+        }
+      });
+      keysToDelete.forEach(k => urlCache.delete(k));
+    }
+
+    // Fetch the image and return it directly (no redirect for Next.js Image compatibility)
+    const imageResponse = await fetch(presignedUrl);
+    const imageBuffer = await imageResponse.arrayBuffer();
+    
+    return new Response(imageBuffer, {
+      status: 200,
+      headers: {
+        'Content-Type': imageResponse.headers.get('Content-Type') || 'image/jpeg',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
+    });
   } catch (error) {
     console.error('S3 image proxy error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch image' },
-      { status: 500 }
-    );
+    
+    // Return a placeholder for missing images
+    return NextResponse.redirect(new URL('/placeholders/listing-no-image.png', request.url));
   }
 }
