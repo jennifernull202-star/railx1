@@ -139,13 +139,19 @@ export default async function HomePage() {
       <SiteHeader showCTA={false} />
 
       <main className="flex-1">
-        {/* Hero Section - Premium Gradient */}
-        <section className="relative bg-gradient-to-b from-slate-50/80 via-white to-white overflow-hidden">
-          <div className="container-rail max-w-[1280px] mx-auto px-6 md:px-8 py-14 md:py-20 lg:py-24">
+        {/* Hero Section - Premium Background Image */}
+        <section 
+          className="relative bg-cover bg-center bg-no-repeat h-[85vh] overflow-hidden"
+          style={{ backgroundImage: "url('/hero-rail.jpg')" }}
+        >
+          {/* Dark + Frosted Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/30 backdrop-blur-sm z-10" />
+          
+          <div className="relative z-20 container-rail max-w-[1280px] mx-auto px-6 md:px-8 py-14 md:py-20 lg:py-24 h-full flex items-center">
             <div className="max-w-4xl mx-auto text-center">
               
               {/* Premium Badge - Eye-catching Navy Design */}
-              <div className="inline-flex items-center gap-2.5 px-5 py-2.5 bg-navy-900 rounded-full mb-10 shadow-lg">
+              <div className="relative z-20 inline-flex items-center gap-2.5 px-5 py-2.5 bg-navy-900 rounded-full mb-10 shadow-lg">
                 <span className="flex items-center justify-center w-5 h-5 bg-rail-orange rounded-full">
                   <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -158,26 +164,26 @@ export default async function HomePage() {
               </div>
 
               {/* Headline - Premium Spacing */}
-              <h1 className="text-[36px] md:text-[48px] lg:text-[56px] font-bold text-navy-900 leading-[1.1] tracking-tight mb-7">
+              <h1 className="relative z-20 text-[36px] md:text-[48px] lg:text-[56px] font-bold text-white leading-[1.1] tracking-tight mb-7">
                 Buy, Sell & Connect in the{" "}
                 <span className="text-rail-orange">Rail Industry</span>
               </h1>
 
               {/* Subheadline */}
-              <p className="text-[17px] md:text-[19px] text-slate-500 max-w-2xl mx-auto mb-12 leading-relaxed">
+              <p className="relative z-20 text-[17px] md:text-[19px] text-white/90 max-w-2xl mx-auto mb-12 leading-relaxed">
                 The premium marketplace for rail equipment, materials, services, and
                 verified contractors. Trusted by industry professionals nationwide.
               </p>
 
               {/* Search Module - Perfectly Centered */}
-              <div className="max-w-3xl mx-auto px-4 md:px-0">
+              <div className="relative z-20 max-w-3xl mx-auto px-4 md:px-0">
                 <HeroSearch />
                 
                 {/* Map CTA Button */}
                 <div className="mt-6 flex justify-center">
                   <Link 
                     href="/search?view=map" 
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-full text-[14px] font-medium text-navy-900 hover:bg-rail-orange hover:text-white hover:border-rail-orange shadow-sm hover:shadow-md transition-all duration-200"
+                    className="relative z-20 inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-full text-[14px] font-medium text-navy-900 hover:bg-rail-orange hover:text-white hover:border-rail-orange shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -188,10 +194,6 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
-
-          {/* Subtle Background Accents */}
-          <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-rail-orange/[0.02] to-transparent pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-1/3 h-1/2 bg-gradient-to-tr from-slate-100/50 to-transparent pointer-events-none" />
         </section>
 
         {/* Section Separator */}
