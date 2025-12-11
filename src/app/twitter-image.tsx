@@ -130,6 +130,8 @@ export default async function TwitterImage() {
               lineHeight: 1.1,
               marginBottom: '24px',
               maxWidth: '900px',
+              textAlign: 'center',
+              width: '100%',
             }}
           >
             Buy, Sell & Connect in the{' '}
@@ -143,6 +145,8 @@ export default async function TwitterImage() {
               color: 'rgba(255,255,255,0.9)',
               maxWidth: '700px',
               lineHeight: 1.5,
+              textAlign: 'center',
+              width: '100%',
             }}
           >
             The premium marketplace for rail equipment, materials, services, and
