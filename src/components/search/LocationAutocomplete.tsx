@@ -15,9 +15,6 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { useGoogleMaps } from '@/components/providers/GoogleMapsProvider';
 
-// Import the PlacePicker component
-import '@googlemaps/extended-component-library/place_picker.js';
-
 export interface LocationResult {
   formattedAddress: string;
   city: string;
@@ -70,7 +67,17 @@ export default function LocationAutocomplete({
   const containerRef = React.useRef<HTMLDivElement>(null);
   const pickerRef = React.useRef<PlacePickerElement | null>(null);
   const [inputValue, setInputValue] = React.useState(value);
+  const [pickerLoaded, setPickerLoaded] = React.useState(false);
   const { isLoaded, apiKey } = useGoogleMaps();
+
+  // Dynamically import the PlacePicker component (browser only)
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && apiKey) {
+      import('@googlemaps/extended-component-library/place_picker.js')
+        .then(() => setPickerLoaded(true))
+        .catch((err) => console.error('Failed to load PlacePicker:', err));
+    }
+  }, [apiKey]);
 
   // Store callbacks in refs to avoid stale closures
   const onChangeRef = React.useRef(onChange);
@@ -167,7 +174,7 @@ export default function LocationAutocomplete({
   // Set up event listener on PlacePicker
   React.useEffect(() => {
     const container = containerRef.current;
-    if (!container || !apiKey) return;
+    if (!container || !apiKey || !pickerLoaded) return;
 
     // Find or wait for the place-picker element
     const setupPicker = () => {
@@ -198,7 +205,7 @@ export default function LocationAutocomplete({
         pickerRef.current.removeEventListener('gmpx-placechange', handlePlaceChange);
       }
     };
-  }, [apiKey, handlePlaceChange]);
+  }, [apiKey, pickerLoaded, handlePlaceChange]);
 
   // Sync external value changes
   React.useEffect(() => {
@@ -235,7 +242,7 @@ export default function LocationAutocomplete({
   }
 
   return (
-    <div ref={containerRef} className={cn('relative location-autocomplete-wrapper', className)}>
+    <div ref={containerRef} className={cn('relative location-autocomplete-wrapper', disabled ? 'disabled' : '', className)}>
       <style jsx global>{`
         .location-autocomplete-wrapper gmpx-place-picker {
           --gmpx-color-surface: rgb(248 250 252 / 0.8);
@@ -262,13 +269,26 @@ export default function LocationAutocomplete({
         }
       `}</style>
       
-      <gmpx-place-picker
-        placeholder={placeholder}
-        country={countryAttr}
-        type={pickerType}
-      />
+      {/* Only render PlacePicker after dynamic import completes */}
+      {pickerLoaded ? (
+        <gmpx-place-picker
+          placeholder={placeholder}
+          country={countryAttr}
+          type={pickerType}
+        />
+      ) : (
+        <input
+          type="text"
+          placeholder={placeholder}
+          disabled
+          className={cn(
+            'w-full px-4 py-3 bg-slate-50/80 rounded-xl text-[15px] text-navy-900 placeholder:text-slate-400',
+            inputClassName
+          )}
+        />
+      )}
       
-      {!isLoaded && (
+      {(!isLoaded || !pickerLoaded) && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
           <div className="w-4 h-4 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin" />
         </div>

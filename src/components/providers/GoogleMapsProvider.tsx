@@ -11,9 +11,6 @@
 
 import * as React from 'react';
 
-// Import the API Loader component from extended library
-import '@googlemaps/extended-component-library/api_loader.js';
-
 interface GoogleMapsContextType {
   isLoaded: boolean;
   loadError: Error | null;
@@ -41,9 +38,21 @@ interface GoogleMapsProviderProps {
 export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [loadError, setLoadError] = React.useState<Error | null>(null);
+  const [eclLoaded, setEclLoaded] = React.useState(false);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || null;
 
+  // Dynamically import the Extended Component Library (browser only)
   React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('@googlemaps/extended-component-library/api_loader.js')
+        .then(() => setEclLoaded(true))
+        .catch((err) => setLoadError(err));
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!eclLoaded) return;
+    
     if (!apiKey) {
       setLoadError(new Error('Google Maps API key not configured'));
       return;
@@ -70,7 +79,7 @@ export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
 
     // Cleanup
     return () => clearInterval(interval);
-  }, [apiKey]);
+  }, [apiKey, eclLoaded]);
 
   // Ref for the API loader element
   const loaderRef = React.useRef<HTMLElement | null>(null);
@@ -80,7 +89,7 @@ export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
     if (loaderRef.current && apiKey) {
       loaderRef.current.setAttribute('key', apiKey);
     }
-  }, [apiKey]);
+  }, [apiKey, eclLoaded]);
 
   const value = React.useMemo(
     () => ({ isLoaded, loadError, apiKey }),
@@ -89,8 +98,8 @@ export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
 
   return (
     <GoogleMapsContext.Provider value={value}>
-      {/* The gmpx-api-loader element handles API loading */}
-      {apiKey && (
+      {/* The gmpx-api-loader element handles API loading - only render after ECL import */}
+      {eclLoaded && apiKey && (
         <gmpx-api-loader
           ref={loaderRef as React.RefObject<HTMLElement>}
           solution-channel="GMP_EXTENDED_COMPONENT_V0"
