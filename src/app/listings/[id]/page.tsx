@@ -22,6 +22,8 @@ interface PopulatedSeller {
   name: string;
   email: string;
   image?: string;
+  paypalEmail?: string;
+  paypalVerified?: boolean;
 }
 
 interface ListingData {
@@ -179,7 +181,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
   const listing = await Listing.findOne(
     isObjectId ? { _id: id } : { slug: id }
   )
-    .populate('sellerId', 'name email image')
+    .populate('sellerId', 'name email image paypalEmail paypalVerified')
     .lean() as ListingData | null;
 
   if (!listing || listing.status !== 'active') {
@@ -550,6 +552,31 @@ export default async function ListingDetailPage({ params }: PageProps) {
                   >
                     View Seller Profile →
                   </a>
+                  
+                  {/* PayPal Invoice Option */}
+                  {listing.sellerId.paypalEmail && listing.sellerId.paypalVerified && (
+                    <div className="mt-4 pt-4 border-t border-surface-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 bg-[#003087] rounded flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">PP</span>
+                        </div>
+                        <span className="text-body-sm font-medium text-navy-900">
+                          Pay with PayPal (Invoice Only)
+                        </span>
+                      </div>
+                      <p className="text-xs text-text-tertiary mb-3">
+                        This PayPal email is provided directly by the seller. 
+                        The Rail Exchange does not handle or guarantee payments.
+                      </p>
+                      <ContactSellerForm 
+                        listingId={listing._id} 
+                        listingTitle={listing.title}
+                        sellerName={listing.sellerId.name}
+                        isPaypalRequest={true}
+                        paypalEmail={listing.sellerId.paypalEmail}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Stats */}

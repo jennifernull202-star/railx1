@@ -15,12 +15,16 @@ interface ContactSellerFormProps {
   listingId: string;
   listingTitle: string;
   sellerName: string;
+  isPaypalRequest?: boolean;
+  paypalEmail?: string;
 }
 
 export default function ContactSellerForm({
   listingId,
   listingTitle,
   sellerName,
+  isPaypalRequest = false,
+  paypalEmail,
 }: ContactSellerFormProps) {
   const { data: session, status } = useSession();
   const [message, setMessage] = useState('');
@@ -40,13 +44,21 @@ export default function ContactSellerForm({
     setError('');
 
     try {
+      const subject = isPaypalRequest 
+        ? `PayPal Invoice Request: ${listingTitle}`
+        : `Inquiry about ${listingTitle}`;
+      
+      const fullMessage = isPaypalRequest
+        ? `[PayPal Invoice Request]\nSeller PayPal: ${paypalEmail}\n\n${message.trim()}\n\n---\nNote: The Rail Exchange does not process payments. This is a request for the seller to send a PayPal invoice directly.`
+        : message.trim();
+
       const res = await fetch('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           listingId,
-          subject: `Inquiry about ${listingTitle}`,
-          message: message.trim(),
+          subject,
+          message: fullMessage,
         }),
       });
 
@@ -122,8 +134,8 @@ export default function ContactSellerForm({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
-      <h3 className="heading-sm mb-4">Contact {sellerName}</h3>
+    <div className={isPaypalRequest ? "" : "bg-white rounded-2xl shadow-card border border-surface-border p-6"}>
+      {!isPaypalRequest && <h3 className="heading-sm mb-4">Contact {sellerName}</h3>}
       
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
@@ -134,38 +146,53 @@ export default function ContactSellerForm({
 
         <div>
           <label htmlFor="inquiry-message" className="block text-body-sm font-medium text-navy-900 mb-2">
-            Your Message
+            {isPaypalRequest ? 'Invoice Request Message' : 'Your Message'}
           </label>
           <textarea
             id="inquiry-message"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            rows={4}
+            rows={isPaypalRequest ? 3 : 4}
             className="input-field resize-none"
-            placeholder={`Hi, I'm interested in "${listingTitle}". Is it still available?`}
+            placeholder={isPaypalRequest 
+              ? `Hi, I'd like to purchase "${listingTitle}". Please send a PayPal invoice to my email.`
+              : `Hi, I'm interested in "${listingTitle}". Is it still available?`}
             required
           />
           <p className="text-caption text-text-tertiary mt-1">
-            Your contact info will be shared with the seller.
+            {isPaypalRequest 
+              ? 'The seller will send you a PayPal invoice directly.'
+              : 'Your contact info will be shared with the seller.'}
           </p>
         </div>
 
         <button
           type="submit"
           disabled={isSubmitting || !message.trim()}
-          className="btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed font-semibold rounded-xl transition-colors ${
+            isPaypalRequest 
+              ? 'bg-[#003087] hover:bg-[#002066] text-white' 
+              : 'btn-primary'
+          }`}
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-2">
-              <svg className="w-5 h-5 animate-spin\" fill="none" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
               Sending...
             </span>
+          ) : isPaypalRequest ? (
+            <>
+              <span className="inline-flex items-center gap-2">
+                <span className="font-bold">PP</span>
+                Request PayPal Invoice
+              </span>
+            </>
           ) : (
             <>
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               Send Inquiry
@@ -173,9 +200,11 @@ export default function ContactSellerForm({
           )}
         </button>
 
-        <p className="text-caption text-text-tertiary text-center">
-          Signed in as {session?.user?.email}
-        </p>
+        {!isPaypalRequest && (
+          <p className="text-caption text-text-tertiary text-center">
+            Signed in as {session?.user?.email}
+          </p>
+        )}
       </form>
     </div>
   );

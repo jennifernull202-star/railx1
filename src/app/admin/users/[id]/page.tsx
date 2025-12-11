@@ -44,6 +44,8 @@ interface UserDetail {
   location?: string;
   company?: string;
   usedPromoCodes?: string[];
+  paypalEmail?: string;
+  paypalVerified?: boolean;
 }
 
 interface Listing {
@@ -305,6 +307,35 @@ export default function AdminUserDetailPage() {
               </div>
             </div>
           )}
+
+          {/* PayPal Status */}
+          <div className="space-y-3">
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-[#003087]" />
+              PayPal Invoice
+            </h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Status</span>
+                <span className={`inline-flex items-center gap-1.5 font-medium ${user.paypalEmail ? 'text-green-600' : 'text-gray-400'}`}>
+                  {user.paypalEmail ? (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      Connected
+                    </>
+                  ) : (
+                    'Not Connected'
+                  )}
+                </span>
+              </div>
+              {user.paypalEmail && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Email</span>
+                  <span className="font-medium">{user.paypalEmail}</span>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Promo Codes */}
           {user.usedPromoCodes && user.usedPromoCodes.length > 0 && (

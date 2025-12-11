@@ -77,6 +77,10 @@ export interface IUser {
     tier?: string;
   }[];
   
+  // PayPal invoice email (external payment - NOT processed by platform)
+  paypalEmail?: string | null;
+  paypalVerified?: boolean;
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -293,6 +297,26 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
         tier: { type: String }, // The tier it was applied to
       }],
       default: [],
+    },
+    
+    // ============================================
+    // PAYPAL INVOICE EMAIL
+    // User-provided PayPal email for external invoicing.
+    // The Rail Exchange does NOT process payments.
+    // ============================================
+    paypalEmail: {
+      type: String,
+      default: null,
+      trim: true,
+      lowercase: true,
+      match: [
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        'Please provide a valid PayPal email address',
+      ],
+    },
+    paypalVerified: {
+      type: Boolean,
+      default: false,
     },
   },
   {
