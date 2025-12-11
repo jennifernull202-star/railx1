@@ -10,6 +10,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import { VerifiedSellerBadgeWithLabel } from '@/components/VerifiedSellerBadge';
 
 interface ContactSellerFormProps {
   listingId: string;
@@ -17,6 +18,7 @@ interface ContactSellerFormProps {
   sellerName: string;
   isPaypalRequest?: boolean;
   paypalEmail?: string;
+  isVerifiedSeller?: boolean;
 }
 
 export default function ContactSellerForm({
@@ -25,6 +27,7 @@ export default function ContactSellerForm({
   sellerName,
   isPaypalRequest = false,
   paypalEmail,
+  isVerifiedSeller = false,
 }: ContactSellerFormProps) {
   const { data: session, status } = useSession();
   const [message, setMessage] = useState('');
@@ -135,7 +138,14 @@ export default function ContactSellerForm({
 
   return (
     <div className={isPaypalRequest ? "" : "bg-white rounded-2xl shadow-card border border-surface-border p-6"}>
-      {!isPaypalRequest && <h3 className="heading-sm mb-4">Contact {sellerName}</h3>}
+      {!isPaypalRequest && (
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="heading-sm">Contact {sellerName}</h3>
+          {isVerifiedSeller && (
+            <VerifiedSellerBadgeWithLabel size="xs" />
+          )}
+        </div>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (

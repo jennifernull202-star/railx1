@@ -122,7 +122,8 @@ export async function GET(request: NextRequest) {
 
       const [listings, listingsTotal] = await Promise.all([
         Listing.find(listingQuery, projection)
-          .select('title slug category condition primaryImageUrl price location viewCount premiumAddOns createdAt')
+          .select('title slug category condition primaryImageUrl price location viewCount premiumAddOns createdAt sellerId')
+          .populate('sellerId', 'isVerifiedSeller')
           .sort(sort as Record<string, 1 | -1>)
           .skip((page - 1) * limit)
           .limit(limit)

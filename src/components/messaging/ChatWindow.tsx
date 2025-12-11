@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { VerifiedSellerBadge } from '@/components/VerifiedSellerBadge';
 
 export interface MessageItem {
   id: string;
@@ -38,6 +39,7 @@ export interface ChatWindowProps {
   currentUserId: string;
   recipientName: string;
   recipientImage?: string;
+  recipientIsVerifiedSeller?: boolean;
   listingTitle?: string;
   onSendMessage: (content: string, attachments?: File[]) => Promise<void>;
   isLoading?: boolean;
@@ -49,6 +51,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   currentUserId,
   recipientName,
   recipientImage,
+  recipientIsVerifiedSeller,
   listingTitle,
   onSendMessage,
   isLoading,
@@ -111,7 +114,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-navy-900 truncate">{recipientName}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-navy-900 truncate">{recipientName}</p>
+            {recipientIsVerifiedSeller && (
+              <VerifiedSellerBadge size="xs" />
+            )}
+          </div>
           {listingTitle && (
             <p className="text-xs text-text-tertiary truncate">Re: {listingTitle}</p>
           )}

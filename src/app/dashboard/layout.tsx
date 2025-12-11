@@ -218,6 +218,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
         { label: "My Add-Ons", href: "/dashboard/addons", icon: Star },
         { label: "Leads & Inquiries", href: "/dashboard/leads", icon: MessageSquare },
         { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+        { label: "Verified Seller", href: "/dashboard/verification/seller", icon: Shield },
       ],
     });
   }
@@ -249,6 +250,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
         { label: "Manage Users", href: "/admin/users", icon: User },
         { label: "Manage Listings", href: "/admin/listings", icon: Package },
         { label: "Contractors", href: "/admin/contractors", icon: Wrench },
+        { label: "Seller Verifications", href: "/admin/verification/sellers", icon: Shield },
         { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
       ],
     });

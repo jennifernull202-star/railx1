@@ -81,6 +81,17 @@ export interface IUser {
   paypalEmail?: string | null;
   paypalVerified?: boolean;
   
+  // ============================================
+  // VERIFIED SELLER FIELDS
+  // Badge activates only after: AI review + Admin approval + Valid paid subscription
+  // ============================================
+  isVerifiedSeller: boolean;
+  verifiedSellerStatus: 'none' | 'pending-ai' | 'pending-admin' | 'active' | 'revoked' | 'expired';
+  verifiedSellerStartedAt: Date | null;
+  verifiedSellerExpiresAt: Date | null;
+  verifiedSellerSubscriptionId: string | null;
+  verifiedSellerLastAICheck: Date | null;
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -318,6 +329,36 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
       type: Boolean,
       default: false,
     },
+    
+    // ============================================
+    // VERIFIED SELLER FIELDS
+    // Badge activates only after: AI review + Admin approval + Valid paid subscription
+    // ============================================
+    isVerifiedSeller: {
+      type: Boolean,
+      default: false,
+    },
+    verifiedSellerStatus: {
+      type: String,
+      enum: ['none', 'pending-ai', 'pending-admin', 'active', 'revoked', 'expired'],
+      default: 'none',
+    },
+    verifiedSellerStartedAt: {
+      type: Date,
+      default: null,
+    },
+    verifiedSellerExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    verifiedSellerSubscriptionId: {
+      type: String,
+      default: null,
+    },
+    verifiedSellerLastAICheck: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -342,6 +383,8 @@ UserSchema.index({ isActive: 1, role: 1 });
 UserSchema.index({ stripeCustomerId: 1 }, { sparse: true });
 UserSchema.index({ sellerTier: 1 });
 UserSchema.index({ contractorTier: 1 });
+UserSchema.index({ isVerifiedSeller: 1 });
+UserSchema.index({ verifiedSellerStatus: 1 });
 
 // ============================================
 // MIDDLEWARE

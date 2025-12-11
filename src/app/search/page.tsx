@@ -13,6 +13,7 @@ import { getImageUrl } from '@/lib/utils';
 import { LISTING_CATEGORIES, LISTING_CONDITIONS } from '@/lib/listing-constants';
 import { SERVICE_CATEGORIES, US_STATES } from '@/lib/constants';
 import { ListingsMap } from '@/components/maps';
+import { VerifiedSellerBadgeCompact } from '@/components/VerifiedSellerBadge';
 
 const CATEGORY_LABELS: Record<string, string> = {
   'locomotives': 'Locomotives',
@@ -63,6 +64,9 @@ interface Listing {
     featured?: { active: boolean };
     premium?: { active: boolean };
     elite?: { active: boolean };
+  };
+  sellerId?: {
+    isVerifiedSeller?: boolean;
   };
   // Add ranking tier from search API
   _rankTier?: 'elite' | 'premium' | 'featured' | 'standard';
@@ -142,6 +146,9 @@ function ListingCard({ listing }: { listing: Listing }) {
           )}
           {(listing._rankTier === 'featured' || listing.premiumAddOns?.featured?.active) && !listing.premiumAddOns?.premium?.active && !listing.premiumAddOns?.elite?.active && listing._rankTier !== 'premium' && listing._rankTier !== 'elite' && (
             <span className="badge-featured text-xs py-0.5">Featured</span>
+          )}
+          {listing.sellerId?.isVerifiedSeller && (
+            <VerifiedSellerBadgeCompact />
           )}
         </div>
         <h3 className="text-body-md font-semibold text-navy-900 group-hover:text-rail-orange transition-colors line-clamp-1">

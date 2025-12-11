@@ -12,6 +12,7 @@ import connectDB from '@/lib/db';
 import Listing from '@/models/Listing';
 import mongoose from 'mongoose';
 import ContactSellerForm from '@/components/ContactSellerForm';
+import { VerifiedSellerBadgeWithLabel } from '@/components/VerifiedSellerBadge';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -24,6 +25,7 @@ interface PopulatedSeller {
   image?: string;
   paypalEmail?: string;
   paypalVerified?: boolean;
+  isVerifiedSeller?: boolean;
 }
 
 interface ListingData {
@@ -181,7 +183,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
   const listing = await Listing.findOne(
     isObjectId ? { _id: id } : { slug: id }
   )
-    .populate('sellerId', 'name email image paypalEmail paypalVerified')
+    .populate('sellerId', 'name email image paypalEmail paypalVerified isVerifiedSeller')
     .lean() as ListingData | null;
 
   if (!listing || listing.status !== 'active') {
@@ -494,6 +496,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
                       listingId={listing._id} 
                       listingTitle={listing.title}
                       sellerName={listing.sellerId.name}
+                      isVerifiedSeller={listing.sellerId.isVerifiedSeller}
                     />
                     <button className="btn-outline w-full py-4">
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -546,6 +549,14 @@ export default async function ListingDetailPage({ params }: PageProps) {
                       </p>
                     </div>
                   </div>
+                  
+                  {/* Verified Seller Badge */}
+                  {listing.sellerId.isVerifiedSeller && (
+                    <div className="mb-4">
+                      <VerifiedSellerBadgeWithLabel size="sm" showDisclaimer={true} />
+                    </div>
+                  )}
+                  
                   <a
                     href={`mailto:${listing.sellerId.email}`}
                     className="text-body-sm font-medium text-rail-orange hover:text-rail-orange-dark"
@@ -574,6 +585,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
                         sellerName={listing.sellerId.name}
                         isPaypalRequest={true}
                         paypalEmail={listing.sellerId.paypalEmail}
+                        isVerifiedSeller={listing.sellerId.isVerifiedSeller}
                       />
                     </div>
                   )}

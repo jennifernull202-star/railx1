@@ -14,6 +14,7 @@ import connectDB from '@/lib/db';
 import User, { SubscriptionStatusType, SellerTierType, ContractorTierType } from '@/models/User';
 import AddOnPurchase from '@/models/AddOnPurchase';
 import Listing from '@/models/Listing';
+import SellerVerification from '@/models/SellerVerification';
 import { ADD_ON_TYPES, VISIBILITY_ADDONS, calculateExpirationDate, type AddOnType } from '@/config/addons';
 
 // Initialize Stripe lazily to avoid build-time errors
@@ -121,7 +122,13 @@ export async function POST(request: NextRequest) {
 // ============================================================================
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
-  const { purchaseType, purchaseId, addonType, listingId, contractorId, userId, subscriptionType, tier, promoCode } = session.metadata || {};
+  const { purchaseType, purchaseId, addonType, listingId, contractorId, userId, subscriptionType, tier, promoCode, type, verificationId } = session.metadata || {};
+
+  // Handle verified seller subscription
+  if (type === 'verified_seller' && verificationId) {
+    await handleVerifiedSellerCheckout(session, userId!, verificationId);
+    return;
+  }
 
   // Handle add-on purchases
   if (purchaseType === 'addon' && purchaseId) {
@@ -224,6 +231,65 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   console.log(`Subscription activated for user ${userId}: ${subscriptionType} - ${tier}`);
 }
 
+// Handle verified seller subscription checkout
+async function handleVerifiedSellerCheckout(
+  session: Stripe.Checkout.Session,
+  userId: string,
+  verificationId: string
+) {
+  const user = await User.findById(userId);
+  if (!user) {
+    console.error(`User not found for verified seller checkout: ${userId}`);
+    return;
+  }
+
+  const verification = await SellerVerification.findById(verificationId);
+  if (!verification) {
+    console.error(`Verification not found: ${verificationId}`);
+    return;
+  }
+
+  // Get the subscription from Stripe
+  const stripe = getStripe();
+  const subscriptionId = session.subscription as string;
+  let subscriptionEnd: Date | null = null;
+
+  if (subscriptionId) {
+    try {
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId) as Stripe.Subscription;
+      if (subscription.items?.data?.[0]?.current_period_end) {
+        subscriptionEnd = new Date(subscription.items.data[0].current_period_end * 1000);
+      }
+    } catch (err) {
+      console.error('Failed to retrieve subscription:', err);
+    }
+  }
+
+  // Update verification record
+  verification.stripeSubscriptionId = subscriptionId;
+  verification.subscriptionStatus = 'active';
+  verification.status = 'active';
+  verification.statusHistory.push({
+    status: 'active',
+    changedAt: new Date(),
+    reason: 'Subscription payment completed',
+  });
+  await verification.save();
+
+  // CRITICAL: Activate verified seller badge on user
+  // Badge only activates after: AI review + Admin approval + Valid paid subscription
+  user.isVerifiedSeller = true;
+  user.verifiedSellerStatus = 'active';
+  user.verifiedSellerStartedAt = new Date();
+  user.verifiedSellerExpiresAt = subscriptionEnd || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  user.verifiedSellerSubscriptionId = subscriptionId;
+  user.verifiedSellerLastAICheck = verification.lastAIRevalidation || null;
+  user.stripeCustomerId = session.customer as string;
+  await user.save();
+
+  console.log(`Verified Seller badge activated for user ${userId}`);
+}
+
 // Handle add-on purchase completion
 async function handleAddonCheckoutComplete(
   session: Stripe.Checkout.Session,
@@ -307,24 +373,51 @@ async function handleAddonCheckoutComplete(
 }
 
 async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
-  const { userId, subscriptionType, tier } = subscription.metadata || {};
+  const { userId, subscriptionType, tier, type, verificationId } = subscription.metadata || {};
+
+  // Handle verified seller subscription updates
+  if (type === 'verified_seller') {
+    await handleVerifiedSellerSubscriptionUpdate(subscription, userId, verificationId);
+    return;
+  }
 
   // Try to find user by subscription ID if no metadata
   let user;
   if (userId) {
     user = await User.findById(userId);
   } else {
-    // Find by subscription ID
+    // Find by subscription ID (including verified seller)
     user = await User.findOne({
       $or: [
         { sellerSubscriptionId: subscription.id },
         { contractorSubscriptionId: subscription.id },
+        { verifiedSellerSubscriptionId: subscription.id },
       ],
     });
   }
 
   if (!user) {
     console.error(`User not found for subscription: ${subscription.id}`);
+    return;
+  }
+
+  // Check if this is a verified seller subscription
+  if (user.verifiedSellerSubscriptionId === subscription.id) {
+    const status = mapStripeStatus(subscription.status);
+    if (status === 'active') {
+      user.isVerifiedSeller = true;
+      user.verifiedSellerStatus = 'active';
+    } else if (['past_due', 'unpaid'].includes(status)) {
+      // Keep badge but warn user
+      user.verifiedSellerStatus = 'active'; // Still show badge
+    } else if (['canceled', 'incomplete_expired'].includes(status)) {
+      // Badge expires
+      user.isVerifiedSeller = false;
+      user.verifiedSellerStatus = 'expired';
+      user.verifiedSellerExpiresAt = new Date();
+    }
+    await user.save();
+    console.log(`Verified seller subscription updated for user ${user._id}: status=${status}`);
     return;
   }
 
@@ -360,16 +453,43 @@ async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-  // Find user by subscription ID
+  // Find user by subscription ID (including verified seller)
   const user = await User.findOne({
     $or: [
       { sellerSubscriptionId: subscription.id },
       { contractorSubscriptionId: subscription.id },
+      { verifiedSellerSubscriptionId: subscription.id },
     ],
   });
 
   if (!user) {
     console.error(`User not found for canceled subscription: ${subscription.id}`);
+    return;
+  }
+
+  // Handle verified seller subscription cancellation
+  if (user.verifiedSellerSubscriptionId === subscription.id) {
+    // CRITICAL: Badge disappears immediately
+    user.isVerifiedSeller = false;
+    user.verifiedSellerStatus = 'expired';
+    user.verifiedSellerExpiresAt = new Date();
+    user.verifiedSellerSubscriptionId = null;
+
+    // Update verification record
+    const verification = await SellerVerification.findOne({ userId: user._id });
+    if (verification) {
+      verification.status = 'expired';
+      verification.subscriptionStatus = 'canceled';
+      verification.statusHistory.push({
+        status: 'expired',
+        changedAt: new Date(),
+        reason: 'Subscription canceled',
+      });
+      await verification.save();
+    }
+
+    await user.save();
+    console.log(`Verified Seller badge removed for user ${user._id} - subscription canceled`);
     return;
   }
 
@@ -411,6 +531,50 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   await user.save();
 
   console.log(`Subscription canceled for user ${user._id}`);
+}
+
+// Handle verified seller subscription updates
+async function handleVerifiedSellerSubscriptionUpdate(
+  subscription: Stripe.Subscription,
+  userId?: string,
+  verificationId?: string
+) {
+  const user = userId 
+    ? await User.findById(userId)
+    : await User.findOne({ verifiedSellerSubscriptionId: subscription.id });
+  
+  if (!user) return;
+
+  const status = mapStripeStatus(subscription.status);
+  const subscriptionData = subscription as unknown as { 
+    current_period_end: number; 
+    cancel_at_period_end: boolean 
+  };
+
+  if (status === 'active') {
+    user.isVerifiedSeller = true;
+    user.verifiedSellerStatus = 'active';
+    user.verifiedSellerExpiresAt = new Date(subscriptionData.current_period_end * 1000);
+  } else if (['past_due', 'unpaid'].includes(status)) {
+    // Keep badge for grace period but mark status
+    user.verifiedSellerStatus = 'active';
+  } else {
+    user.isVerifiedSeller = false;
+    user.verifiedSellerStatus = 'expired';
+    user.verifiedSellerExpiresAt = new Date();
+  }
+
+  await user.save();
+
+  // Update verification record
+  if (verificationId) {
+    const verification = await SellerVerification.findById(verificationId);
+    if (verification) {
+      verification.subscriptionStatus = status === 'active' ? 'active' : 
+        status === 'past_due' ? 'past_due' : 'canceled';
+      await verification.save();
+    }
+  }
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
