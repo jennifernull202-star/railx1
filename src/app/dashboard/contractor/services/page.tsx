@@ -68,7 +68,7 @@ export default async function ContractorServicesPage() {
             Create your contractor profile to list your services and start receiving leads.
           </p>
           <Link 
-            href="/dashboard/contractor/setup" 
+            href="/dashboard/contractor/profile" 
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             <Plus className="w-5 h-5" />
@@ -90,7 +90,7 @@ export default async function ContractorServicesPage() {
           <p className="text-slate-500">Manage the services you offer to clients</p>
         </div>
         <Link
-          href="/dashboard/contractor/setup"
+          href="/dashboard/contractor/profile"
           className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
         >
           <Settings className="w-4 h-4" />
@@ -152,7 +152,7 @@ export default async function ContractorServicesPage() {
           <div className="p-8 text-center">
             <p className="text-slate-500 mb-4">No services added yet</p>
             <Link 
-              href="/dashboard/contractor/setup" 
+              href="/dashboard/contractor/profile" 
               className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
             >
               <Plus className="w-4 h-4" />
@@ -184,7 +184,7 @@ export default async function ContractorServicesPage() {
           <div className="p-8 text-center">
             <p className="text-slate-500 mb-4">No service areas defined</p>
             <Link 
-              href="/dashboard/contractor/setup" 
+              href="/dashboard/contractor/profile" 
               className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium"
             >
               <Plus className="w-4 h-4" />

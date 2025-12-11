@@ -160,7 +160,7 @@ export function getNavigationItems({
       title: 'Contractor Services',
       items: [
         { 
-          href: hasContractorProfile ? '/dashboard/contractor/setup' : '/dashboard/contractor/setup',
+          href: hasContractorProfile ? '/dashboard/contractor/profile' : '/dashboard/contractor/profile',
           label: hasContractorProfile ? 'My Services' : 'List Your Services',
           icon: <ToolsIcon />,
         },
@@ -170,7 +170,7 @@ export function getNavigationItems({
           icon: <LeadsIcon /> 
         },
         {
-          href: '/dashboard/contractor/setup',
+          href: '/dashboard/contractor/profile',
           label: isVerifiedContractor ? 'Verified ✓' : 'Get Verified',
           icon: <ShieldIcon />,
         },

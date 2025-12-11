@@ -33,7 +33,7 @@ export default function BecomeContractorPage() {
 
   // Redirect if already a contractor
   if (session?.user?.isContractor) {
-    router.push("/dashboard/contractor/services");
+    router.push("/dashboard/contractor/profile");
     return null;
   }
 
@@ -64,7 +64,7 @@ export default function BecomeContractorPage() {
 
       // Redirect after short delay
       setTimeout(() => {
-        router.push("/dashboard/contractor/setup");
+        router.push("/dashboard/contractor/profile");
       }, 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");

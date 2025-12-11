@@ -167,7 +167,7 @@ export default function ContractorVerificationPage() {
             Set up your contractor profile before applying for the Verified Contractor badge.
           </p>
           <Link 
-            href="/dashboard/contractor/setup" 
+            href="/dashboard/contractor/profile" 
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             Create Profile
@@ -356,7 +356,7 @@ export default function ContractorVerificationPage() {
               </p>
               <div className="flex gap-3">
                 <Link
-                  href="/dashboard/contractor/setup"
+                  href="/dashboard/contractor/profile"
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                 >
                   Update Profile

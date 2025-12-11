@@ -94,7 +94,7 @@ export default async function ContractorLeadsPage() {
             Create your contractor profile to start receiving leads from potential clients.
           </p>
           <Link 
-            href="/dashboard/contractor/setup" 
+            href="/dashboard/contractor/profile" 
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             <Plus className="w-5 h-5" />

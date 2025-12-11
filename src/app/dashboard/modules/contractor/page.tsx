@@ -148,7 +148,7 @@ export default function ContractorDashboard() {
             <p className="text-text-secondary mb-6 max-w-md mx-auto">
               Set up your business profile to appear in contractor search results and receive project leads from potential clients.
             </p>
-            <Link href="/dashboard/contractor/setup">
+            <Link href="/dashboard/contractor/profile">
               <Button className="bg-rail-orange hover:bg-rail-orange-dark">
                 Complete Setup
                 <svg className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">

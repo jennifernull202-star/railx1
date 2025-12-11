@@ -2,7 +2,7 @@
  * THE RAIL EXCHANGE™ — Contractor Verification Status API
  * 
  * GET /api/contractors/verification/status
- * Returns the contractor's verification status
+ * Returns the contractor's verification status and profile existence
  */
 
 import { NextResponse } from 'next/server';
@@ -10,7 +10,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db';
 import ContractorProfile from '@/models/ContractorProfile';
-import User from '@/models/User';
 import { Types } from 'mongoose';
 
 export async function GET() {
@@ -23,28 +22,43 @@ export async function GET() {
 
     await connectDB();
 
-    const [profile, user] = await Promise.all([
-      ContractorProfile.findOne({ userId: new Types.ObjectId(session.user.id) })
-        .select('businessName verificationStatus verifiedBadgePurchased verifiedAt verifiedBadgeExpiresAt')
-        .lean(),
-      User.findById(session.user.id)
-        .select('contractorVerificationStatus contractorSubscriptionId')
-        .lean(),
-    ]);
+    const profile = await ContractorProfile.findOne({ 
+      userId: new Types.ObjectId(session.user.id) 
+    })
+      .select('companyName verificationStatus verifiedBadgePurchased verifiedAt verifiedBadgeExpiresAt')
+      .lean();
+
+    // Determine verification status
+    let verificationStatus: 'none' | 'pending' | 'ai_approved' | 'approved' | 'verified' | 'rejected' | 'expired' = 'none';
+    
+    if (profile) {
+      const status = profile.verificationStatus;
+      if (status === 'verified' && profile.verifiedBadgePurchased) {
+        // Check if expired
+        if (profile.verifiedBadgeExpiresAt && new Date(profile.verifiedBadgeExpiresAt) < new Date()) {
+          verificationStatus = 'expired';
+        } else {
+          verificationStatus = 'verified';
+        }
+      } else if (status === 'approved' || status === 'ai_approved') {
+        verificationStatus = status;
+      } else if (status === 'pending') {
+        verificationStatus = 'pending';
+      } else if (status === 'rejected') {
+        verificationStatus = 'rejected';
+      }
+    }
 
     return NextResponse.json({
+      hasContractorProfile: !!profile,
+      verificationStatus,
       profile: profile ? {
         _id: profile._id,
-        companyName: profile.businessName,
+        businessName: profile.businessName,
         verificationStatus: profile.verificationStatus,
         verifiedBadgePurchased: profile.verifiedBadgePurchased,
         verifiedAt: profile.verifiedAt,
         verifiedBadgeExpiresAt: profile.verifiedBadgeExpiresAt,
-      } : null,
-      userStatus: user ? {
-        isVerifiedContractor: user.contractorVerificationStatus === 'active',
-        contractorVerificationStatus: user.contractorVerificationStatus,
-        contractorSubscriptionId: user.contractorSubscriptionId,
       } : null,
     });
   } catch (error) {

@@ -423,7 +423,7 @@ export default function PricingContent() {
                     /* LOGGED IN: Go directly to Stripe checkout or contractor setup */
                     tier.priceMonthly === 0 ? (
                       <Link
-                        href="/dashboard/contractor/setup"
+                        href="/dashboard/contractor/profile"
                         className={`block text-center w-full py-3 px-4 rounded-xl font-semibold transition-all duration-200 ${
                           isVerified 
                             ? 'bg-green-600 text-white hover:bg-green-700' 
