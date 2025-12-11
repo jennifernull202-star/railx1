@@ -1,19 +1,16 @@
 /**
  * THE RAIL EXCHANGE™ — Google Maps Provider
  * 
- * Centralized Google Maps script loader that:
- * 1. Prevents duplicate script loading
- * 2. Provides loading state via context
- * 3. Handles errors gracefully
- * 4. Works with Places API (New PlaceAutocompleteElement)
+ * Uses the official @googlemaps/js-api-loader for reliable loading.
+ * Uses the new functional API: setOptions() and importLibrary().
  * 
- * UPDATED: December 2025 - Uses new Places API with async/defer
- * per Google's 2025 migration guide.
+ * UPDATED: December 2025 - Functional API for 2025 requirements.
  */
 
 'use client';
 
 import * as React from 'react';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 
 interface GoogleMapsContextType {
   isLoaded: boolean;
@@ -39,90 +36,13 @@ interface GoogleMapsProviderProps {
   children: React.ReactNode;
 }
 
-// Global state to track script loading across all instances
-let globalScriptLoading = false;
-let globalScriptLoaded = false;
-let globalLoadError: Error | null = null;
-const loadCallbacks: Array<(error: Error | null) => void> = [];
-
-function loadGoogleMapsScript(apiKey: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    // Already loaded - check for both maps and places
-    if (globalScriptLoaded && window.google?.maps) {
-      resolve();
-      return;
-    }
-
-    // Add callback to queue
-    loadCallbacks.push((error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-
-    // Script already loading, just wait for callback
-    if (globalScriptLoading) {
-      return;
-    }
-
-    // Check if script already exists in DOM
-    const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
-    if (existingScript) {
-      if (window.google?.maps) {
-        globalScriptLoaded = true;
-        loadCallbacks.forEach(cb => cb(null));
-        loadCallbacks.length = 0;
-        resolve();
-        return;
-      }
-      // Wait for existing script to load
-      const handleLoad = () => {
-        globalScriptLoaded = true;
-        loadCallbacks.forEach(cb => cb(null));
-        loadCallbacks.length = 0;
-      };
-      const handleError = () => {
-        const error = new Error('Failed to load Google Maps script');
-        globalLoadError = error;
-        loadCallbacks.forEach(cb => cb(error));
-        loadCallbacks.length = 0;
-      };
-      existingScript.addEventListener('load', handleLoad);
-      existingScript.addEventListener('error', handleError);
-      return;
-    }
-
-    // Start loading
-    globalScriptLoading = true;
-
-    const script = document.createElement('script');
-    script.id = 'google-maps-script';
-    // Use loading=async for modern Google Maps loading pattern
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&v=weekly&loading=async`;
-    script.async = true;
-    script.defer = true;
-
-    script.onload = () => {
-      globalScriptLoaded = true;
-      globalScriptLoading = false;
-      loadCallbacks.forEach(cb => cb(null));
-      loadCallbacks.length = 0;
-    };
-
-    script.onerror = () => {
-      const error = new Error('Failed to load Google Maps script');
-      globalLoadError = error;
-      globalScriptLoading = false;
-      loadCallbacks.forEach(cb => cb(error));
-      loadCallbacks.length = 0;
-    };
-
-    document.head.appendChild(script);
-  });
-}
+// Track if options have been set
+let optionsSet = false;
+let loadPromise: Promise<google.maps.PlacesLibrary> | null = null;
 
 export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
-  const [isLoaded, setIsLoaded] = React.useState(globalScriptLoaded);
-  const [loadError, setLoadError] = React.useState<Error | null>(globalLoadError);
+  const [isLoaded, setIsLoaded] = React.useState(false);
+  const [loadError, setLoadError] = React.useState<Error | null>(null);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || null;
 
   React.useEffect(() => {
@@ -131,21 +51,34 @@ export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
       return;
     }
 
-    // Already loaded
-    if (globalScriptLoaded) {
+    // Check if already loaded
+    if (window.google?.maps?.places?.Autocomplete) {
       setIsLoaded(true);
       return;
     }
 
-    // Already errored
-    if (globalLoadError) {
-      setLoadError(globalLoadError);
-      return;
+    // Set options only once (before first importLibrary call)
+    if (!optionsSet) {
+      setOptions({
+        key: apiKey,
+        v: 'weekly',
+      });
+      optionsSet = true;
     }
 
-    loadGoogleMapsScript(apiKey)
-      .then(() => setIsLoaded(true))
-      .catch((error) => setLoadError(error));
+    // Use existing promise or create new one
+    if (!loadPromise) {
+      loadPromise = importLibrary('places');
+    }
+
+    loadPromise
+      .then(() => {
+        setIsLoaded(true);
+      })
+      .catch((error) => {
+        console.error('Failed to load Google Maps:', error);
+        setLoadError(error);
+      });
   }, [apiKey]);
 
   const value = React.useMemo(

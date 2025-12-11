@@ -4,10 +4,8 @@
  * Google Places Autocomplete input for location selection.
  * Returns city, state, coordinates, and formatted address.
  * 
- * UPDATED: December 2025 - Uses PlaceAutocompleteElement
- * (the new web component API required for keys created after March 1, 2025)
- * 
- * Reference: https://developers.google.com/maps/documentation/javascript/place-autocomplete-element
+ * UPDATED: December 2025 - Uses standard Autocomplete class
+ * which is reliable with the @googlemaps/js-api-loader.
  */
 
 'use client';
@@ -34,8 +32,8 @@ interface LocationAutocompleteProps {
   className?: string;
   inputClassName?: string;
   disabled?: boolean;
-  types?: string[]; // e.g., ['(cities)', '(regions)']
-  countryRestrictions?: string[]; // e.g., ['us', 'ca']
+  types?: string[];
+  countryRestrictions?: string[];
 }
 
 export default function LocationAutocomplete({
@@ -49,10 +47,9 @@ export default function LocationAutocomplete({
   types = ['(cities)'],
   countryRestrictions = ['us'],
 }: LocationAutocompleteProps) {
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const autocompleteElementRef = React.useRef<HTMLElement | null>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const autocompleteRef = React.useRef<google.maps.places.Autocomplete | null>(null);
   const [inputValue, setInputValue] = React.useState(value);
-  const [isFallbackMode, setIsFallbackMode] = React.useState(false);
   const { isLoaded } = useGoogleMaps();
 
   // Store callbacks in refs to avoid stale closures
@@ -64,140 +61,99 @@ export default function LocationAutocomplete({
     onLocationSelectRef.current = onLocationSelect;
   }, [onChange, onLocationSelect]);
 
-  // Initialize PlaceAutocompleteElement
+  // Initialize Autocomplete
   React.useEffect(() => {
-    if (!isLoaded || !containerRef.current || autocompleteElementRef.current) return;
+    if (!isLoaded || !inputRef.current || autocompleteRef.current) return;
 
-    // Check if PlaceAutocompleteElement is available
-    if (!window.google?.maps?.places?.PlaceAutocompleteElement) {
-      console.warn('PlaceAutocompleteElement not available, using fallback input');
-      setIsFallbackMode(true);
+    // Check if Autocomplete is available
+    if (!window.google?.maps?.places?.Autocomplete) {
+      console.warn('Google Maps Places Autocomplete not available');
       return;
     }
 
     try {
-      // Create the PlaceAutocompleteElement
-      const autocompleteElement = new google.maps.places.PlaceAutocompleteElement({
+      const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+        types,
         componentRestrictions: countryRestrictions.length > 0 ? { country: countryRestrictions } : undefined,
-        types: types.includes('(cities)') ? ['locality', 'administrative_area_level_3'] : undefined,
+        fields: ['address_components', 'geometry', 'formatted_address', 'name'],
       });
 
-      // Style the element to match our design
-      autocompleteElement.style.cssText = `
-        width: 100%;
-        --gmpx-color-surface: rgb(248 250 252 / 0.8);
-        --gmpx-color-on-surface: #0f172a;
-        --gmpx-color-on-surface-variant: #94a3b8;
-        --gmpx-color-primary: #f97316;
-        --gmpx-font-family-base: inherit;
-        --gmpx-font-size-base: 15px;
-        --gmpx-input-border-radius: 0.75rem;
-        --gmpx-input-padding-block: 0.75rem;
-        --gmpx-input-padding-inline: 1rem;
-      `;
-
-      // Set placeholder attribute
-      autocompleteElement.setAttribute('placeholder', placeholder);
-
-      // Handle place selection - synchronous, no async
-      const handlePlaceChanged = (event: Event) => {
-        const customEvent = event as CustomEvent;
-        const place = customEvent.detail?.place;
+      // Handle place selection - synchronous only
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
         
-        if (!place) {
-          console.warn('No place in event detail');
+        if (!place.geometry?.location) {
+          console.warn('No location data for selected place');
           return;
         }
 
-        // Fetch place details synchronously
-        place.fetchFields({ fields: ['addressComponents', 'location', 'formattedAddress', 'displayName'] })
-          .then((result: { place: google.maps.places.Place }) => {
-            const placeData = result.place;
-            
-            // Parse address components
-            let city = '';
-            let state = '';
-            let country = '';
-            let postalCode = '';
+        // Parse address components
+        let city = '';
+        let state = '';
+        let country = '';
+        let postalCode = '';
 
-            const components = placeData.addressComponents || [];
-            for (const component of components) {
-              const componentTypes = component.types;
-              
-              if (componentTypes.includes('locality')) {
-                city = component.longText || '';
-              } else if (componentTypes.includes('administrative_area_level_1')) {
-                state = component.shortText || '';
-              } else if (componentTypes.includes('country')) {
-                country = component.shortText || '';
-              } else if (componentTypes.includes('postal_code')) {
-                postalCode = component.longText || '';
-              }
+        const components = place.address_components || [];
+        for (const component of components) {
+          const componentTypes = component.types;
+          
+          if (componentTypes.includes('locality')) {
+            city = component.long_name;
+          } else if (componentTypes.includes('administrative_area_level_1')) {
+            state = component.short_name;
+          } else if (componentTypes.includes('country')) {
+            country = component.short_name;
+          } else if (componentTypes.includes('postal_code')) {
+            postalCode = component.long_name;
+          }
+        }
+
+        // If no city found, try sublocality
+        if (!city) {
+          for (const component of components) {
+            if (component.types.includes('sublocality') || component.types.includes('administrative_area_level_2')) {
+              city = component.long_name;
+              break;
             }
+          }
+        }
 
-            // If no city found, try sublocality
-            if (!city) {
-              for (const component of components) {
-                if (component.types.includes('sublocality') || component.types.includes('administrative_area_level_2')) {
-                  city = component.longText || '';
-                  break;
-                }
-              }
-            }
+        const locationResult: LocationResult = {
+          formattedAddress: place.formatted_address || '',
+          city,
+          state,
+          country,
+          postalCode,
+          lat: place.geometry.location.lat(),
+          lng: place.geometry.location.lng(),
+        };
 
-            const location = placeData.location;
-            if (!location) {
-              console.warn('No location data for selected place');
-              return;
-            }
+        // Update display value
+        const displayValue = city && state ? `${city}, ${state}` : place.formatted_address || '';
+        setInputValue(displayValue);
+        
+        // Call callbacks
+        if (onChangeRef.current) {
+          onChangeRef.current(displayValue);
+        }
+        if (onLocationSelectRef.current) {
+          onLocationSelectRef.current(locationResult);
+        }
+      });
 
-            const locationResult: LocationResult = {
-              formattedAddress: placeData.formattedAddress || '',
-              city,
-              state,
-              country,
-              postalCode,
-              lat: location.lat(),
-              lng: location.lng(),
-            };
-
-            // Update display value
-            const displayValue = city && state ? `${city}, ${state}` : placeData.formattedAddress || '';
-            setInputValue(displayValue);
-            
-            // Call callbacks
-            if (onChangeRef.current) {
-              onChangeRef.current(displayValue);
-            }
-            if (onLocationSelectRef.current) {
-              onLocationSelectRef.current(locationResult);
-            }
-          })
-          .catch((err: Error) => {
-            console.error('Error fetching place details:', err);
-          });
-      };
-
-      // Add event listener - NO async, NO return true
-      autocompleteElement.addEventListener('gmp-placeselect', handlePlaceChanged);
-
-      // Insert into container
-      containerRef.current.appendChild(autocompleteElement);
-      autocompleteElementRef.current = autocompleteElement;
+      autocompleteRef.current = autocomplete;
 
       // Cleanup
       return () => {
-        if (autocompleteElementRef.current) {
-          autocompleteElementRef.current.removeEventListener('gmp-placeselect', handlePlaceChanged);
-          autocompleteElementRef.current.remove();
-          autocompleteElementRef.current = null;
+        if (autocompleteRef.current) {
+          google.maps.event.clearInstanceListeners(autocompleteRef.current);
+          autocompleteRef.current = null;
         }
       };
     } catch (error) {
-      console.error('Error initializing PlaceAutocompleteElement:', error);
-      setIsFallbackMode(true);
+      console.error('Error initializing Autocomplete:', error);
     }
-  }, [isLoaded, types, countryRestrictions, placeholder]);
+  }, [isLoaded, types, countryRestrictions]);
 
   // Sync external value changes
   React.useEffect(() => {
@@ -215,41 +171,28 @@ export default function LocationAutocomplete({
     }
   };
 
-  // Fallback input for when PlaceAutocompleteElement is not available
-  if (isFallbackMode || !isLoaded) {
-    return (
-      <div className={cn('relative', className)}>
-        <input
-          type="text"
-          value={inputValue}
-          onChange={handleInputChange}
-          placeholder={placeholder}
-          disabled={disabled}
-          className={cn(
-            'w-full px-4 py-3 bg-slate-50/80 rounded-xl text-[15px] text-navy-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rail-orange/20 focus:bg-white transition-colors',
-            disabled && 'opacity-50 cursor-not-allowed',
-            inputClassName
-          )}
-          autoComplete="off"
-        />
-        {!isLoaded && !process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY && (
-          <p className="absolute -bottom-5 left-0 text-xs text-text-tertiary">
-            Location autocomplete requires Google Maps API key
-          </p>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div 
-      ref={containerRef} 
-      className={cn(
-        'relative location-autocomplete-container',
-        disabled && 'opacity-50 pointer-events-none',
-        className
+    <div className={cn('relative', className)}>
+      <input
+        ref={inputRef}
+        type="text"
+        value={inputValue}
+        onChange={handleInputChange}
+        placeholder={placeholder}
+        disabled={disabled || !isLoaded}
+        className={cn(
+          'w-full px-4 py-3 bg-slate-50/80 rounded-xl text-[15px] text-navy-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rail-orange/20 focus:bg-white transition-colors',
+          disabled && 'opacity-50 cursor-not-allowed',
+          inputClassName
+        )}
+        autoComplete="off"
+      />
+      {!isLoaded && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          <div className="w-4 h-4 border-2 border-gray-300 border-t-orange-500 rounded-full animate-spin" />
+        </div>
       )}
-    />
+    </div>
   );
 }
 
