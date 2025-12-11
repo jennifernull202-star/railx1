@@ -70,9 +70,8 @@ export default async function LeadsPage() {
     redirect('/auth/login');
   }
 
-  if (!session.user.isContractor) {
-    redirect('/dashboard');
-  }
+  // No contractor gating - all users can access this page
+  // If no profile, we show setup prompt below
 
   const { profile, leads } = await getLeads(session.user.id);
 

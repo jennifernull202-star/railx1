@@ -59,9 +59,8 @@ export default async function ContractorProfilePage() {
     redirect('/auth/login');
   }
 
-  if (!session.user.isContractor) {
-    redirect('/dashboard');
-  }
+  // No contractor gating - all users can access this page
+  // If no profile, we show setup prompt below
 
   const profile = await getProfile(session.user.id);
 

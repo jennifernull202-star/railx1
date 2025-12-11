@@ -196,23 +196,19 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
     ],
   });
 
-  // Add Contractor section ONLY if user has opted in (isContractor === true)
-  const userIsContractor = user.isContractor === true;
-  if (userIsContractor) {
-    navigationSections.push({
-      title: "Contractor",
-      icon: Wrench,
-      requiresSubscription: isVerifiedContractor ? undefined : "contractor",
-      items: [
-        { label: "My Services", href: "/dashboard/contractor", icon: Wrench },
-        { label: "Contractor Profile", href: "/dashboard/contractor/setup", icon: User },
-        { label: "Service Leads", href: "/dashboard/contractor/leads", icon: MessageSquare },
-        ...(isVerifiedContractor
-          ? [{ label: "Verified Badge", href: "/dashboard/contractor/verified", icon: Shield }]
-          : [{ label: "Get Verified", href: "/dashboard/contractor/verify", icon: Star }]),
-      ],
-    });
-  }
+  // Add Contractor section - ALWAYS show for ALL users (no gating)
+  navigationSections.push({
+    title: "Contractor",
+    icon: Wrench,
+    items: [
+      { label: "My Services", href: "/dashboard/contractor/services", icon: Wrench },
+      { label: "Contractor Profile", href: "/dashboard/contractor/profile", icon: User },
+      { label: "Service Leads", href: "/dashboard/contractor/leads", icon: MessageSquare },
+      ...(isVerifiedContractor
+        ? [{ label: "Verified Badge", href: "/dashboard/contractor/verified", icon: Shield }]
+        : [{ label: "Get Verified", href: "/dashboard/verification/contractor", icon: Star }]),
+    ],
+  });
 
   // Admin section
   if (isAdmin) {
@@ -443,15 +439,6 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
               >
                 <Crown className="h-4 w-4" />
                 Upgrade Plan
-              </Link>
-            )}
-            {!userIsContractor && (
-              <Link
-                href="/dashboard/contractor/become"
-                className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all"
-              >
-                <Wrench className="h-4 w-4" />
-                Become a Contractor
               </Link>
             )}
             <button
