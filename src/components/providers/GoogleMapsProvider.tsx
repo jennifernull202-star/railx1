@@ -1,16 +1,18 @@
 /**
  * THE RAIL EXCHANGE™ — Google Maps Provider
  * 
- * Uses the official @googlemaps/js-api-loader for reliable loading.
- * Uses the new functional API: setOptions() and importLibrary().
+ * Uses the official @googlemaps/extended-component-library for 2025 compliance.
+ * Provides the APILoader component and context for Google Maps components.
  * 
- * UPDATED: December 2025 - Functional API for 2025 requirements.
+ * UPDATED: December 2025 - Extended Component Library (ECL) for modern Places API.
  */
 
 'use client';
 
 import * as React from 'react';
-import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
+
+// Import the API Loader component from extended library
+import '@googlemaps/extended-component-library/api_loader.js';
 
 interface GoogleMapsContextType {
   isLoaded: boolean;
@@ -36,10 +38,6 @@ interface GoogleMapsProviderProps {
   children: React.ReactNode;
 }
 
-// Track if options have been set
-let optionsSet = false;
-let loadPromise: Promise<google.maps.PlacesLibrary> | null = null;
-
 export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [loadError, setLoadError] = React.useState<Error | null>(null);
@@ -51,34 +49,37 @@ export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
       return;
     }
 
-    // Check if already loaded
-    if (window.google?.maps?.places?.Autocomplete) {
-      setIsLoaded(true);
-      return;
-    }
-
-    // Set options only once (before first importLibrary call)
-    if (!optionsSet) {
-      setOptions({
-        key: apiKey,
-        v: 'weekly',
-      });
-      optionsSet = true;
-    }
-
-    // Use existing promise or create new one
-    if (!loadPromise) {
-      loadPromise = importLibrary('places');
-    }
-
-    loadPromise
-      .then(() => {
+    // Check if Google Maps is already available (loaded by APILoader)
+    const checkLoaded = () => {
+      if (window.google?.maps) {
         setIsLoaded(true);
-      })
-      .catch((error) => {
-        console.error('Failed to load Google Maps:', error);
-        setLoadError(error);
-      });
+        return true;
+      }
+      return false;
+    };
+
+    // Initial check
+    if (checkLoaded()) return;
+
+    // Poll for load completion (APILoader handles actual loading)
+    const interval = setInterval(() => {
+      if (checkLoaded()) {
+        clearInterval(interval);
+      }
+    }, 100);
+
+    // Cleanup
+    return () => clearInterval(interval);
+  }, [apiKey]);
+
+  // Ref for the API loader element
+  const loaderRef = React.useRef<HTMLElement | null>(null);
+
+  // Set the API key on the loader element
+  React.useEffect(() => {
+    if (loaderRef.current && apiKey) {
+      loaderRef.current.setAttribute('key', apiKey);
+    }
   }, [apiKey]);
 
   const value = React.useMemo(
@@ -88,9 +89,41 @@ export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
 
   return (
     <GoogleMapsContext.Provider value={value}>
+      {/* The gmpx-api-loader element handles API loading */}
+      {apiKey && (
+        <gmpx-api-loader
+          ref={loaderRef as React.RefObject<HTMLElement>}
+          solution-channel="GMP_EXTENDED_COMPONENT_V0"
+        />
+      )}
       {children}
     </GoogleMapsContext.Provider>
   );
+}
+
+// Declare the custom element for TypeScript
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      'gmpx-api-loader': React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement> & {
+          'solution-channel'?: string;
+          ref?: React.RefObject<HTMLElement>;
+        },
+        HTMLElement
+      >;
+      'gmpx-place-picker': React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement> & {
+          placeholder?: string;
+          country?: string;
+          type?: string;
+          'strict-bounds'?: boolean;
+        },
+        HTMLElement
+      >;
+    }
+  }
 }
 
 export { GoogleMapsContext };

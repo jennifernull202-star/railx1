@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       ? `${folder}/${session.user.id}/${subfolder}`
       : `${folder}/${session.user.id}`;
     
-    const { uploadUrl, fileUrl, key } = await generatePresignedUploadUrl({
+    const { uploadUrl, fileUrl, key, proxyUrl } = await generatePresignedUploadUrl({
       folder: basePath,
       fileName,
       contentType,
@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
       data: {
         uploadUrl,
         fileUrl,
+        proxyUrl, // Use this URL for display when bucket blocks public access
         key,
       },
     });

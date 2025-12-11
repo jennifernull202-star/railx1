@@ -101,7 +101,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         throw new Error(result.error || 'Failed to get upload URL');
       }
 
-      const { uploadUrl, fileUrl, key } = result.data;
+      const { uploadUrl, fileUrl, key, proxyUrl } = result.data;
 
       // Upload to S3
       const uploadRes = await fetch(uploadUrl, {
@@ -112,8 +112,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       if (!uploadRes.ok) throw new Error('Failed to upload file');
 
+      // Use proxyUrl for display (works even when bucket blocks public access)
+      // Fall back to fileUrl if proxyUrl is not available
       return {
-        url: fileUrl,
+        url: proxyUrl || fileUrl,
         key,
         alt: file.name,
         isPrimary: value.length === 0,

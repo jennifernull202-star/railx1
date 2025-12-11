@@ -49,6 +49,7 @@ interface PresignedUrlResult {
   uploadUrl: string;
   fileUrl: string;
   key: string;
+  proxyUrl: string; // URL through our proxy API (works even with blocked public access)
 }
 
 /**
@@ -77,23 +78,30 @@ export async function generatePresignedUploadUrl(
   const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
   const key = `${folder}/${timestamp}-${randomId}-${sanitizedFileName}`;
 
-  // Create presigned URL with public-read ACL for direct access
+  // Create presigned URL for upload
+  // NOTE: ACL removed - modern S3 buckets block public ACLs by default
+  // Bucket should be configured with a bucket policy for public reads
+  // OR use presigned GET URLs for accessing files
   const command = new PutObjectCommand({
     Bucket: BUCKET_NAME,
     Key: key,
     ContentType: contentType,
-    ACL: 'public-read',
   });
 
   const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
 
-  // Construct the public URL (works because ACL is public-read)
+  // Construct the public URL
+  // This assumes bucket policy allows public read OR caller will use presigned GET
   const fileUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || 'us-east-2'}.amazonaws.com/${key}`;
+  
+  // Proxy URL for when bucket doesn't allow public access
+  const proxyUrl = `/api/s3-image?key=${encodeURIComponent(key)}`;
 
   return {
     uploadUrl,
     fileUrl,
     key,
+    proxyUrl,
   };
 }
 

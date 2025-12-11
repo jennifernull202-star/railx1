@@ -139,7 +139,8 @@ export default function BulkPhotoUpload({
         }
       });
 
-      return { url: data.data.fileUrl };
+      // Use proxyUrl for display (works even when bucket blocks public access)
+      return { url: data.data.proxyUrl || data.data.fileUrl };
     } catch (error) {
       return { url: '', error: error instanceof Error ? error.message : 'Upload failed after retries' };
     }
