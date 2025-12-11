@@ -80,7 +80,7 @@ function UpgradePageContent() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loadingListings, setLoadingListings] = useState(true);
   const [selectedListingForAddon, setSelectedListingForAddon] = useState<string>('');
-  const [showAddonsSection, setShowAddonsSection] = useState(false);
+  const [showAddonsSection, setShowAddonsSection] = useState(true); // Default open for better UX
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<PromoDiscount | null>(null);
   const [promoCode, setPromoCode] = useState<string>('');
@@ -488,16 +488,30 @@ function UpgradePageContent() {
                       const Icon = addonIcons[addon.type] || Star;
                       const selectedListing = listings.find(l => l._id === selectedListingForAddon);
                       const isInCart = cart.some(
-                        item => item.addonType === addon.type && item.listingId === selectedListingForAddon
+                        item => item.addonType === addon.type && (
+                          addon.type === ADD_ON_TYPES.VERIFIED_BADGE 
+                            ? true // Verified badge doesn't need listing match
+                            : item.listingId === selectedListingForAddon
+                        )
                       );
-                      const canAddToCart = selectedListingForAddon && selectedListing && !isInCart;
+                      
+                      // VERIFIED_BADGE doesn't require a listing - it applies to contractor profile
+                      const isVerifiedBadge = addon.type === ADD_ON_TYPES.VERIFIED_BADGE;
+                      const canAddToCart = isVerifiedBadge 
+                        ? !isInCart 
+                        : (selectedListingForAddon && selectedListing && !isInCart);
                       
                       return (
                         <button
                           key={addon.type}
                           onClick={() => {
                             if (canAddToCart) {
-                              addAddonToCart(addon.type, selectedListingForAddon, selectedListing.title);
+                              if (isVerifiedBadge) {
+                                // Verified badge goes to contractor, not listing
+                                addAddonToCart(addon.type, 'contractor-profile', 'Contractor Verified Badge');
+                              } else if (selectedListing) {
+                                addAddonToCart(addon.type, selectedListingForAddon, selectedListing.title);
+                              }
                             }
                           }}
                           disabled={!canAddToCart}
@@ -524,6 +538,11 @@ function UpgradePageContent() {
                             <div className="mt-2 flex items-center gap-1 text-xs text-green-600">
                               <Check className="w-3 h-3" />
                               Added to cart
+                            </div>
+                          )}
+                          {isVerifiedBadge && !isInCart && (
+                            <div className="mt-2 text-xs text-blue-600">
+                              Applies to your contractor profile
                             </div>
                           )}
                         </button>

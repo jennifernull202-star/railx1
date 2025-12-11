@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import AIChatWidget from "@/components/AIChatWidget";
 import AddOnIndicator from "@/components/dashboard/AddOnIndicator";
+import { SubscriptionProvider, useSubscription } from "@/components/providers/SubscriptionProvider";
 import {
   Home,
   Package,
@@ -49,8 +50,10 @@ interface NavItem {
   badge?: string;
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+// Inner component that uses subscription context
+function DashboardLayoutInner({ children }: DashboardLayoutProps) {
   const { data: session, status } = useSession();
+  const { hasSellerSubscription, isVerifiedContractor: isSubVerifiedContractor, subscription, loading: subLoading } = useSubscription();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -162,8 +165,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const user = session.user;
   const isAdmin = user.role === "admin";
-  const hasSellerSubscription = !!user.subscriptionTier;
-  const isVerifiedContractor = user.isVerifiedContractor === true;
+  // Use subscription context for fresh data (hasSellerSubscription comes from context)
+  const isVerifiedContractor = isSubVerifiedContractor || user.isVerifiedContractor === true;
+  // Get display tier from subscription context (fresh from DB)
+  const displayTier = subscription?.sellerTier !== 'buyer' ? subscription?.sellerTier : user.subscriptionTier;
+  const subscriptionStatus = subscription?.sellerStatus;
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) =>
@@ -423,7 +429,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   {hasSellerSubscription && (
                     <span className="flex items-center gap-1 bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
                       <Crown className="h-3 w-3" />
-                      {user.subscriptionTier}
+                      {displayTier}
+                      {subscriptionStatus === 'trialing' && (
+                        <span className="ml-1 text-[10px] bg-blue-100 text-blue-700 px-1 rounded">Trial</span>
+                      )}
                     </span>
                   )}
                   {isVerifiedContractor && (
@@ -487,5 +496,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* AI Chat Widget */}
       <AIChatWidget />
     </div>
+  );
+}
+
+// Exported wrapper that provides subscription context
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  return (
+    <SubscriptionProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </SubscriptionProvider>
   );
 }
