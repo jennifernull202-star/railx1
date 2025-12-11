@@ -1,15 +1,16 @@
 /**
  * THE RAIL EXCHANGE™ — Google Maps Provider
  * 
- * Uses the official @googlemaps/extended-component-library for 2025 compliance.
- * Provides the APILoader component and context for Google Maps components.
+ * Loads the Google Maps JavaScript API with the new Places API.
+ * Uses @googlemaps/js-api-loader functional API (setOptions/importLibrary).
  * 
- * UPDATED: December 2025 - Extended Component Library (ECL) for modern Places API.
+ * CRITICAL: Must use Places API (New) - legacy Places API is disabled for new projects.
  */
 
 'use client';
 
 import * as React from 'react';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 
 interface GoogleMapsContextType {
   isLoaded: boolean;
@@ -35,61 +36,56 @@ interface GoogleMapsProviderProps {
   children: React.ReactNode;
 }
 
+// Track if we've already initialized
+let optionsSet = false;
+let loadPromise: Promise<void> | null = null;
+
 export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [loadError, setLoadError] = React.useState<Error | null>(null);
-  const [eclLoaded, setEclLoaded] = React.useState(false);
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || null;
 
-  // Dynamically import the Extended Component Library (browser only)
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      import('@googlemaps/extended-component-library/api_loader.js')
-        .then(() => setEclLoaded(true))
-        .catch((err) => setLoadError(err));
-    }
-  }, []);
-
-  React.useEffect(() => {
-    if (!eclLoaded) return;
+    if (typeof window === 'undefined') return;
     
     if (!apiKey) {
       setLoadError(new Error('Google Maps API key not configured'));
       return;
     }
 
-    // Check if Google Maps is already available (loaded by APILoader)
-    const checkLoaded = () => {
-      if (window.google?.maps) {
-        setIsLoaded(true);
-        return true;
-      }
-      return false;
-    };
-
-    // Initial check
-    if (checkLoaded()) return;
-
-    // Poll for load completion (APILoader handles actual loading)
-    const interval = setInterval(() => {
-      if (checkLoaded()) {
-        clearInterval(interval);
-      }
-    }, 100);
-
-    // Cleanup
-    return () => clearInterval(interval);
-  }, [apiKey, eclLoaded]);
-
-  // Ref for the API loader element
-  const loaderRef = React.useRef<HTMLElement | null>(null);
-
-  // Set the API key on the loader element
-  React.useEffect(() => {
-    if (loaderRef.current && apiKey) {
-      loaderRef.current.setAttribute('key', apiKey);
+    // Check if already loaded
+    if (window.google?.maps?.places) {
+      setIsLoaded(true);
+      return;
     }
-  }, [apiKey, eclLoaded]);
+
+    // Set options only once
+    if (!optionsSet) {
+      setOptions({
+        key: apiKey,
+        v: 'weekly',
+        libraries: ['places', 'marker'],
+      });
+      optionsSet = true;
+    }
+
+    // Start loading only once
+    if (!loadPromise) {
+      loadPromise = importLibrary('places').then(() => {
+        // Also import marker library
+        return importLibrary('marker');
+      }).then(() => {});
+    }
+
+    loadPromise
+      .then(() => {
+        setIsLoaded(true);
+      })
+      .catch((err) => {
+        console.error('Failed to load Google Maps:', err);
+        setLoadError(err);
+      });
+  }, [apiKey]);
 
   const value = React.useMemo(
     () => ({ isLoaded, loadError, apiKey }),
@@ -98,41 +94,9 @@ export function GoogleMapsProvider({ children }: GoogleMapsProviderProps) {
 
   return (
     <GoogleMapsContext.Provider value={value}>
-      {/* The gmpx-api-loader element handles API loading - only render after ECL import */}
-      {eclLoaded && apiKey && (
-        <gmpx-api-loader
-          ref={loaderRef as React.RefObject<HTMLElement>}
-          solution-channel="GMP_EXTENDED_COMPONENT_V0"
-        />
-      )}
       {children}
     </GoogleMapsContext.Provider>
   );
-}
-
-// Declare the custom element for TypeScript
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace JSX {
-    interface IntrinsicElements {
-      'gmpx-api-loader': React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & {
-          'solution-channel'?: string;
-          ref?: React.RefObject<HTMLElement>;
-        },
-        HTMLElement
-      >;
-      'gmpx-place-picker': React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & {
-          placeholder?: string;
-          country?: string;
-          type?: string;
-          'strict-bounds'?: boolean;
-        },
-        HTMLElement
-      >;
-    }
-  }
 }
 
 export { GoogleMapsContext };
