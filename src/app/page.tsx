@@ -141,13 +141,13 @@ export default async function HomePage() {
       <main className="flex-1">
         {/* Hero Section - Premium Background Image */}
         <section 
-          className="relative bg-cover bg-center bg-no-repeat h-[85vh] overflow-hidden"
+          className="relative bg-cover bg-center bg-no-repeat min-h-[85vh] overflow-hidden pt-24 md:pt-32"
           style={{ backgroundImage: "url('/hero-rail.jpg')" }}
         >
           {/* Dark Overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/30 z-10" />
           
-          <div className="relative z-20 container-rail max-w-[1280px] mx-auto px-6 md:px-8 py-14 md:py-20 lg:py-24 h-full flex items-center">
+          <div className="relative z-20 container-rail max-w-[1280px] mx-auto px-6 md:px-8 py-14 md:py-20 lg:py-24 flex items-center">
             <div className="max-w-4xl mx-auto text-center">
               
               {/* Premium Badge - Eye-catching Navy Design */}
@@ -625,23 +625,23 @@ export default async function HomePage() {
         </section>
       </main>
 
-      {/* Footer - Premium Refinements */}
-      <footer className="bg-[#0a1825] text-white pt-16 pb-8">
-        <div className="container-rail">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 md:gap-8 pb-12 border-b border-white/[0.08]">
+      {/* Footer - Premium Refinements with Mobile Fix */}
+      <footer className="w-full bg-[#0a1825] text-white px-6 py-16">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row md:justify-between gap-12 pb-12 border-b border-white/[0.08]">
             {/* Brand Column */}
-            <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="inline-flex items-center mb-5">
+            <div className="flex flex-col gap-3 text-center md:text-left">
+              <Link href="/" className="inline-flex items-center justify-center md:justify-start mb-3">
                 <span className="text-[18px] font-bold text-white">The Rail</span>
                 <span className="text-[18px] font-bold text-rail-orange ml-1">Exchange</span>
                 <span className="text-rail-orange text-[10px] font-medium ml-0.5">™</span>
               </Link>
-              <p className="text-[13px] text-white/50 leading-relaxed mb-6 max-w-[240px]">
+              <p className="text-[13px] text-white/50 leading-relaxed mb-4 max-w-[280px] mx-auto md:mx-0">
                 The premier marketplace for the rail industry. Buy, sell, and connect with
                 verified professionals.
               </p>
               {/* Social Icons */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center md:justify-start gap-4">
                 <a href="#" className="text-white/40 hover:text-white transition-colors duration-200">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
@@ -661,8 +661,8 @@ export default async function HomePage() {
             </div>
 
             {/* Marketplace Links */}
-            <div>
-              <h4 className="text-[13px] font-semibold text-white/80 uppercase tracking-wider mb-4">Marketplace</h4>
+            <div className="flex flex-col gap-3 text-center md:text-left">
+              <h4 className="text-[13px] font-semibold text-white/80 uppercase tracking-wider mb-2">Marketplace</h4>
               <ul className="space-y-2.5">
                 <li><Link href="/listings" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Browse All</Link></li>
                 <li><Link href="/listings?category=locomotives" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Equipment</Link></li>
@@ -672,18 +672,18 @@ export default async function HomePage() {
             </div>
 
             {/* Contractors Links */}
-            <div>
-              <h4 className="text-[13px] font-semibold text-white/80 uppercase tracking-wider mb-4">Contractors</h4>
+            <div className="flex flex-col gap-3 text-center md:text-left">
+              <h4 className="text-[13px] font-semibold text-white/80 uppercase tracking-wider mb-2">Contractors</h4>
               <ul className="space-y-2.5">
                 <li><Link href="/contractors" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Find Contractors</Link></li>
-                <li><Link href="/contractors/onboard" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Join as Contractor</Link></li>
+                <li><Link href="/dashboard/contractor/profile" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Join as Contractor</Link></li>
                 <li><Link href="/contractors?verified=true" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Verified Only</Link></li>
               </ul>
             </div>
 
             {/* Company Links */}
-            <div>
-              <h4 className="text-[13px] font-semibold text-white/80 uppercase tracking-wider mb-4">Company</h4>
+            <div className="flex flex-col gap-3 text-center md:text-left">
+              <h4 className="text-[13px] font-semibold text-white/80 uppercase tracking-wider mb-2">Company</h4>
               <ul className="space-y-2.5">
                 <li><Link href="/about" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">About Us</Link></li>
                 <li><Link href="/contact" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Contact</Link></li>
@@ -694,11 +694,11 @@ export default async function HomePage() {
           </div>
 
           {/* Copyright */}
-          <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-[12px] text-white/40">
+          <div className="text-center text-xs text-gray-400 mt-10">
+            <p className="mb-2">
               © {new Date().getFullYear()} The Rail Exchange™. All rights reserved.
             </p>
-            <p className="text-[12px] text-white/30">
+            <p className="text-white/30">
               Made with precision for the rail industry.
             </p>
           </div>

@@ -157,26 +157,40 @@ export function getNavigationItems({
   // Contractor section - show to everyone (free directory listing available)
   if (showContractorSection) {
     sections.push({
-      title: 'Contractor Services',
+      title: 'Contractor',
       items: [
         { 
-          href: hasContractorProfile ? '/dashboard/contractor/profile' : '/dashboard/contractor/profile',
-          label: hasContractorProfile ? 'My Services' : 'List Your Services',
+          href: '/dashboard/contractor/profile',
+          label: 'Contractor Profile',
+          icon: <ProfileIcon />,
+        },
+        { 
+          href: '/dashboard/contractor/services',
+          label: 'My Services',
           icon: <ToolsIcon />,
         },
         { 
-          href: '/dashboard/leads', 
-          label: isVerifiedContractor ? 'Leads' : 'Leads ✓', 
+          href: '/dashboard/contractor/leads', 
+          label: 'Service Leads', 
           icon: <LeadsIcon /> 
         },
         {
-          href: '/dashboard/contractor/profile',
-          label: isVerifiedContractor ? 'Verified ✓' : 'Get Verified',
+          href: '/dashboard/contractor/verify',
+          label: 'Get Verified',
           icon: <ShieldIcon />,
         },
       ],
     });
   }
+
+  // ISO (In Search Of) section
+  sections.push({
+    title: 'ISO (In Search Of)',
+    items: [
+      { href: '/iso', label: 'Browse Requests', icon: <ListingsIcon /> },
+      { href: '/iso/create', label: 'Create Request', icon: <InboxIcon /> },
+    ],
+  });
 
   // Admin section
   if (isAdmin) {

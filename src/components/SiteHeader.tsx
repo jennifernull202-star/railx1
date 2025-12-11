@@ -39,7 +39,7 @@ export default function SiteHeader({
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b transition-colors ${
+      className={`sticky top-0 z-50 border-b transition-colors relative ${
         variant === 'transparent'
           ? 'bg-white/80 backdrop-blur-xl border-surface-border/50'
           : 'bg-white/90 backdrop-blur-2xl border-slate-100'
