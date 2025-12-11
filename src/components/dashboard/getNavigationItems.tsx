@@ -118,38 +118,37 @@ export function getNavigationItems({
 }: GetNavigationItemsParams): NavSection[] {
   const sections: NavSection[] = [];
 
-  // Main section - for all users (free features)
+  // Marketplace section - for all users
   sections.push({
-    title: 'Dashboard',
+    title: 'Marketplace',
     items: [
-      { href: '/dashboard', label: 'Overview', icon: <HomeIcon /> },
+      { href: '/listings', label: 'Browse Listings', icon: <ListingsIcon /> },
+      { href: '/dashboard/saved', label: 'Saved Items', icon: <HeartIcon /> },
       { 
-        href: '/dashboard/messages', 
-        label: 'Messages', 
-        icon: <MessagesIcon />,
-        badge: unreadMessages > 0 ? unreadMessages : undefined,
+        href: '/dashboard/inquiries', 
+        label: 'My Inquiries', 
+        icon: <InboxIcon />,
+        badge: pendingInquiries > 0 ? pendingInquiries : undefined,
       },
-      { href: '/dashboard/saved', label: 'Saved & Watchlist', icon: <HeartIcon /> },
+      { href: '/contractors', label: 'Find Contractors', icon: <UsersIcon /> },
     ],
   });
 
-  // Seller section - show to everyone (free listings available)
+  // Selling section - show to everyone (free listings available)
   if (showSellerSection) {
     sections.push({
       title: 'Selling',
       items: [
-        { href: '/dashboard/listings', label: 'My Listings', icon: <ListingsIcon /> },
+        { href: '/listings/create', label: 'Create Listing', icon: <HomeIcon /> },
+        { href: '/dashboard/listings', label: 'Manage Listings', icon: <ListingsIcon /> },
         { 
-          href: '/dashboard/inquiries', 
-          label: 'Inquiries', 
-          icon: <InboxIcon />,
-          badge: pendingInquiries > 0 ? pendingInquiries : undefined,
+          href: '/dashboard/messages', 
+          label: 'View Inquiries', 
+          icon: <MessagesIcon />,
+          badge: unreadMessages > 0 ? unreadMessages : undefined,
         },
-        { 
-          href: '/dashboard/analytics', 
-          label: hasSellerSubscription ? 'Analytics' : 'Analytics ⭐', 
-          icon: <AnalyticsIcon /> 
-        },
+        { href: '/dashboard/upgrade', label: 'Upgrade Plan', icon: <AnalyticsIcon /> },
+        { href: '/dashboard/verification/seller', label: 'Get Verified (Seller)', icon: <ShieldIcon /> },
       ],
     });
   }
