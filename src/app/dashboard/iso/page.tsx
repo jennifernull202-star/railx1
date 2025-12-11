@@ -22,7 +22,6 @@ import {
   Calendar,
   MapPin,
   DollarSign,
-  Tag,
   X,
   CheckCircle,
   Clock,

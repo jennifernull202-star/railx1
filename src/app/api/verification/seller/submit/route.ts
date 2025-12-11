@@ -149,8 +149,10 @@ async function checkForDuplicates(
 ): Promise<{ isDuplicate: boolean; matchingUserId?: string }> {
   // In production: Use perceptual hashing or document fingerprinting
   // to detect if same documents were used by another account
+  // eslint-disable-next-line no-console
+  console.debug(`Duplicate check for user ${userId}, ${documents.length} documents`);
   
-  // For now, return no duplicates
+  // For now, return no duplicates (full implementation in Phase 2)
   return { isDuplicate: false };
 }
 

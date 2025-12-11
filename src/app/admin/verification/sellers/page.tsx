@@ -17,23 +17,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import {
   Shield,
   CheckCircle2,
   XCircle,
-  Clock,
   Eye,
   AlertTriangle,
   Loader2,
   FileText,
   User,
   Search,
-  Filter,
   RefreshCw,
   ExternalLink,
-  ChevronDown,
-  CreditCard,
 } from 'lucide-react';
 
 interface VerificationUser {
@@ -696,6 +691,9 @@ export default function AdminSellerVerificationsPage() {
                     title="Document Preview"
                   />
                 ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element -- 
+                     Presigned S3 URLs for secure document viewing require native img.
+                     Next/Image cannot be used with dynamic external presigned URLs. */
                   <img
                     src={viewingDocument.url}
                     alt="Document"

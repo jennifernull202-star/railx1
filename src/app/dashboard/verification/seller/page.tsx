@@ -15,7 +15,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import {
   Shield,
   CheckCircle2,
@@ -27,7 +26,6 @@ import {
   Loader2,
   CreditCard,
   Info,
-  Eye,
   RefreshCw,
 } from 'lucide-react';
 
@@ -66,7 +64,7 @@ const DOCUMENT_TYPES = [
 ];
 
 export default function SellerVerificationPage() {
-  const { data: session, status: sessionStatus } = useSession();
+  const { status: sessionStatus } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -77,18 +75,6 @@ export default function SellerVerificationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  // Check for success/cancel from Stripe checkout
-  useEffect(() => {
-    if (searchParams.get('success') === 'true') {
-      setSuccess('Payment successful! Your Verified Seller badge is now active.');
-      // Refresh data
-      fetchVerificationStatus();
-    }
-    if (searchParams.get('canceled') === 'true') {
-      setError('Payment was canceled. Complete payment to activate your badge.');
-    }
-  }, [searchParams]);
 
   const fetchVerificationStatus = useCallback(async () => {
     try {
@@ -104,6 +90,18 @@ export default function SellerVerificationPage() {
       setLoading(false);
     }
   }, []);
+
+  // Check for success/cancel from Stripe checkout
+  useEffect(() => {
+    if (searchParams.get('success') === 'true') {
+      setSuccess('Payment successful! Your Verified Seller badge is now active.');
+      // Refresh data
+      fetchVerificationStatus();
+    }
+    if (searchParams.get('canceled') === 'true') {
+      setError('Payment was canceled. Complete payment to activate your badge.');
+    }
+  }, [searchParams, fetchVerificationStatus]);
 
   useEffect(() => {
     if (sessionStatus === 'unauthenticated') {
