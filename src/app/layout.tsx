@@ -25,21 +25,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: "The Rail Exchange",
-    images: [
-      {
-        url: "/railxphoto.png",
-        width: 1200,
-        height: 630,
-        alt: "The Rail Exchange - Rail Industry Marketplace",
-      },
-    ],
+    // Dynamic OG image generated via opengraph-image.tsx
   },
   twitter: {
     card: "summary_large_image",
     title: "The Rail Exchange™",
     description:
       "The premier marketplace for rail industry equipment, materials, services, and contractors.",
-    images: ["/railxphoto.png"],
+    // Dynamic Twitter image generated via twitter-image.tsx
   },
   robots: {
     index: true,
