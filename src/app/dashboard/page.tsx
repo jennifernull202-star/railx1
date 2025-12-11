@@ -44,6 +44,8 @@ async function getDashboardData(userId: string): Promise<{
   hasSubscription: boolean;
   isContractor: boolean;
   sellerTier: string | null;
+  trialEndsAt: Date | null;
+  subscriptionStatus: string | null;
 }> {
   await connectDB();
 
@@ -69,7 +71,7 @@ async function getDashboardData(userId: string): Promise<{
       .sort({ createdAt: -1 })
       .limit(5)
       .lean(),
-    User.findById(userId).select('sellerTier role contractorTier').lean(),
+    User.findById(userId).select('sellerTier isContractor contractorTier sellerSubscriptionStatus subscriptionCurrentPeriodEnd').lean(),
   ]);
 
   const stats = statsResult[0] || {
@@ -80,12 +82,20 @@ async function getDashboardData(userId: string): Promise<{
     featured: 0,
   };
 
+  // Check if user is on a trial (using promo code or Stripe trial)
+  const isTrialing = user?.sellerSubscriptionStatus === 'trialing';
+  const trialEndsAt = isTrialing && user?.subscriptionCurrentPeriodEnd 
+    ? new Date(user.subscriptionCurrentPeriodEnd) 
+    : null;
+
   return {
     stats,
     recentListings: recentListings as unknown as RecentListing[],
     hasSubscription: !!(user?.sellerTier && user.sellerTier !== 'buyer'),
     isContractor: user?.isContractor || user?.contractorTier === 'verified' || false,
     sellerTier: user?.sellerTier || null,
+    trialEndsAt,
+    subscriptionStatus: user?.sellerSubscriptionStatus || null,
   };
 }
 
@@ -96,7 +106,12 @@ export default async function DashboardPage() {
     return null;
   }
 
-  const { stats, recentListings, hasSubscription, isContractor, sellerTier } = await getDashboardData(session.user.id);
+  const { stats, recentListings, hasSubscription, isContractor, sellerTier, trialEndsAt, subscriptionStatus } = await getDashboardData(session.user.id);
+
+  // Calculate days remaining in trial
+  const daysRemaining = trialEndsAt 
+    ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -105,6 +120,34 @@ export default async function DashboardPage() {
         currentTier={sellerTier || undefined} 
         isContractor={isContractor} 
       />
+
+      {/* Trial Countdown Banner */}
+      {subscriptionStatus === 'trialing' && daysRemaining !== null && (
+        <div className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                <span className="text-2xl font-bold">{daysRemaining}</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold">
+                  {daysRemaining === 0 ? 'Trial Ends Today!' : daysRemaining === 1 ? '1 Day Left in Your Trial' : `${daysRemaining} Days Left in Your Trial`}
+                </h3>
+                <p className="text-white/80 text-sm">
+                  Enjoy full Seller Pro features. {daysRemaining <= 7 ? 'Subscribe now to keep your benefits!' : 'Your trial is active.'}
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/dashboard/billing"
+              className="inline-flex items-center px-5 py-2.5 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors"
+            >
+              Upgrade Now
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Welcome Message for New Users */}
       <WelcomeMessage
         userName={session.user.name?.split(' ')[0] || 'there'}

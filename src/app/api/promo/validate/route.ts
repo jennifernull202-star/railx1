@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       code: normalizedCode,
       active: true,
       limit: 1,
-      expand: ['data.promotion.coupon'], // Expand coupon details
+      expand: ['data.coupon'], // Expand coupon details
     });
 
     if (promoCodes.data.length === 0) {
@@ -86,10 +86,11 @@ export async function POST(request: NextRequest) {
 
     const promoCode = promoCodes.data[0];
     
-    // Access coupon through promotion object
-    const coupon = promoCode.promotion?.coupon;
+    // Access coupon - use type assertion since we expanded it
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const coupon = (promoCode as any).coupon as Stripe.Coupon;
     
-    if (!coupon || typeof coupon === 'string') {
+    if (!coupon) {
       return NextResponse.json({
         valid: false,
         error: 'Unable to validate promo code',

@@ -141,7 +141,7 @@ export default async function HomePage() {
       <main className="flex-1">
         {/* Hero Section - Premium Background Image */}
         <section 
-          className="relative bg-cover bg-center bg-no-repeat min-h-[85vh] overflow-hidden pt-24 md:pt-32"
+          className="relative bg-cover bg-center bg-no-repeat min-h-[85vh] overflow-hidden pt-20 md:pt-28"
           style={{ backgroundImage: "url('/hero-rail.jpg')" }}
         >
           {/* Dark Overlay - Gradient per spec */}
