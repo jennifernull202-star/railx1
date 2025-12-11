@@ -16,7 +16,6 @@ import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import Listing from '@/models/Listing';
 import {
-  SELLER_TIERS,
   ADD_ON_TYPES,
   ADD_ON_PRICING,
 } from '@/config/pricing';

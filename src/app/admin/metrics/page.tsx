@@ -21,9 +21,6 @@ import {
   TrendingUp,
   BarChart3,
   Globe,
-  Users,
-  HardDrive,
-  Cpu,
 } from "lucide-react";
 
 interface SystemMetrics {

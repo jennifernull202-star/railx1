@@ -12,13 +12,10 @@ import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   RefreshCw,
-  Filter,
   ChevronDown,
   ChevronRight,
   Clock,
   Code,
-  User,
-  Globe,
   XCircle,
   AlertCircle,
   Info,

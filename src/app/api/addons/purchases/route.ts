@@ -12,7 +12,7 @@ import connectDB from '@/lib/db';
 import AddOnPurchase from '@/models/AddOnPurchase';
 import Listing from '@/models/Listing';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 

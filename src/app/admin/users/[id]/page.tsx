@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -23,10 +23,7 @@ import {
   CreditCard,
   Package,
   Clock,
-  MapPin,
   Phone,
-  Globe,
-  Edit,
   AlertTriangle,
 } from 'lucide-react';
 
@@ -77,7 +74,6 @@ const getRoleColor = (role: string) => {
 
 export default function AdminUserDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const userId = params.id as string;
   
   const [user, setUser] = useState<UserDetail | null>(null);

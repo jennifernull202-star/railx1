@@ -7,7 +7,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -71,7 +71,6 @@ const getStatusIcon = (status: string) => {
 
 export default function AdminContractorDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const contractorId = params.id as string;
   
   const [contractor, setContractor] = useState<ContractorDetail | null>(null);

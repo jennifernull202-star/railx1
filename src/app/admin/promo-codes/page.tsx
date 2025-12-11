@@ -140,7 +140,7 @@ export default function AdminPromoCodesPage() {
           message: data.error || "Invalid promo code",
         });
       }
-    } catch (error) {
+    } catch {
       setTestResult({
         valid: false,
         message: "Failed to validate promo code",

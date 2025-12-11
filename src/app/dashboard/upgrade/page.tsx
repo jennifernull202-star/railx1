@@ -22,9 +22,7 @@ import {
 } from '@/config/pricing';
 import {
   Check,
-  X,
   ShoppingCart,
-  Trash2,
   Crown,
   Star,
   TrendingUp,
@@ -33,10 +31,8 @@ import {
   ArrowRight,
   ChevronDown,
   Loader2,
-  Zap,
   ArrowLeft,
   Package,
-  Tag,
   Gift,
   Shield,
 } from 'lucide-react';
@@ -109,7 +105,7 @@ function UpgradePageContent() {
   }, [session]);
 
   // Get current user's subscription tier
-  const currentTier = (session?.user as any)?.sellerTier || 'basic';
+  const currentTier = (session?.user as { sellerTier?: string })?.sellerTier || 'basic';
 
   const sellerTiers = [
     SELLER_TIER_CONFIG[SELLER_TIERS.BASIC],
@@ -129,13 +125,6 @@ function UpgradePageContent() {
   const getPrice = (tier: { priceMonthly: number; priceYearly?: number }) => {
     if (billingPeriod === 'yearly' && tier.priceYearly) {
       return tier.priceYearly / 12;
-    }
-    return tier.priceMonthly;
-  };
-
-  const getTotalPrice = (tier: { priceMonthly: number; priceYearly?: number }) => {
-    if (billingPeriod === 'yearly' && tier.priceYearly) {
-      return tier.priceYearly;
     }
     return tier.priceMonthly;
   };

@@ -11,11 +11,9 @@ import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
-  CreditCard,
   RefreshCw,
   CheckCircle,
   XCircle,
-  AlertTriangle,
   DollarSign,
   Clock,
   Tag,
@@ -24,8 +22,6 @@ import {
   Activity,
   ExternalLink,
   ArrowUpRight,
-  TrendingUp,
-  Calendar,
 } from "lucide-react";
 
 interface StripeMetrics {
@@ -133,7 +129,7 @@ export default function AdminStripePage() {
           message: data.error || "Invalid promo code",
         });
       }
-    } catch (error) {
+    } catch {
       setPromoTestResult({
         valid: false,
         message: "Failed to validate promo code",

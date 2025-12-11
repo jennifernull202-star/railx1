@@ -22,7 +22,6 @@ import {
   Activity,
   BarChart3,
   ThumbsUp,
-  ThumbsDown,
   AlertCircle,
 } from "lucide-react";
 

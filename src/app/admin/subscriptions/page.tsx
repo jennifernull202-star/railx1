@@ -16,11 +16,9 @@ import {
   TrendingUp,
   TrendingDown,
   DollarSign,
-  Calendar,
   ArrowUpRight,
   ArrowDownRight,
   ChevronRight,
-  Filter,
 } from "lucide-react";
 import Link from "next/link";
 

@@ -53,7 +53,7 @@ interface NavItem {
 // Inner component that uses subscription context
 function DashboardLayoutInner({ children }: DashboardLayoutProps) {
   const { data: session, status } = useSession();
-  const { hasSellerSubscription, isVerifiedContractor: isSubVerifiedContractor, subscription, loading: subLoading } = useSubscription();
+  const { hasSellerSubscription, isVerifiedContractor: isSubVerifiedContractor, subscription } = useSubscription();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -80,7 +80,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
             showContractorSection: data.showContractorSection ?? true,
           });
         }
-      } catch (error) {
+      } catch {
         // Use defaults
       }
     };
