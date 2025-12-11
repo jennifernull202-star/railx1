@@ -30,6 +30,7 @@ import {
   Crown,
   Lock,
   ArrowLeft,
+  Search,
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -154,59 +155,62 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
     );
   };
 
-  // Navigation sections - unified for all users
+  // Navigation sections - unified for all users matching required structure:
+  // /dashboard → Overview, Selling, Contractor, ISO, Account, Upgrade
   const navigationSections: NavSection[] = [
     {
-      title: "General",
+      title: "Overview",
       icon: Home,
       items: [
         { label: "Dashboard", href: "/dashboard", icon: Home },
         { label: "Messages", href: "/dashboard/messages", icon: MessageSquare, badge: unreadMessagesCount > 0 ? String(unreadMessagesCount) : undefined },
         { label: "Notifications", href: "/dashboard/settings", icon: Bell, badge: unreadCount > 0 ? String(unreadCount) : undefined },
-        { label: "Profile", href: "/dashboard/profile", icon: User },
-        { label: "Upgrade", href: "/dashboard/upgrade", icon: Crown },
-        { label: "Billing", href: "/dashboard/billing", icon: CreditCard },
-        { label: "Settings", href: "/dashboard/settings", icon: Settings },
       ],
     },
     {
-      title: "Marketplace",
-      icon: ShoppingCart,
+      title: "Selling",
+      icon: Package,
       items: [
-        { label: "Browse Listings", href: "/listings", icon: Package },
-        { label: "Saved Items", href: "/dashboard/saved", icon: Heart },
+        { label: "Create Listing", href: "/listings/create", icon: FileText },
+        { label: "Manage Listings", href: "/dashboard/listings", icon: Package },
         { label: "My Inquiries", href: "/dashboard/inquiries", icon: MessageSquare },
-        { label: "Find Contractors", href: "/contractors", icon: Wrench },
+      ],
+    },
+    {
+      title: "Contractor",
+      icon: Wrench,
+      items: [
+        { label: "My Services", href: "/dashboard/contractor/services", icon: Wrench },
+        { label: "Contractor Profile", href: "/dashboard/contractor/profile", icon: User },
+        { label: "Service Leads", href: "/dashboard/contractor/leads", icon: MessageSquare },
+        { label: "Get Verified", href: "/dashboard/contractor/verify", icon: Shield },
+      ],
+    },
+    {
+      title: "ISO (In Search Of)",
+      icon: Search,
+      items: [
+        { label: "Create Request", href: "/dashboard/iso", icon: FileText },
+        { label: "Browse Requests", href: "/dashboard/iso", icon: Search },
+      ],
+    },
+    {
+      title: "Account",
+      icon: User,
+      items: [
+        { label: "Settings", href: "/dashboard/settings", icon: Settings },
+        { label: "Billing & Subscriptions", href: "/dashboard/billing", icon: CreditCard },
+        { label: "Seller Verification", href: "/dashboard/verification/seller", icon: Shield },
       ],
     },
   ];
 
-  // Add Seller section - ALWAYS show for all users (isSeller is always true)
+  // Add Upgrade Plan item (not a section, but we add it as a section for consistency)
   navigationSections.push({
-    title: "Selling",
-    icon: Package,
-    requiresSubscription: hasSellerSubscription ? undefined : "seller",
+    title: "Upgrade Plan",
+    icon: Crown,
     items: [
-      { label: "My Listings", href: "/dashboard/listings", icon: Package },
-      { label: "Create Listing", href: "/listings/create", icon: FileText },
-      { label: "My Add-Ons", href: "/dashboard/addons", icon: Star },
-      { label: "Leads & Inquiries", href: "/dashboard/leads", icon: MessageSquare },
-      { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-      { label: "Verified Seller", href: "/dashboard/verification/seller", icon: Shield },
-    ],
-  });
-
-  // Add Contractor section - ALWAYS show for ALL users (no gating)
-  navigationSections.push({
-    title: "Contractor",
-    icon: Wrench,
-    items: [
-      { label: "My Services", href: "/dashboard/contractor/services", icon: Wrench },
-      { label: "Contractor Profile", href: "/dashboard/contractor/profile", icon: User },
-      { label: "Service Leads", href: "/dashboard/contractor/leads", icon: MessageSquare },
-      ...(isVerifiedContractor
-        ? [{ label: "Verified Badge", href: "/dashboard/contractor/verified", icon: Shield }]
-        : [{ label: "Get Verified", href: "/dashboard/verification/contractor", icon: Star }]),
+      { label: "Upgrade Plan", href: "/dashboard/upgrade", icon: Crown },
     ],
   });
 

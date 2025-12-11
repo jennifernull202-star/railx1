@@ -47,7 +47,7 @@ export default function VerificationPaymentPage() {
           // Redirect if not approved
           if (data.verificationStatus !== 'ai_approved' && data.verificationStatus !== 'approved') {
             if (data.verificationStatus === 'verified') {
-              router.push('/dashboard/contractor');
+              router.push('/dashboard/contractor/services');
             } else {
               router.push('/dashboard/contractor/verify');
             }

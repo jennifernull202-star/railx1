@@ -33,7 +33,7 @@ export default function BecomeContractorPage() {
 
   // Redirect if already a contractor
   if (session?.user?.isContractor) {
-    router.push("/dashboard/contractor");
+    router.push("/dashboard/contractor/services");
     return null;
   }
 

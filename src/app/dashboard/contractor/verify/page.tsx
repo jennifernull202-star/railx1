@@ -213,7 +213,7 @@ export default function ContractorVerifyPage() {
             Your Verified badge is active and visible to all buyers.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link href="/dashboard/contractor" className="btn-primary">
+            <Link href="/dashboard/contractor/services" className="btn-primary">
               Go to Dashboard
             </Link>
             <Link href="/dashboard/billing" className="btn-secondary">
@@ -297,7 +297,7 @@ export default function ContractorVerifyPage() {
           <p className="text-text-secondary mb-6">
             Your documents are being reviewed by our team. We&apos;ll notify you within 24-48 hours.
           </p>
-          <Link href="/dashboard/contractor" className="btn-secondary">
+          <Link href="/dashboard/contractor/services" className="btn-secondary">
             Return to Dashboard
           </Link>
         </div>
