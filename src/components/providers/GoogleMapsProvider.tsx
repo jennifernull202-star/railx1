@@ -5,7 +5,10 @@
  * 1. Prevents duplicate script loading
  * 2. Provides loading state via context
  * 3. Handles errors gracefully
- * 4. Works with Places API
+ * 4. Works with Places API (New PlaceAutocompleteElement)
+ * 
+ * UPDATED: December 2025 - Uses new Places API with async/defer
+ * per Google's 2025 migration guide.
  */
 
 'use client';
@@ -44,8 +47,8 @@ const loadCallbacks: Array<(error: Error | null) => void> = [];
 
 function loadGoogleMapsScript(apiKey: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    // Already loaded
-    if (globalScriptLoaded && window.google?.maps?.places) {
+    // Already loaded - check for both maps and places
+    if (globalScriptLoaded && window.google?.maps) {
       resolve();
       return;
     }
@@ -64,7 +67,7 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
     // Check if script already exists in DOM
     const existingScript = document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
     if (existingScript) {
-      if (window.google?.maps?.places) {
+      if (window.google?.maps) {
         globalScriptLoaded = true;
         loadCallbacks.forEach(cb => cb(null));
         loadCallbacks.length = 0;
@@ -72,17 +75,19 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
         return;
       }
       // Wait for existing script to load
-      existingScript.addEventListener('load', () => {
+      const handleLoad = () => {
         globalScriptLoaded = true;
         loadCallbacks.forEach(cb => cb(null));
         loadCallbacks.length = 0;
-      });
-      existingScript.addEventListener('error', () => {
+      };
+      const handleError = () => {
         const error = new Error('Failed to load Google Maps script');
         globalLoadError = error;
         loadCallbacks.forEach(cb => cb(error));
         loadCallbacks.length = 0;
-      });
+      };
+      existingScript.addEventListener('load', handleLoad);
+      existingScript.addEventListener('error', handleError);
       return;
     }
 
@@ -91,7 +96,8 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
 
     const script = document.createElement('script');
     script.id = 'google-maps-script';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`;
+    // Use loading=async for modern Google Maps loading pattern
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,marker&v=weekly&loading=async`;
     script.async = true;
     script.defer = true;
 

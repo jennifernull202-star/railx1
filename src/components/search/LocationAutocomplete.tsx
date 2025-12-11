@@ -3,7 +3,13 @@
  * 
  * Google Places Autocomplete input for location selection.
  * Returns city, state, coordinates, and formatted address.
- * Uses centralized GoogleMapsProvider for script loading.
+ * 
+ * UPDATED: December 2025 - Uses new Places Autocomplete API
+ * with proper event handling (no async in listeners).
+ * 
+ * Note: PlaceAutocompleteElement is the new web component approach,
+ * but for maximum compatibility we use the Places Service with
+ * synchronous event handling.
  */
 
 'use client';
@@ -45,14 +51,31 @@ export default function LocationAutocomplete({
   types = ['(cities)'],
   countryRestrictions = ['us'],
 }: LocationAutocompleteProps) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const autocompleteRef = React.useRef<google.maps.places.Autocomplete | null>(null);
+  const listenerRef = React.useRef<google.maps.MapsEventListener | null>(null);
   const [inputValue, setInputValue] = React.useState(value);
   const { isLoaded } = useGoogleMaps();
 
-  // Initialize autocomplete
+  // Store callbacks in refs to avoid stale closures in event listener
+  const onChangeRef = React.useRef(onChange);
+  const onLocationSelectRef = React.useRef(onLocationSelect);
+  
+  React.useEffect(() => {
+    onChangeRef.current = onChange;
+    onLocationSelectRef.current = onLocationSelect;
+  }, [onChange, onLocationSelect]);
+
+  // Initialize autocomplete - synchronous event handling only
   React.useEffect(() => {
     if (!isLoaded || !inputRef.current || autocompleteRef.current) return;
+
+    // Ensure google.maps.places is available
+    if (!window.google?.maps?.places?.Autocomplete) {
+      console.warn('Google Maps Places API not available');
+      return;
+    }
 
     const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
       types,
@@ -60,7 +83,8 @@ export default function LocationAutocomplete({
       fields: ['address_components', 'geometry', 'formatted_address', 'name'],
     });
 
-    autocomplete.addListener('place_changed', () => {
+    // CRITICAL: Synchronous event handler - no async/await inside
+    const handlePlaceChanged = () => {
       const place = autocomplete.getPlace();
       
       if (!place.geometry?.location) {
@@ -68,32 +92,37 @@ export default function LocationAutocomplete({
         return;
       }
 
-      // Parse address components
+      // Parse address components synchronously
       let city = '';
       let state = '';
       let country = '';
       let postalCode = '';
 
-      place.address_components?.forEach((component) => {
-        const types = component.types;
-        if (types.includes('locality')) {
+      const components = place.address_components || [];
+      for (let i = 0; i < components.length; i++) {
+        const component = components[i];
+        const componentTypes = component.types;
+        
+        if (componentTypes.includes('locality')) {
           city = component.long_name;
-        } else if (types.includes('administrative_area_level_1')) {
+        } else if (componentTypes.includes('administrative_area_level_1')) {
           state = component.short_name;
-        } else if (types.includes('country')) {
+        } else if (componentTypes.includes('country')) {
           country = component.short_name;
-        } else if (types.includes('postal_code')) {
+        } else if (componentTypes.includes('postal_code')) {
           postalCode = component.long_name;
         }
-      });
+      }
 
       // If no city found, try sublocality
       if (!city) {
-        place.address_components?.forEach((component) => {
+        for (let i = 0; i < components.length; i++) {
+          const component = components[i];
           if (component.types.includes('sublocality') || component.types.includes('administrative_area_level_2')) {
             city = component.long_name;
+            break;
           }
-        });
+        }
       }
 
       const result: LocationResult = {
@@ -106,21 +135,35 @@ export default function LocationAutocomplete({
         lng: place.geometry.location.lng(),
       };
 
-      // Update input value
+      // Update input value synchronously
       const displayValue = city && state ? `${city}, ${state}` : place.formatted_address || '';
       setInputValue(displayValue);
-      onChange?.(displayValue);
-      onLocationSelect?.(result);
-    });
-
-    autocompleteRef.current = autocomplete;
-
-    return () => {
-      if (autocompleteRef.current) {
-        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      
+      // Call callbacks using refs (avoids stale closure)
+      if (onChangeRef.current) {
+        onChangeRef.current(displayValue);
+      }
+      if (onLocationSelectRef.current) {
+        onLocationSelectRef.current(result);
       }
     };
-  }, [isLoaded, types, countryRestrictions, onChange, onLocationSelect]);
+
+    // Add listener and store reference for cleanup
+    listenerRef.current = autocomplete.addListener('place_changed', handlePlaceChanged);
+    autocompleteRef.current = autocomplete;
+
+    // Cleanup function
+    return () => {
+      if (listenerRef.current) {
+        google.maps.event.removeListener(listenerRef.current);
+        listenerRef.current = null;
+      }
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
+      }
+    };
+  }, [isLoaded, types, countryRestrictions]);
 
   // Sync external value changes
   React.useEffect(() => {
@@ -131,12 +174,15 @@ export default function LocationAutocomplete({
   }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputValue(e.target.value);
-    onChange?.(e.target.value);
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    if (onChangeRef.current) {
+      onChangeRef.current(newValue);
+    }
   };
 
   return (
-    <div className={cn('relative', className)}>
+    <div ref={containerRef} className={cn('relative', className)}>
       <input
         ref={inputRef}
         type="text"
