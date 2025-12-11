@@ -103,7 +103,7 @@ export default function EditListingPage() {
       const data: ListingData = await res.json();
 
       // Verify ownership
-      if (data.sellerId !== session?.user?.id && session?.user?.role !== 'admin') {
+      if (data.sellerId !== session?.user?.id && !session?.user?.isAdmin) {
         throw new Error('You do not have permission to edit this listing');
       }
 
@@ -137,7 +137,7 @@ export default function EditListingPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [listingId, session?.user?.id, session?.user?.role]);
+  }, [listingId, session?.user?.id, session?.user?.isAdmin]);
 
   useEffect(() => {
     if (sessionStatus === 'authenticated' && listingId) {

@@ -27,6 +27,10 @@ export interface HeaderProps {
     email?: string | null;
     image?: string | null;
     role?: string | null;
+    // Capability flags
+    isAdmin?: boolean;
+    isContractor?: boolean;
+    isSeller?: boolean;
   };
   notificationCount?: number;
   className?: string;
@@ -134,7 +138,9 @@ const Header: React.FC<HeaderProps> = ({
               </Avatar>
               <div className="hidden md:block text-left">
                 <p className="text-sm font-medium text-navy-900">{user.name || 'User'}</p>
-                <p className="text-xs text-text-tertiary capitalize">{user.role || 'Member'}</p>
+                <p className="text-xs text-text-tertiary capitalize">
+                  {user.isAdmin ? 'Admin' : user.isContractor ? 'Seller & Contractor' : 'Seller'}
+                </p>
               </div>
               <svg className="hidden md:block w-4 h-4 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

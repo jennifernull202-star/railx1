@@ -108,7 +108,7 @@ export default function AdminSellerVerificationsPage() {
 
   // Check admin access
   useEffect(() => {
-    if (sessionStatus === 'authenticated' && session?.user?.role !== 'admin') {
+    if (sessionStatus === 'authenticated' && !session?.user?.isAdmin) {
       router.push('/dashboard');
     }
   }, [session, sessionStatus, router]);
@@ -129,7 +129,7 @@ export default function AdminSellerVerificationsPage() {
   }, [statusFilter]);
 
   useEffect(() => {
-    if (session?.user?.role === 'admin') {
+    if (session?.user?.isAdmin) {
       fetchVerifications();
     }
   }, [session, fetchVerifications]);

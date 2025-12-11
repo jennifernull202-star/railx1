@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
     const admin = await User.findOne({ email: session.user.email });
-    if (!admin || admin.role !== 'admin') {
+    if (!admin || !admin.isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
     const admin = await User.findOne({ email: session.user.email });
-    if (!admin || admin.role !== 'admin') {
+    if (!admin || !admin.isAdmin) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 

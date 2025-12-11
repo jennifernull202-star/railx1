@@ -28,7 +28,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const session = await getServerSession(authOptions);
 
     // Admin only
-    if (!session?.user?.id || session.user.role !== 'admin') {
+    if (!session?.user?.id || !session.user.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const session = await getServerSession(authOptions);
 
     // Admin only
-    if (!session?.user?.id || session.user.role !== 'admin') {
+    if (!session?.user?.id || !session.user.isAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

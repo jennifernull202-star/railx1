@@ -24,13 +24,30 @@ export interface IUser {
   name: string;
   email: string;
   password: string;
-  role: UserRole;
+  role: UserRole; // Legacy - kept for admin check only
   image?: string;
   phone?: string;
   company?: string;
   emailVerified?: Date;
   isActive: boolean;
   lastLogin?: Date;
+  
+  // ============================================
+  // CAPABILITY FLAGS (new capability-based system)
+  // ============================================
+  isSeller: boolean;           // True for ALL users by default (everyone can sell)
+  isContractor: boolean;       // False by default, true only if opted-in
+  isAdmin: boolean;            // False by default, true only for admin users
+  
+  // Seller Pro tier tracking
+  sellerProActive: boolean;
+  sellerProExpiresAt: Date | null;
+  
+  // Verification statuses
+  sellerVerificationStatus: 'none' | 'pending-ai' | 'pending-admin' | 'active' | 'revoked';
+  sellerVerificationSubscriptionId: string | null;
+  contractorVerificationStatus: 'none' | 'pending-ai' | 'pending-admin' | 'active' | 'revoked';
+  contractorVerificationSubscriptionId: string | null;
   
   // Subscription fields for sellers
   sellerTier: SellerTierType;
@@ -157,6 +174,53 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
       },
       default: 'buyer',
     },
+    
+    // ============================================
+    // CAPABILITY FLAGS (new capability-based system)
+    // ============================================
+    isSeller: {
+      type: Boolean,
+      default: true, // ALL users can sell by default
+    },
+    isContractor: {
+      type: Boolean,
+      default: false, // Only true if user opts in
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false, // Only true for admin users
+    },
+    
+    // Seller Pro tier tracking
+    sellerProActive: {
+      type: Boolean,
+      default: false,
+    },
+    sellerProExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    
+    // Verification statuses
+    sellerVerificationStatus: {
+      type: String,
+      enum: ['none', 'pending-ai', 'pending-admin', 'active', 'revoked'],
+      default: 'none',
+    },
+    sellerVerificationSubscriptionId: {
+      type: String,
+      default: null,
+    },
+    contractorVerificationStatus: {
+      type: String,
+      enum: ['none', 'pending-ai', 'pending-admin', 'active', 'revoked'],
+      default: 'none',
+    },
+    contractorVerificationSubscriptionId: {
+      type: String,
+      default: null,
+    },
+    
     image: {
       type: String,
       default: null,
@@ -385,6 +449,12 @@ UserSchema.index({ sellerTier: 1 });
 UserSchema.index({ contractorTier: 1 });
 UserSchema.index({ isVerifiedSeller: 1 });
 UserSchema.index({ verifiedSellerStatus: 1 });
+// Capability flag indexes
+UserSchema.index({ isSeller: 1 });
+UserSchema.index({ isContractor: 1 });
+UserSchema.index({ isAdmin: 1 });
+UserSchema.index({ sellerVerificationStatus: 1 });
+UserSchema.index({ contractorVerificationStatus: 1 });
 
 // ============================================
 // MIDDLEWARE

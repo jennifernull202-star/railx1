@@ -44,7 +44,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
     // Check if listing is viewable
     const isOwner = session?.user?.id === listing.sellerId._id.toString();
-    const isAdmin = session?.user?.role === 'admin';
+    const isAdmin = session?.user?.isAdmin;
 
     if (!listing.isActive && !isOwner && !isAdmin) {
       return NextResponse.json(
@@ -114,7 +114,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     // Check ownership
     const isOwner = session.user.id === listing.sellerId.toString();
-    const isAdmin = session.user.role === 'admin';
+    const isAdmin = session.user.isAdmin;
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
@@ -240,7 +240,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     // Check ownership
     const isOwner = session.user.id === listing.sellerId.toString();
-    const isAdmin = session.user.role === 'admin';
+    const isAdmin = session.user.isAdmin;
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json(

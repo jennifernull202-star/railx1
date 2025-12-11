@@ -20,7 +20,6 @@ import {
   LogOut,
   Menu,
   X,
-  User,
   Shield,
   ChevronDown,
   ChevronRight,
@@ -72,7 +71,7 @@ export default function AdminLayout({
 
   // Redirect non-admins
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.role !== "admin") {
+    if (status === "authenticated" && !session?.user?.isAdmin) {
       router.push("/dashboard");
     } else if (status === "unauthenticated") {
       router.push("/auth/login");
@@ -101,7 +100,7 @@ export default function AdminLayout({
       }
     };
 
-    if (session?.user?.role === "admin") {
+    if (session?.user?.isAdmin) {
       fetchPendingCounts();
       const interval = setInterval(fetchPendingCounts, 60000); // Refresh every minute
       return () => clearInterval(interval);
@@ -116,7 +115,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!session?.user || session.user.role !== "admin") {
+  if (!session?.user || !session.user.isAdmin) {
     return null;
   }
 

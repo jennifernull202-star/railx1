@@ -18,7 +18,7 @@ import {
 export default async function AdminSettingsPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user || session.user.role !== 'admin') {
+  if (!session?.user || !session.user.isAdmin) {
     redirect('/');
   }
 

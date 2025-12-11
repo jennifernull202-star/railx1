@@ -65,7 +65,7 @@ export default function AdminUsersPage() {
 
   // Redirect non-admins
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.role !== 'admin') {
+    if (status === 'authenticated' && !session?.user?.isAdmin) {
       router.push('/dashboard');
     }
   }, [status, session, router]);

@@ -79,7 +79,7 @@ async function getAdminStats() {
 export default async function AdminDashboardPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user || session.user.role !== 'admin') {
+  if (!session?.user || !session.user.isAdmin) {
     redirect('/');
   }
 

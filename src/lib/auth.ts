@@ -61,8 +61,12 @@ export const authOptions: NextAuthOptions = {
             id: user._id.toString(),
             email: user.email,
             name: user.name,
-            role: user.role,
+            role: user.role, // Legacy - kept for backwards compat
             image: user.image || undefined,
+            // Capability flags
+            isSeller: user.isSeller ?? true, // Default true for all users
+            isContractor: user.isContractor ?? false,
+            isAdmin: user.isAdmin ?? (user.role === 'admin'), // Fallback for migration
             // Subscription info
             subscriptionTier: user.sellerTier !== 'buyer' ? user.sellerTier : undefined,
             isVerifiedContractor: user.contractorTier === 'verified',
@@ -98,8 +102,12 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
-        token.role = user.role;
+        token.role = user.role; // Legacy - kept for backwards compat
         token.image = user.image;
+        // Capability flags
+        token.isSeller = user.isSeller ?? true;
+        token.isContractor = user.isContractor ?? false;
+        token.isAdmin = user.isAdmin ?? false;
         token.subscriptionTier = user.subscriptionTier;
         token.isVerifiedContractor = user.isVerifiedContractor;
         token.contractorTier = user.contractorTier;
@@ -115,6 +123,9 @@ export const authOptions: NextAuthOptions = {
         if (session.isVerifiedContractor !== undefined) {
           token.isVerifiedContractor = session.isVerifiedContractor;
         }
+        if (session.isContractor !== undefined) {
+          token.isContractor = session.isContractor;
+        }
       }
 
       return token;
@@ -125,8 +136,12 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id;
         session.user.email = token.email;
         session.user.name = token.name;
-        session.user.role = token.role;
+        session.user.role = token.role; // Legacy - kept for backwards compat
         session.user.image = token.image;
+        // Capability flags
+        session.user.isSeller = token.isSeller ?? true;
+        session.user.isContractor = token.isContractor ?? false;
+        session.user.isAdmin = token.isAdmin ?? false;
         session.user.subscriptionTier = token.subscriptionTier;
         session.user.isVerifiedContractor = token.isVerifiedContractor;
         session.user.contractorTier = token.contractorTier;

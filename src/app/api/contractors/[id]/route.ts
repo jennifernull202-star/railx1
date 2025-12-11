@@ -47,7 +47,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Only return if published or if owner/admin
     const session = await getServerSession(authOptions);
     const isOwner = session?.user?.id === contractor.userId?.toString();
-    const isAdmin = session?.user?.role === 'admin';
+    const isAdmin = session?.user?.isAdmin;
 
     if (!contractor.isPublished && !isOwner && !isAdmin) {
       return NextResponse.json(
@@ -106,7 +106,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Check ownership or admin
     const isOwner = session.user.id === contractor.userId.toString();
-    const isAdmin = session.user.role === 'admin';
+    const isAdmin = session.user.isAdmin;
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
@@ -224,7 +224,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     // Check ownership or admin
     const isOwner = session.user.id === contractor.userId.toString();
-    const isAdmin = session.user.role === 'admin';
+    const isAdmin = session.user.isAdmin;
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json(

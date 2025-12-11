@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const userId = session.user.id;
     const isBuyer = inquiry.buyer._id.toString() === userId;
     const isSeller = inquiry.seller._id.toString() === userId;
-    const isAdmin = session.user.role === 'admin';
+    const isAdmin = session.user.isAdmin;
 
     if (!isBuyer && !isSeller && !isAdmin) {
       return NextResponse.json(
@@ -226,7 +226,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const userId = session.user.id;
     const isBuyer = inquiry.buyer.toString() === userId;
     const isSeller = inquiry.seller.toString() === userId;
-    const isAdmin = session.user.role === 'admin';
+    const isAdmin = session.user.isAdmin;
 
     if (!isBuyer && !isSeller && !isAdmin) {
       return NextResponse.json(

@@ -63,31 +63,6 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
   ]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
-  const [userPreferences, setUserPreferences] = useState({
-    showSellerSection: true,
-    showContractorSection: true,
-  });
-
-  // Fetch user preferences for which sections to show
-  useEffect(() => {
-    const fetchPreferences = async () => {
-      try {
-        const res = await fetch("/api/user/preferences");
-        if (res.ok) {
-          const data = await res.json();
-          setUserPreferences({
-            showSellerSection: data.showSellerSection ?? true,
-            showContractorSection: data.showContractorSection ?? true,
-          });
-        }
-      } catch {
-        // Use defaults
-      }
-    };
-    if (session?.user) {
-      fetchPreferences();
-    }
-  }, [session]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -164,7 +139,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
   }
 
   const user = session.user;
-  const isAdmin = user.role === "admin";
+  const isAdmin = user.isAdmin === true;
   // Use subscription context for fresh data (hasSellerSubscription comes from context)
   const isVerifiedContractor = isSubVerifiedContractor || user.isVerifiedContractor === true;
   // Get display tier from subscription context (fresh from DB)
@@ -206,25 +181,24 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
     },
   ];
 
-  // Add Seller section if user wants to see it
-  if (userPreferences.showSellerSection) {
-    navigationSections.push({
-      title: "Selling",
-      icon: Package,
-      requiresSubscription: hasSellerSubscription ? undefined : "seller",
-      items: [
-        { label: "My Listings", href: "/dashboard/listings", icon: Package },
-        { label: "Create Listing", href: "/listings/create", icon: FileText },
-        { label: "My Add-Ons", href: "/dashboard/addons", icon: Star },
-        { label: "Leads & Inquiries", href: "/dashboard/leads", icon: MessageSquare },
-        { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-        { label: "Verified Seller", href: "/dashboard/verification/seller", icon: Shield },
-      ],
-    });
-  }
+  // Add Seller section - ALWAYS show for all users (isSeller is always true)
+  navigationSections.push({
+    title: "Selling",
+    icon: Package,
+    requiresSubscription: hasSellerSubscription ? undefined : "seller",
+    items: [
+      { label: "My Listings", href: "/dashboard/listings", icon: Package },
+      { label: "Create Listing", href: "/listings/create", icon: FileText },
+      { label: "My Add-Ons", href: "/dashboard/addons", icon: Star },
+      { label: "Leads & Inquiries", href: "/dashboard/leads", icon: MessageSquare },
+      { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+      { label: "Verified Seller", href: "/dashboard/verification/seller", icon: Shield },
+    ],
+  });
 
-  // Add Contractor section if user wants to see it
-  if (userPreferences.showContractorSection) {
+  // Add Contractor section ONLY if user has opted in (isContractor === true)
+  const userIsContractor = user.isContractor === true;
+  if (userIsContractor) {
     navigationSections.push({
       title: "Contractor",
       icon: Wrench,
@@ -469,6 +443,15 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
               >
                 <Crown className="h-4 w-4" />
                 Upgrade Plan
+              </Link>
+            )}
+            {!userIsContractor && (
+              <Link
+                href="/dashboard/contractor/become"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all"
+              >
+                <Wrench className="h-4 w-4" />
+                Become a Contractor
               </Link>
             )}
             <button

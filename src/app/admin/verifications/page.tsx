@@ -67,7 +67,7 @@ export default function AdminVerificationsPage() {
 
   // Check admin role
   useEffect(() => {
-    if (sessionStatus === 'authenticated' && session?.user?.role !== 'admin') {
+    if (sessionStatus === 'authenticated' && !session?.user?.isAdmin) {
       router.push('/dashboard');
     }
   }, [session, sessionStatus, router]);
@@ -88,7 +88,7 @@ export default function AdminVerificationsPage() {
       }
     }
 
-    if (session?.user?.role === 'admin') {
+    if (session?.user?.isAdmin) {
       fetchPending();
     }
   }, [session]);

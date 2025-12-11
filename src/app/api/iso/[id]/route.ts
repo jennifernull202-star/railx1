@@ -102,7 +102,7 @@ export async function PUT(
 
     // Check ownership (admins can also edit)
     const isOwner = isoRequest.userId.toString() === session.user.id;
-    const isAdmin = session.user.role === 'admin';
+    const isAdmin = session.user.isAdmin;
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
@@ -191,7 +191,7 @@ export async function DELETE(
 
     // Check ownership (admins can also delete)
     const isOwner = isoRequest.userId.toString() === session.user.id;
-    const isAdmin = session.user.role === 'admin';
+    const isAdmin = session.user.isAdmin;
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json(

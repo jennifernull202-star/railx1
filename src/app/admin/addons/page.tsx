@@ -14,7 +14,7 @@ import { ADD_ON_METADATA } from '@/config/pricing';
 export default async function AdminAddOnsPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user || session.user.role !== 'admin') {
+  if (!session?.user || !session.user.isAdmin) {
     redirect('/');
   }
 
