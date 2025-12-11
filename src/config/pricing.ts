@@ -191,6 +191,7 @@ export const ADD_ON_TYPES = {
   PREMIUM: 'premium',
   ELITE: 'elite',
   AI_ENHANCEMENT: 'ai-enhancement',
+  VERIFIED_BADGE: 'verified-badge',
   SPEC_SHEET: 'spec-sheet',
 } as const;
 
@@ -205,6 +206,7 @@ export const ADD_ON_PRICING = {
   [ADD_ON_TYPES.PREMIUM]: 5000,         // $50.00 - Premium Placement
   [ADD_ON_TYPES.ELITE]: 9900,           // $99.00 - Elite Placement
   [ADD_ON_TYPES.AI_ENHANCEMENT]: 1000,  // $10.00 - AI Listing Enhancement
+  [ADD_ON_TYPES.VERIFIED_BADGE]: 1500,  // $15.00 - Verified Asset Badge
   [ADD_ON_TYPES.SPEC_SHEET]: 2500,      // $25.00 - Spec Sheet Auto-Build
 } as const;
 
@@ -217,6 +219,7 @@ export const ADD_ON_DURATION = {
   [ADD_ON_TYPES.PREMIUM]: 30,           // 30 days
   [ADD_ON_TYPES.ELITE]: 30,             // 30 days
   [ADD_ON_TYPES.AI_ENHANCEMENT]: null,  // Permanent (one-time enhancement)
+  [ADD_ON_TYPES.VERIFIED_BADGE]: 30,    // 30 days
   [ADD_ON_TYPES.SPEC_SHEET]: null,      // Permanent (one-time generation)
 } as const;
 
@@ -229,6 +232,7 @@ export const ADD_ON_RANKING_BOOST = {
   [ADD_ON_TYPES.PREMIUM]: 2,            // +2 tier boost
   [ADD_ON_TYPES.ELITE]: 3,              // +3 tier boost (highest - homepage + category)
   [ADD_ON_TYPES.AI_ENHANCEMENT]: 0,     // No ranking boost (content enhancement only)
+  [ADD_ON_TYPES.VERIFIED_BADGE]: 0,     // No ranking boost (trust signal only)
   [ADD_ON_TYPES.SPEC_SHEET]: 0,         // No ranking boost (document generation only)
 } as const;
 
@@ -241,6 +245,7 @@ export const STRIPE_ADDON_PRICE_IDS = {
   [ADD_ON_TYPES.PREMIUM]: process.env.STRIPE_PRICE_PREMIUM_PLACEMENT || '',
   [ADD_ON_TYPES.ELITE]: process.env.STRIPE_PRICE_ELITE_PLACEMENT || '',
   [ADD_ON_TYPES.AI_ENHANCEMENT]: process.env.STRIPE_PRICE_AI_ENHANCEMENT || '',
+  [ADD_ON_TYPES.VERIFIED_BADGE]: process.env.STRIPE_PRICE_VERIFIED_BADGE || '',
   [ADD_ON_TYPES.SPEC_SHEET]: process.env.STRIPE_PRICE_SPEC_SHEET || '',
 } as const;
 
@@ -322,6 +327,22 @@ export const ADD_ON_METADATA: Record<AddOnType, AddOnMetadata> = {
     badge: 'AI Enhanced',
     badgeColor: 'bg-blue-600',
     icon: '🤖',
+    category: 'enhancement',
+  },
+  [ADD_ON_TYPES.VERIFIED_BADGE]: {
+    name: 'Verified Asset Badge',
+    shortDescription: 'Trust signal for buyers',
+    description: 'Add a verified asset badge to your listing to build buyer confidence. Shows that your equipment has been seller-verified for authenticity.',
+    features: [
+      'Verified Asset badge on listing',
+      'Trust indicator for buyers',
+      'Highlighted in search results',
+      'Increased buyer confidence',
+      'Professional credibility boost',
+    ],
+    badge: 'Verified Asset',
+    badgeColor: 'bg-green-600',
+    icon: '✓',
     category: 'enhancement',
   },
   [ADD_ON_TYPES.SPEC_SHEET]: {

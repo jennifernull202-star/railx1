@@ -41,6 +41,7 @@ export interface ListingCardProps {
     featured?: { active: boolean };
     premium?: { active: boolean };
     elite?: { active: boolean };
+    verifiedBadge?: { active: boolean };
     aiEnhanced?: boolean;
   };
   isWatchlisted?: boolean;
@@ -118,6 +119,7 @@ const ListingCard: React.FC<ListingCardProps> = ({
   const isElite = premiumAddOns?.elite?.active;
   const isPremium = premiumAddOns?.premium?.active;
   const isFeatured = premiumAddOns?.featured?.active;
+  const hasVerifiedBadge = premiumAddOns?.verifiedBadge?.active;
 
   return (
     <Card className={cn(
@@ -158,6 +160,11 @@ const ListingCard: React.FC<ListingCardProps> = ({
           {premiumAddOns?.aiEnhanced && (
             <Badge variant="outline" className="bg-white/90 text-navy-900 border-navy-900/20 text-xs">
               ✨ AI Enhanced
+            </Badge>
+          )}
+          {hasVerifiedBadge && (
+            <Badge className="bg-green-600 text-white border-0 text-xs font-semibold">
+              ✓ Verified Asset
             </Badge>
           )}
         </div>

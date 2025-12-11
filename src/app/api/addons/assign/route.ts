@@ -175,6 +175,12 @@ export async function POST(request: NextRequest) {
       };
     } else if (type === ADD_ON_TYPES.AI_ENHANCEMENT) {
       updateData['premiumAddOns.aiEnhanced'] = true;
+    } else if (type === ADD_ON_TYPES.VERIFIED_BADGE) {
+      updateData['premiumAddOns.verifiedBadge'] = {
+        active: true,
+        expiresAt: expiresAt,
+        purchasedAt: now,
+      };
     } else if (type === ADD_ON_TYPES.SPEC_SHEET) {
       updateData['premiumAddOns.specSheet.generated'] = true;
     }

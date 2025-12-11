@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import AIChatWidget from "@/components/AIChatWidget";
+import AddOnIndicator from "@/components/dashboard/AddOnIndicator";
 import {
   Home,
   Package,
@@ -364,6 +365,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <Link href="/" className="flex-1">
           <span className="text-lg font-bold text-orange-600">RailX</span>
         </Link>
+        {hasSellerSubscription && <AddOnIndicator />}
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="p-2 rounded-lg hover:bg-gray-100"
@@ -399,6 +401,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Link href="/" className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-orange-600">RailX</span>
               </Link>
+              {hasSellerSubscription && (
+                <div className="ml-auto hidden lg:block">
+                  <AddOnIndicator />
+                </div>
+              )}
             </div>
           </div>
 

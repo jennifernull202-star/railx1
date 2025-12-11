@@ -30,6 +30,7 @@ import {
   Clock,
   ChevronRight,
   Package,
+  Shield,
 } from 'lucide-react';
 import { ADD_ON_TYPES, VISIBILITY_ADDONS } from '@/config/pricing';
 
@@ -63,6 +64,7 @@ const ADD_ON_ICONS: Record<string, typeof Star> = {
   premium: TrendingUp,
   elite: Crown,
   ai_enhancement: Sparkles,
+  'verified-badge': Shield,
   spec_sheet: FileText,
 };
 
@@ -71,6 +73,7 @@ const ADD_ON_NAMES: Record<string, string> = {
   premium: 'Premium Placement',
   elite: 'Elite Placement',
   ai_enhancement: 'AI Enhancement',
+  'verified-badge': 'Verified Asset Badge',
   spec_sheet: 'Spec Sheet Generator',
 };
 
@@ -79,6 +82,7 @@ const ADD_ON_COLORS: Record<string, string> = {
   premium: 'bg-blue-500',
   elite: 'bg-purple-500',
   ai_enhancement: 'bg-green-500',
+  'verified-badge': 'bg-green-600',
   spec_sheet: 'bg-slate-500',
 };
 

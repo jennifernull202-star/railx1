@@ -77,6 +77,7 @@ interface ListingData {
     featured: { active: boolean; expiresAt?: string };
     premium?: { active: boolean; expiresAt?: string };
     elite?: { active: boolean; expiresAt?: string };
+    verifiedBadge?: { active: boolean; expiresAt?: string };
     aiEnhanced?: boolean;
     specSheet?: { generated: boolean; url?: string };
   };
@@ -297,6 +298,16 @@ export default async function ListingDetailPage({ params }: PageProps) {
                         <path d="M13.5 3a1.5 1.5 0 100 3h.5a.5.5 0 01.5.5v.5a1.5 1.5 0 003 0V6a1 1 0 00-1-1h-.5a1.5 1.5 0 01-1.5-1.5V3zm-5 0A1.5 1.5 0 017 4.5V5a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3H6a.5.5 0 01.5.5v.5a1.5 1.5 0 003 0V9.5a.5.5 0 01.5-.5h.5a1.5 1.5 0 000-3H10a1 1 0 01-1-1v-.5A1.5 1.5 0 008.5 3z" />
                       </svg>
                       AI
+                    </div>
+                  )}
+
+                  {/* Verified Asset Badge */}
+                  {listing.premiumAddOns.verifiedBadge?.active && (
+                    <div className={`absolute ${listing.premiumAddOns.aiEnhanced ? 'top-12' : 'top-4'} right-4 bg-green-600 text-white px-2 py-1 rounded text-xs font-medium flex items-center`}>
+                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Verified Asset
                     </div>
                   )}
                 </div>

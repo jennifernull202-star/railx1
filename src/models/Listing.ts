@@ -53,6 +53,12 @@ export interface PremiumAddOns {
     expiresAt?: Date;
     purchasedAt?: Date;
   };
+  // Verified Asset Badge (30-day duration)
+  verifiedBadge?: {
+    active: boolean;
+    expiresAt?: Date;
+    purchasedAt?: Date;
+  };
   // Enhancement add-ons (permanent from config)
   aiEnhanced?: boolean;
   specSheet?: {
@@ -326,6 +332,11 @@ const ListingSchema = new Schema<IListingDocument, IListingModel>(
         purchasedAt: Date,
       },
       topSpot: {
+        active: { type: Boolean, default: false },
+        expiresAt: Date,
+        purchasedAt: Date,
+      },
+      verifiedBadge: {
         active: { type: Boolean, default: false },
         expiresAt: Date,
         purchasedAt: Date,

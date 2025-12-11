@@ -145,6 +145,7 @@ export async function GET(request: NextRequest) {
           featured?: { active: boolean; expiresAt?: Date };
           premium?: { active: boolean; expiresAt?: Date };
           elite?: { active: boolean; expiresAt?: Date };
+          verifiedBadge?: { active: boolean; expiresAt?: Date };
           aiEnhanced?: boolean;
           specSheet?: boolean;
         };
@@ -154,6 +155,7 @@ export async function GET(request: NextRequest) {
         isFeatured: boolean;
         isPremium: boolean;
         isElite: boolean;
+        hasVerifiedBadge: boolean;
         isAiEnhanced: boolean;
         hasSpecSheet: boolean;
       }
@@ -196,6 +198,10 @@ export async function GET(request: NextRequest) {
           rankScore += RANKING_WEIGHTS.specSheet;
         }
 
+        // Check Verified Badge status
+        const verifiedBadgeActive = addOns?.verifiedBadge?.active && 
+          (!addOns.verifiedBadge.expiresAt || new Date(addOns.verifiedBadge.expiresAt) > now);
+
         return {
           ...listing,
           _rankScore: rankScore,
@@ -203,6 +209,7 @@ export async function GET(request: NextRequest) {
           isFeatured: !!featuredActive || rankTier !== 'standard',
           isPremium: !!premiumActive || rankTier === 'elite',
           isElite: !!eliteActive,
+          hasVerifiedBadge: !!verifiedBadgeActive,
           isAiEnhanced: !!addOns?.aiEnhanced,
           hasSpecSheet: !!addOns?.specSheet,
         } as ProcessedListing;

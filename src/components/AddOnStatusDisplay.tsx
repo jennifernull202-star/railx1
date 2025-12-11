@@ -72,6 +72,8 @@ function AddOnBadge({ addOn }: { addOn: AddOnStatus }) {
         return 'bg-amber-500 text-white';
       case ADD_ON_TYPES.AI_ENHANCEMENT:
         return 'bg-blue-600 text-white';
+      case ADD_ON_TYPES.VERIFIED_BADGE:
+        return 'bg-green-600 text-white';
       case ADD_ON_TYPES.SPEC_SHEET:
         return 'bg-slate-700 text-white';
       default:
@@ -130,6 +132,8 @@ function AddOnCard({
         return 'border-l-amber-500';
       case ADD_ON_TYPES.AI_ENHANCEMENT:
         return 'border-l-blue-600';
+      case ADD_ON_TYPES.VERIFIED_BADGE:
+        return 'border-l-green-600';
       case ADD_ON_TYPES.SPEC_SHEET:
         return 'border-l-slate-700';
       default:

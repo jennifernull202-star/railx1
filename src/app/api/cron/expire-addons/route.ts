@@ -90,6 +90,8 @@ export async function GET(request: NextRequest) {
             if (!otherFeaturedSource) {
               updateData['premiumAddOns.featured.active'] = false;
             }
+          } else if (type === ADD_ON_TYPES.VERIFIED_BADGE) {
+            updateData['premiumAddOns.verifiedBadge.active'] = false;
           }
 
           if (Object.keys(updateData).length > 0) {
