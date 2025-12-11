@@ -38,6 +38,7 @@ import {
   Package,
   Tag,
   Gift,
+  Shield,
 } from 'lucide-react';
 import PromoCodeInput, { PromoDiscount } from '@/components/PromoCodeInput';
 
@@ -66,6 +67,7 @@ const addonIcons: Record<string, typeof Star> = {
   [ADD_ON_TYPES.ELITE]: Crown,
   [ADD_ON_TYPES.AI_ENHANCEMENT]: Sparkles,
   [ADD_ON_TYPES.SPEC_SHEET]: FileText,
+  [ADD_ON_TYPES.VERIFIED_BADGE]: Shield,
 };
 
 function UpgradePageContent() {
@@ -121,6 +123,7 @@ function UpgradePageContent() {
     { type: ADD_ON_TYPES.ELITE, ...ADD_ON_METADATA[ADD_ON_TYPES.ELITE], price: ADD_ON_PRICING[ADD_ON_TYPES.ELITE] },
     { type: ADD_ON_TYPES.AI_ENHANCEMENT, ...ADD_ON_METADATA[ADD_ON_TYPES.AI_ENHANCEMENT], price: ADD_ON_PRICING[ADD_ON_TYPES.AI_ENHANCEMENT] },
     { type: ADD_ON_TYPES.SPEC_SHEET, ...ADD_ON_METADATA[ADD_ON_TYPES.SPEC_SHEET], price: ADD_ON_PRICING[ADD_ON_TYPES.SPEC_SHEET] },
+    { type: ADD_ON_TYPES.VERIFIED_BADGE, ...ADD_ON_METADATA[ADD_ON_TYPES.VERIFIED_BADGE], price: ADD_ON_PRICING[ADD_ON_TYPES.VERIFIED_BADGE] },
   ];
 
   const getPrice = (tier: { priceMonthly: number; priceYearly?: number }) => {

@@ -45,6 +45,7 @@ function getAddonPriceId(addonType: string): string {
     [ADD_ON_TYPES.ELITE]: process.env.STRIPE_PRICE_ADDON_ELITE || '',
     [ADD_ON_TYPES.AI_ENHANCEMENT]: process.env.STRIPE_PRICE_ADDON_AI || '',
     [ADD_ON_TYPES.SPEC_SHEET]: process.env.STRIPE_PRICE_ADDON_SPEC || '',
+    [ADD_ON_TYPES.VERIFIED_BADGE]: process.env.STRIPE_PRICE_ADDON_VERIFIED || '',
   };
   return addonMap[addonType] || '';
 }
