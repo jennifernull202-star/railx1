@@ -148,7 +148,7 @@ export function getNavigationItems({
           badge: unreadMessages > 0 ? unreadMessages : undefined,
         },
         { href: '/dashboard/upgrade', label: 'Upgrade Plan', icon: <AnalyticsIcon /> },
-        { href: '/dashboard/verification/seller', label: 'Get Verified (Seller)', icon: <ShieldIcon /> },
+        { href: '/dashboard/verification/seller', label: 'Get Verified', icon: <ShieldIcon /> },
       ],
     });
   }
@@ -184,7 +184,7 @@ export function getNavigationItems({
 
   // ISO (In Search Of) section
   sections.push({
-    title: 'ISO (In Search Of)',
+    title: 'ISO',
     items: [
       { href: '/iso', label: 'Browse Requests', icon: <ListingsIcon /> },
       { href: '/iso/create', label: 'Create Request', icon: <InboxIcon /> },
