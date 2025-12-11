@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { getImageUrl } from '@/lib/utils';
 import { LISTING_CATEGORIES, LISTING_CONDITIONS } from '@/lib/listing-constants';
 import { SERVICE_CATEGORIES, US_STATES } from '@/lib/constants';
 import { ListingsMap } from '@/components/maps';
@@ -113,7 +114,7 @@ function ListingCard({ listing }: { listing: Listing }) {
         {listing.primaryImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={listing.primaryImageUrl}
+            src={getImageUrl(listing.primaryImageUrl)}
             alt={listing.title}
             className="w-full h-full object-cover"
           />

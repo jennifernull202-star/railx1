@@ -24,9 +24,21 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'www.therailexchange.com',
-        pathname: '/api/s3-image/**',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'therailexchange.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.vercel.app',
+        pathname: '/**',
       },
     ],
+    // Allow unoptimized images for API proxy routes
+    unoptimized: false,
   },
 };
 

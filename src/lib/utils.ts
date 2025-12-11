@@ -6,38 +6,23 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Convert S3 URLs to proxy URLs for images.
- * This allows images to be served even when S3 bucket blocks public access.
+ * Normalize image URLs for display.
+ * Now that S3 bucket has public read access and CORS configured,
+ * we can use direct S3 URLs instead of proxying through our API.
  * 
  * @param url - Original URL (could be S3 URL, proxy URL, or other)
- * @returns Proxy URL if it's an S3 URL, otherwise returns the original URL
+ * @returns Direct S3 URL or original URL
  */
 export function getImageUrl(url: string | undefined | null): string {
   if (!url) return '/placeholders/listing-no-image.png';
   
-  // Already a proxy URL
-  if (url.startsWith('/api/s3-image')) {
-    return url;
+  // If it's a proxy URL, convert back to direct S3 URL
+  if (url.startsWith('/api/s3-image?key=')) {
+    const keyParam = url.replace('/api/s3-image?key=', '');
+    const key = decodeURIComponent(keyParam);
+    return `https://railx-uploads.s3.us-east-2.amazonaws.com/${key}`;
   }
   
-  // Check if it's an S3 URL and convert to proxy
-  const s3Pattern = /https?:\/\/([^.]+)\.s3\.([^.]+)\.amazonaws\.com\/(.+)/;
-  const match = url.match(s3Pattern);
-  
-  if (match) {
-    const key = match[3];
-    return `/api/s3-image?key=${encodeURIComponent(key)}`;
-  }
-  
-  // Also handle S3 URLs in path style: https://s3.region.amazonaws.com/bucket/key
-  const s3PathPattern = /https?:\/\/s3\.([^.]+)\.amazonaws\.com\/([^/]+)\/(.+)/;
-  const pathMatch = url.match(s3PathPattern);
-  
-  if (pathMatch) {
-    const key = pathMatch[3];
-    return `/api/s3-image?key=${encodeURIComponent(key)}`;
-  }
-  
-  // Return original URL for non-S3 URLs (e.g., placeholder images, external URLs)
+  // Already an S3 URL or other URL - return as-is
   return url;
 }

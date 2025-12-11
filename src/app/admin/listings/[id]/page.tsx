@@ -29,6 +29,7 @@ import {
   ImageIcon,
   ExternalLink,
 } from 'lucide-react';
+import { getImageUrl } from '@/lib/utils';
 
 interface ListingDetail {
   _id: string;
@@ -72,21 +73,6 @@ const STATUS_CONFIG = {
   expired: { color: 'bg-red-100 text-red-700', icon: XCircle, label: 'Expired' },
   removed: { color: 'bg-red-100 text-red-700', icon: Trash2, label: 'Removed' },
 };
-
-function getImageUrl(src: string): string {
-  if (!src) return '/placeholder.svg';
-  if (src.startsWith('http://') || src.startsWith('https://')) {
-    if (src.includes('s3.') && src.includes('amazonaws.com')) {
-      const key = src.split('.com/')[1];
-      if (key) {
-        return `/api/s3-image?key=${encodeURIComponent(key)}`;
-      }
-    }
-    return src;
-  }
-  if (src.startsWith('/')) return src;
-  return `/api/s3-image?key=${encodeURIComponent(src)}`;
-}
 
 export default function AdminListingDetailPage() {
   const params = useParams();

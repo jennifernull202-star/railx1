@@ -8,7 +8,7 @@
 'use client';
 
 import * as React from 'react';
-import { cn } from '@/lib/utils';
+import { cn, getImageUrl } from '@/lib/utils';
 import { MapWrapper } from './MapWrapper';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -137,7 +137,7 @@ export const ListingsMap: React.FC<ListingsMapProps> = ({
           const content = `
             <div style="max-width: 280px; font-family: Inter, sans-serif;">
               ${listing.primaryImageUrl ? `
-                <img src="${listing.primaryImageUrl}" alt="${listing.title}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px 8px 0 0;" />
+                <img src="${getImageUrl(listing.primaryImageUrl)}" alt="${listing.title}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px 8px 0 0;" />
               ` : ''}
               <div style="padding: 12px;">
                 <p style="font-size: 12px; color: #FF6A1A; margin: 0 0 4px 0; font-weight: 500;">

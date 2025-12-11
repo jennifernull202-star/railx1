@@ -17,6 +17,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/utils';
 import {
   ArrowLeft,
   Star,
@@ -506,7 +507,7 @@ export default function MyAddOnsPage() {
                           <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
                             {imageUrl ? (
                               <Image
-                                src={imageUrl}
+                                src={getImageUrl(imageUrl)}
                                 alt={listing.title}
                                 width={48}
                                 height={48}
