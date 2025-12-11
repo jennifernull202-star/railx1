@@ -144,8 +144,8 @@ export default async function HomePage() {
           className="relative bg-cover bg-center bg-no-repeat h-[85vh] overflow-hidden"
           style={{ backgroundImage: "url('/hero-rail.jpg')" }}
         >
-          {/* Dark + Frosted Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/30 backdrop-blur-sm z-10" />
+          {/* Dark Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/30 z-10" />
           
           <div className="relative z-20 container-rail max-w-[1280px] mx-auto px-6 md:px-8 py-14 md:py-20 lg:py-24 h-full flex items-center">
             <div className="max-w-4xl mx-auto text-center">
