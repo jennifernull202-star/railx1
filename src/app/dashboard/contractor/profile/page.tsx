@@ -21,6 +21,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useUnsavedChanges } from '@/lib/hooks/useUnsavedChanges';
 import {
   Building2,
   Mail,
@@ -181,6 +182,18 @@ export default function ContractorProfilePage() {
     return null;
   }
 
+  // Track if form has unsaved changes
+  const hasFormChanges = formData.businessName.length > 0 || 
+    formData.description.length > 0 || 
+    formData.services.length > 0 ||
+    formData.photos.length > 0;
+  
+  // Warn user before leaving with unsaved changes  
+  useUnsavedChanges({ 
+    hasChanges: hasFormChanges && !saving && !success,
+    message: 'You have unsaved changes to your contractor profile. Are you sure you want to leave?'
+  });
+
   // Handle service toggle
   const toggleService = (serviceValue: string) => {
     setFormData(prev => ({
@@ -316,7 +329,7 @@ export default function ContractorProfilePage() {
       setHasExistingProfile(true);
       if (data.slug) setProfileSlug(data.slug);
       
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(''), 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save');
     } finally {

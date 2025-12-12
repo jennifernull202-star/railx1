@@ -3,6 +3,7 @@ import "./globals.css";
 import AuthProvider from "@/components/providers/AuthProvider";
 import { GoogleMapsProvider } from "@/components/providers/GoogleMapsProvider";
 import AIChatWidget from "@/components/AIChatWidget";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "The Rail Exchange™ | Premium Rail Industry Marketplace",
@@ -56,6 +57,13 @@ export default function RootLayout({
             </div>
             {/* AI Chat Widget - Available Site-Wide */}
             <AIChatWidget />
+            {/* Global Toast Notifications */}
+            <Toaster 
+              position="top-right" 
+              richColors 
+              closeButton
+              duration={5000}
+            />
           </GoogleMapsProvider>
         </AuthProvider>
       </body>

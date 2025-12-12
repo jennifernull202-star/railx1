@@ -63,7 +63,9 @@ export default function BulkPhotoUpload({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [uploadProgress, setUploadProgress] = useState<{ completed: number; total: number } | null>(null);
   const [truncationWarning, setTruncationWarning] = useState<string | null>(null);
+  const [failedFiles, setFailedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const retryInputRef = useRef<HTMLInputElement>(null);
   const dragItemRef = useRef<number | null>(null);
 
   const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -291,6 +293,24 @@ export default function BulkPhotoUpload({
     setDragOverIndex(index);
   };
 
+  // Retry all failed uploads
+  const handleRetryFailed = useCallback(() => {
+    // Get indices and remove failed images
+    const failedImageIds = images.filter(img => img.error).map(img => img.id);
+    const successfulImages = images.filter(img => !img.error);
+    
+    // Clear failed images from the list
+    onChange(successfulImages.map((img, index) => ({ ...img, order: index })));
+    
+    // Trigger file input to allow user to re-select files
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  }, [images, onChange]);
+
+  // Count failed uploads for retry button
+  const failedCount = images.filter(img => img.error).length;
+
   const handleDragEnd = () => {
     if (dragItemRef.current === null || dragOverIndex === null) {
       setDragOverIndex(null);
@@ -347,6 +367,22 @@ export default function BulkPhotoUpload({
           {uploadProgress.completed === uploadProgress.total && (
             <CheckCircle className="w-4 h-4 text-green-600" />
           )}
+        </div>
+      )}
+
+      {/* Retry Failed Uploads Button */}
+      {failedCount > 0 && !uploadProgress && (
+        <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+          <span className="text-sm text-red-800 flex-1">
+            {failedCount} {failedCount === 1 ? 'photo' : 'photos'} failed to upload
+          </span>
+          <button
+            onClick={handleRetryFailed}
+            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          >
+            Remove &amp; Retry
+          </button>
         </div>
       )}
 

@@ -16,6 +16,7 @@ import { LISTING_CATEGORIES, LISTING_CONDITIONS } from '@/lib/listing-constants'
 import { US_STATES } from '@/lib/constants';
 import LocationAutocomplete, { LocationResult } from '@/components/search/LocationAutocomplete';
 import BulkPhotoUpload, { UploadedImage } from '@/components/forms/BulkPhotoUpload';
+import { useUnsavedChanges } from '@/lib/hooks/useUnsavedChanges';
 
 const CATEGORY_LABELS: Record<string, { label: string; description: string }> = {
   'locomotives': { label: 'Locomotives', description: 'Diesel, electric, and switcher locomotives' },
@@ -161,6 +162,18 @@ export default function CreateListingPage() {
       console.error('Failed to clear draft:', e);
     }
   };
+
+  // Warn user before leaving with unsaved changes
+  const hasFormChanges = formData.title.length > 0 || 
+    formData.description.length > 0 || 
+    formData.category.length > 0 ||
+    media.length > 0 ||
+    specifications.some(s => s.label || s.value);
+  
+  useUnsavedChanges({ 
+    hasChanges: hasFormChanges && !isSubmitting,
+    message: 'You have unsaved changes to your listing. Are you sure you want to leave?'
+  });
 
   const updateFormData = (updates: Partial<ListingFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));

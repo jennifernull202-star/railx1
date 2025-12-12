@@ -172,35 +172,40 @@ const ListingCard: React.FC<ListingCardProps> = ({
           )}
         </div>
 
-        {/* Watchlist Button */}
-        {onWatchlistToggle && (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
+        {/* Watchlist Button - Always visible, prompts login for anonymous users */}
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            if (onWatchlistToggle) {
               onWatchlistToggle(id);
-            }}
-            className={cn(
-              "absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center",
-              "bg-white/90 hover:bg-white shadow-sm transition-all duration-200",
-              isWatchlisted && "text-status-error"
-            )}
-            aria-label={isWatchlisted ? 'Remove from watchlist' : 'Add to watchlist'}
+            }
+          }}
+          className={cn(
+            "absolute top-3 right-3 min-w-[44px] min-h-[44px] w-11 h-11 rounded-full flex items-center justify-center",
+            "shadow-sm transition-all duration-200",
+            onWatchlistToggle 
+              ? "bg-white/90 hover:bg-white cursor-pointer" 
+              : "bg-white/60 cursor-default",
+            isWatchlisted && "text-status-error",
+            !onWatchlistToggle && "text-slate-300"
+          )}
+          aria-label={!onWatchlistToggle ? 'Sign in to save' : isWatchlisted ? 'Remove from watchlist' : 'Add to watchlist'}
+          title={!onWatchlistToggle ? 'Sign in to save to watchlist' : isWatchlisted ? 'Remove from watchlist' : 'Add to watchlist'}
+        >
+          <svg
+            className="w-5 h-5"
+            fill={isWatchlisted ? 'currentColor' : 'none'}
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
           >
-            <svg
-              className="w-5 h-5"
-              fill={isWatchlisted ? 'currentColor' : 'none'}
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-            </svg>
-          </button>
-        )}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            />
+          </svg>
+        </button>
 
         {/* Condition Badge */}
         <div className="absolute bottom-3 left-3">
