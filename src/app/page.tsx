@@ -139,74 +139,93 @@ export default async function HomePage() {
       <SiteHeader showCTA={false} />
 
       <main className="flex-1">
-        {/* Hero Section - Premium Background Image */}
+        {/* Hero Section - Premium Gradient Mesh */}
         <section 
-          className="relative bg-cover bg-center bg-no-repeat min-h-[85vh] overflow-hidden pt-16 md:pt-20"
+          className="relative bg-cover bg-center bg-no-repeat min-h-[50vh] md:min-h-[60vh] lg:min-h-[70vh] overflow-hidden pt-16 md:pt-20"
           style={{ backgroundImage: "url('/hero-rail.jpg')" }}
         >
-          {/* Dark Overlay - Strong gradient for readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/40 z-10" />
+          {/* Dark Overlay with Gradient Mesh */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/70 to-navy-900/90 z-10" />
+          <div className="absolute inset-0 z-[11] opacity-30" style={{ background: 'radial-gradient(ellipse at 20% 30%, rgba(255, 107, 26, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(30, 64, 175, 0.1) 0%, transparent 50%)' }} />
           
-          <div className="relative z-20 container-rail max-w-[1280px] mx-auto px-6 md:px-8 py-14 md:py-20 lg:py-24 flex items-center">
+          <div className="relative z-20 container-rail max-w-[1280px] mx-auto px-5 md:px-8 py-10 md:py-16 lg:py-20 flex items-center">
             <div className="max-w-4xl mx-auto text-center">
               
-              {/* Premium Badge - Eye-catching Navy Design */}
-              <div className="relative z-20 inline-flex items-center gap-2.5 px-5 py-2.5 bg-navy-900 rounded-full mb-10 shadow-lg">
-                <span className="flex items-center justify-center w-5 h-5 bg-rail-orange rounded-full">
-                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+              {/* Trust Stats Bar */}
+              <div className="relative z-20 inline-flex flex-wrap justify-center items-center gap-4 md:gap-6 px-5 py-3 bg-white/10 backdrop-blur-md rounded-full mb-8 border border-white/20">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-[13px] md:text-[14px] font-semibold text-white">1,200+ Listings</span>
+                </div>
+                <span className="hidden md:block w-px h-4 bg-white/30" />
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                  </svg>
+                  <span className="text-[13px] md:text-[14px] font-semibold text-white">850+ Verified Sellers</span>
+                </div>
+                <span className="hidden md:block w-px h-4 bg-white/30" />
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                </span>
-                <span className="text-[14px] font-bold text-white tracking-wide">
-                  #1 Rail Industry Marketplace
-                </span>
-                <span className="w-1.5 h-1.5 bg-rail-orange rounded-full animate-pulse" />
+                  <span className="text-[13px] md:text-[14px] font-semibold text-white">4.9★ Avg Rating</span>
+                </div>
               </div>
 
-              {/* Headline - Premium Spacing */}
-              <h1 className="relative z-20 text-[36px] md:text-[48px] lg:text-[56px] font-bold text-white leading-[1.1] tracking-tight mb-7">
-                Buy, Sell & Connect in the{" "}
-                <span className="text-rail-orange">Rail Industry</span>
+              {/* Headline */}
+              <h1 className="relative z-20 text-[32px] md:text-[44px] lg:text-[52px] font-bold text-white leading-[1.1] tracking-tight mb-5">
+                The Marketplace Where{" "}
+                <span className="text-rail-orange">Rail Professionals</span> Trade
               </h1>
 
               {/* Subheadline */}
-              <p className="relative z-20 text-[17px] md:text-[19px] text-white/90 max-w-2xl mx-auto mb-6 leading-relaxed">
-                The premium marketplace for rail equipment, materials, services, and
-                verified contractors. Trusted by industry professionals nationwide.
+              <p className="relative z-20 text-[16px] md:text-[18px] text-white/90 max-w-2xl mx-auto mb-5 leading-relaxed">
+                Buy and sell locomotives, freight cars, track materials, and MOW equipment.
+                Connect with verified contractors nationwide.
               </p>
 
-              {/* New & Used Callout */}
-              <div className="relative z-20 inline-flex items-center gap-3 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-10 border border-white/20">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  <span className="text-[13px] font-medium text-white/95">New Equipment</span>
-                </span>
-                <span className="text-white/40">|</span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 bg-rail-orange rounded-full"></span>
-                  <span className="text-[13px] font-medium text-white/95">Pre-Owned</span>
-                </span>
-                <span className="text-white/40">|</span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-                  <span className="text-[13px] font-medium text-white/95">Surplus & Parts</span>
-                </span>
+              {/* Quick Category Pills */}
+              <div className="relative z-20 flex flex-wrap justify-center gap-2 mb-6">
+                <Link href="/listings?category=locomotives" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-full border border-white/20 transition-colors min-h-[36px]">
+                  <span className="text-[13px] font-medium text-white">🚂 Locomotives</span>
+                </Link>
+                <Link href="/listings?category=freight-cars" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-full border border-white/20 transition-colors min-h-[36px]">
+                  <span className="text-[13px] font-medium text-white">🚃 Freight Cars</span>
+                </Link>
+                <Link href="/listings?category=track-materials" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-full border border-white/20 transition-colors min-h-[36px]">
+                  <span className="text-[13px] font-medium text-white">🛤️ Track & Materials</span>
+                </Link>
+                <Link href="/listings?category=maintenance-of-way" className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-full border border-white/20 transition-colors min-h-[36px]">
+                  <span className="text-[13px] font-medium text-white">🔧 MOW Equipment</span>
+                </Link>
               </div>
 
-              {/* Search Module - Perfectly Centered */}
-              <div className="relative z-20 max-w-3xl mx-auto px-4 md:px-0">
+              {/* Search Module */}
+              <div className="relative z-20 max-w-3xl mx-auto px-2 md:px-0">
                 <HeroSearch />
                 
-                {/* Map CTA Button */}
-                <div className="mt-6 flex justify-center">
+                {/* Secondary CTAs */}
+                <div className="mt-5 flex flex-col sm:flex-row justify-center gap-3">
                   <Link 
                     href="/search?view=map" 
-                    className="relative z-20 inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-full text-[14px] font-medium text-navy-900 hover:bg-rail-orange hover:text-white hover:border-rail-orange shadow-sm hover:shadow-md transition-all duration-200"
+                    className="relative z-20 inline-flex items-center justify-center gap-2 px-5 py-3 min-h-[44px] bg-white border border-slate-200 rounded-xl text-[14px] font-medium text-navy-900 hover:bg-rail-orange hover:text-white hover:border-rail-orange shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                     </svg>
-                    <span>Explore Listings on Map</span>
+                    <span>Explore Map</span>
+                  </Link>
+                  <Link 
+                    href="/contractors" 
+                    className="relative z-20 inline-flex items-center justify-center gap-2 px-5 py-3 min-h-[44px] bg-white/10 backdrop-blur border border-white/20 rounded-xl text-[14px] font-medium text-white hover:bg-white/20 transition-all duration-200"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Find Contractors</span>
                   </Link>
                 </div>
               </div>
@@ -217,90 +236,117 @@ export default async function HomePage() {
         {/* Section Separator */}
         <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
 
-        {/* Category Section - Premium Refinements */}
-        <section className="pt-14 pb-12 bg-white">
-          <div className="container-rail max-w-[1280px] mx-auto px-6 md:px-8">
-            <div className="text-center mb-14">
-              <h2 className="text-[28px] md:text-[32px] font-bold text-navy-900 tracking-tight mb-4">
-                Browse by Category
+        {/* Category Section - Mega Categories */}
+        <section className="pt-12 pb-10 bg-white">
+          <div className="container-rail max-w-[1280px] mx-auto px-5 md:px-8">
+            <div className="text-center mb-10">
+              <h2 className="text-[24px] md:text-[28px] font-bold text-navy-900 tracking-tight mb-3">
+                Browse Equipment & Services
               </h2>
-              <p className="text-[16px] text-slate-500 max-w-xl mx-auto">
-                Find exactly what you need across our comprehensive marketplace
+              <p className="text-[15px] text-slate-500 max-w-lg mx-auto">
+                Find rolling stock, track materials, MOW equipment, and verified contractors
               </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-7">
-              {/* Equipment Tile */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+              {/* Rolling Stock - Mega Category */}
               <Link
                 href="/listings?category=locomotives"
-                className="group bg-white rounded-2xl p-7 md:p-8 text-center border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-slate-200 hover:-translate-y-0.5 transition-all duration-300"
+                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-rail-orange/30 hover:-translate-y-0.5 transition-all duration-300"
               >
-                <div className="w-14 h-14 mx-auto mb-5 bg-rail-orange/8 rounded-xl flex items-center justify-center group-hover:bg-rail-orange/12 transition-colors duration-300">
-                  <svg className="w-7 h-7 text-rail-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
+                <div className="w-12 h-12 mx-auto mb-4 bg-rail-orange/10 rounded-xl flex items-center justify-center group-hover:bg-rail-orange/15 transition-colors duration-300">
+                  <span className="text-2xl">🚂</span>
                 </div>
-                <h3 className="text-[16px] font-semibold text-navy-900 mb-1.5 group-hover:text-rail-orange transition-colors duration-200">
-                  Equipment
+                <h3 className="text-[15px] font-semibold text-navy-900 text-center mb-1 group-hover:text-rail-orange transition-colors duration-200">
+                  Rolling Stock
                 </h3>
-                <p className="text-[13px] text-slate-500 leading-relaxed">
-                  Locomotives, rail cars & machinery
+                <p className="text-[13px] text-slate-500 text-center leading-snug mb-3">
+                  Locomotives • Freight Cars • Passenger
                 </p>
+                <div className="text-center">
+                  <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 text-slate-600 text-[11px] font-medium rounded-full">
+                    420+ listings
+                  </span>
+                </div>
               </Link>
 
-              {/* Materials Tile */}
+              {/* Track & Infrastructure */}
               <Link
                 href="/listings?category=track-materials"
-                className="group bg-white rounded-2xl p-7 md:p-8 text-center border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-slate-200 hover:-translate-y-0.5 transition-all duration-300"
+                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-navy-900/30 hover:-translate-y-0.5 transition-all duration-300"
               >
-                <div className="w-14 h-14 mx-auto mb-5 bg-navy-900/6 rounded-xl flex items-center justify-center group-hover:bg-navy-900/10 transition-colors duration-300">
-                  <svg className="w-7 h-7 text-navy-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
+                <div className="w-12 h-12 mx-auto mb-4 bg-navy-900/8 rounded-xl flex items-center justify-center group-hover:bg-navy-900/12 transition-colors duration-300">
+                  <span className="text-2xl">🛤️</span>
                 </div>
-                <h3 className="text-[16px] font-semibold text-navy-900 mb-1.5 group-hover:text-rail-orange transition-colors duration-200">
-                  Materials
+                <h3 className="text-[15px] font-semibold text-navy-900 text-center mb-1 group-hover:text-rail-orange transition-colors duration-200">
+                  Track & Materials
                 </h3>
-                <p className="text-[13px] text-slate-500 leading-relaxed">
-                  Rails, ties & infrastructure
+                <p className="text-[13px] text-slate-500 text-center leading-snug mb-3">
+                  Rails • Ties • Turnouts • OTM
                 </p>
+                <div className="text-center">
+                  <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 text-slate-600 text-[11px] font-medium rounded-full">
+                    280+ listings
+                  </span>
+                </div>
               </Link>
 
-              {/* Services Tile */}
+              {/* MOW Equipment */}
               <Link
-                href="/listings?category=services"
-                className="group bg-white rounded-2xl p-7 md:p-8 text-center border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-slate-200 hover:-translate-y-0.5 transition-all duration-300"
+                href="/listings?category=maintenance-of-way"
+                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-amber-500/30 hover:-translate-y-0.5 transition-all duration-300"
               >
-                <div className="w-14 h-14 mx-auto mb-5 bg-emerald-500/8 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/12 transition-colors duration-300">
-                  <svg className="w-7 h-7 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
+                <div className="w-12 h-12 mx-auto mb-4 bg-amber-500/10 rounded-xl flex items-center justify-center group-hover:bg-amber-500/15 transition-colors duration-300">
+                  <span className="text-2xl">🛠️</span>
                 </div>
-                <h3 className="text-[16px] font-semibold text-navy-900 mb-1.5 group-hover:text-rail-orange transition-colors duration-200">
-                  Services
+                <h3 className="text-[15px] font-semibold text-navy-900 text-center mb-1 group-hover:text-rail-orange transition-colors duration-200">
+                  MOW Equipment
                 </h3>
-                <p className="text-[13px] text-slate-500 leading-relaxed">
-                  Maintenance & consulting
+                <p className="text-[13px] text-slate-500 text-center leading-snug mb-3">
+                  Tampers • Ballast • Rail Handling
                 </p>
+                <div className="text-center">
+                  <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 text-slate-600 text-[11px] font-medium rounded-full">
+                    185+ listings
+                  </span>
+                </div>
               </Link>
 
-              {/* Contractors Tile */}
+              {/* Contractors */}
               <Link
                 href="/contractors"
-                className="group bg-white rounded-2xl p-7 md:p-8 text-center border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-slate-200 hover:-translate-y-0.5 transition-all duration-300"
+                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-emerald-500/30 hover:-translate-y-0.5 transition-all duration-300"
               >
-                <div className="w-14 h-14 mx-auto mb-5 bg-blue-500/8 rounded-xl flex items-center justify-center group-hover:bg-blue-500/12 transition-colors duration-300">
-                  <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
+                <div className="w-12 h-12 mx-auto mb-4 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/15 transition-colors duration-300">
+                  <span className="text-2xl">👷</span>
                 </div>
-                <h3 className="text-[16px] font-semibold text-navy-900 mb-1.5 group-hover:text-rail-orange transition-colors duration-200">
+                <h3 className="text-[15px] font-semibold text-navy-900 text-center mb-1 group-hover:text-rail-orange transition-colors duration-200">
                   Contractors
                 </h3>
-                <p className="text-[13px] text-slate-500 leading-relaxed">
-                  Verified rail professionals
+                <p className="text-[13px] text-slate-500 text-center leading-snug mb-3">
+                  Verified • Insured • Nationwide
                 </p>
+                <div className="text-center">
+                  <span className="inline-flex items-center px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[11px] font-medium rounded-full">
+                    150+ verified
+                  </span>
+                </div>
+              </Link>
+            </div>
+
+            {/* Secondary Categories Row */}
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              <Link href="/listings?category=parts-components" className="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-medium rounded-full transition-colors">
+                Parts & Components
+              </Link>
+              <Link href="/listings?category=signals-communications" className="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-medium rounded-full transition-colors">
+                Signals & Communications
+              </Link>
+              <Link href="/listings?category=tools-equipment" className="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-medium rounded-full transition-colors">
+                Tools & Equipment
+              </Link>
+              <Link href="/listings" className="inline-flex items-center px-3 py-1.5 bg-navy-900 hover:bg-navy-800 text-white text-[13px] font-medium rounded-full transition-colors">
+                View All →
               </Link>
             </div>
           </div>
@@ -385,15 +431,15 @@ export default async function HomePage() {
                           {listing.condition}
                         </span>
                       </div>
-                      <h3 className="text-[16px] font-semibold text-navy-900 mb-2 line-clamp-2 group-hover:text-rail-orange transition-colors">
+                      <h3 className="text-[15px] font-semibold text-navy-900 mb-2 line-clamp-2 group-hover:text-rail-orange transition-colors">
                         {listing.title}
                       </h3>
-                      <div className="flex items-center justify-between mt-4">
-                        <p className="text-[18px] font-bold text-navy-900">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-3 gap-1">
+                        <p className="text-[17px] font-bold text-navy-900">
                           {formatPrice(listing.price)}
                         </p>
                         {(listing.location?.city || listing.location?.state) && (
-                          <p className="text-[13px] text-slate-500">
+                          <p className="text-[12px] text-slate-500">
                             {[listing.location.city, listing.location.state].filter(Boolean).join(', ')}
                           </p>
                         )}
@@ -471,43 +517,48 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              {/* US Map with Contractor Markers */}
+              {/* Contractor Stats Card - Replaces problematic map iframe */}
               <div className="relative">
-                <div className="aspect-[4/3] bg-slate-100 rounded-2xl overflow-hidden border border-slate-200/60 shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-                  {/* Static US Map */}
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d12587726.902398996!2d-109.67765073816428!3d39.54883771905045!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x54eab584e432360b%3A0x1c3bb99243deb742!2sUnited%20States!5e0!3m2!1sen!2sus!4v1702123456789!5m2!1sen!2sus"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    className="absolute inset-0"
-                  />
-                  {/* Overlay with CTA */}
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <Link 
-                      href="/contractors"
-                      className="flex items-center justify-between w-full px-5 py-3 bg-white/95 backdrop-blur rounded-xl shadow-lg hover:bg-white transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-navy-900 rounded-lg flex items-center justify-center">
-                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-[14px] font-semibold text-navy-900">Explore All Contractors</p>
-                          <p className="text-[12px] text-slate-500">Nationwide coverage</p>
-                        </div>
-                      </div>
-                      <svg className="w-5 h-5 text-rail-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </Link>
+                <div className="aspect-[4/3] bg-gradient-to-br from-navy-900 to-navy-800 rounded-2xl overflow-hidden border border-navy-700 shadow-[0_4px_20px_rgba(0,0,0,0.15)] p-6 md:p-8 flex flex-col justify-between">
+                  {/* Background Pattern */}
+                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
+                  
+                  <div className="relative z-10">
+                    <h3 className="text-[20px] md:text-[24px] font-bold text-white mb-2">Nationwide Coverage</h3>
+                    <p className="text-[14px] text-white/70">Verified contractors in 42 states</p>
                   </div>
+                  
+                  {/* Stats Grid */}
+                  <div className="relative z-10 grid grid-cols-2 gap-4 mt-6">
+                    <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
+                      <p className="text-[28px] md:text-[32px] font-bold text-white">150+</p>
+                      <p className="text-[12px] text-white/70">Verified Contractors</p>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
+                      <p className="text-[28px] md:text-[32px] font-bold text-white">42</p>
+                      <p className="text-[12px] text-white/70">States Covered</p>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
+                      <p className="text-[28px] md:text-[32px] font-bold text-white">24h</p>
+                      <p className="text-[12px] text-white/70">Avg Response</p>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
+                      <p className="text-[28px] md:text-[32px] font-bold text-emerald-400">100%</p>
+                      <p className="text-[12px] text-white/70">Insured</p>
+                    </div>
+                  </div>
+                  
+                  {/* CTA */}
+                  <Link 
+                    href="/contractors"
+                    className="relative z-10 mt-6 flex items-center justify-center gap-2 w-full px-5 py-3 min-h-[44px] bg-white text-navy-900 font-semibold rounded-xl hover:bg-rail-orange hover:text-white transition-all"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Explore All Contractors</span>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -521,7 +572,7 @@ export default async function HomePage() {
               <h2 className="text-[28px] md:text-[36px] font-bold text-white tracking-tight mb-4">
                 Boost Your Visibility
               </h2>
-              <p className="text-[16px] text-white/60 max-w-2xl mx-auto">
+              <p className="text-[16px] text-white/80 max-w-2xl mx-auto">
                 Premium add-ons to help your listings and profile stand out from the competition
               </p>
             </div>
@@ -535,10 +586,10 @@ export default async function HomePage() {
                   </svg>
                 </div>
                 <h3 className="text-[18px] font-semibold text-white mb-2">Featured Listing</h3>
-                <p className="text-[14px] text-white/50 mb-5 leading-relaxed">
-                  Boost your listing in search results with priority placement and a featured badge.
+                <p className="text-[14px] text-white/75 mb-5 leading-relaxed">
+                  Get 2x more views with priority placement and a featured badge in search.
                 </p>
-                <p className="text-[22px] font-bold text-rail-orange">$20<span className="text-[14px] font-medium text-white/40">/30 days</span></p>
+                <p className="text-[22px] font-bold text-rail-orange">$20<span className="text-[14px] font-medium text-white/60">/30 days</span></p>
               </div>
 
               {/* Premium - $50/30 days - Popular */}
@@ -552,10 +603,10 @@ export default async function HomePage() {
                   </svg>
                 </div>
                 <h3 className="text-[18px] font-semibold text-white mb-2">Premium Placement</h3>
-                <p className="text-[14px] text-white/50 mb-5 leading-relaxed">
-                  Pin your listing to category pages with enhanced visibility and premium badge.
+                <p className="text-[14px] text-white/75 mb-5 leading-relaxed">
+                  Get 5x more inquiries with category page pins and premium badge visibility.
                 </p>
-                <p className="text-[22px] font-bold text-purple-400">$50<span className="text-[14px] font-medium text-white/40">/30 days</span></p>
+                <p className="text-[22px] font-bold text-purple-400">$50<span className="text-[14px] font-medium text-white/60">/30 days</span></p>
               </div>
 
               {/* Elite - $99/30 days */}
@@ -566,10 +617,10 @@ export default async function HomePage() {
                   </svg>
                 </div>
                 <h3 className="text-[18px] font-semibold text-white mb-2">Elite Placement</h3>
-                <p className="text-[14px] text-white/50 mb-5 leading-relaxed">
-                  Homepage spotlight, category pins, and maximum visibility across the platform.
+                <p className="text-[14px] text-white/75 mb-5 leading-relaxed">
+                  Homepage spotlight + category pins = maximum visibility and fastest sales.
                 </p>
-                <p className="text-[22px] font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">$99<span className="text-[14px] font-medium text-white/40">/30 days</span></p>
+                <p className="text-[22px] font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">$99<span className="text-[14px] font-medium text-white/60">/30 days</span></p>
               </div>
             </div>
 
@@ -583,7 +634,7 @@ export default async function HomePage() {
                 </div>
                 <div>
                   <h4 className="text-[14px] font-semibold text-white">AI Enhancement</h4>
-                  <p className="text-[12px] text-white/40">$10 — Optimized listing content</p>
+                  <p className="text-[12px] text-white/60">$10 — Optimized listing content</p>
                 </div>
               </div>
               <div className="flex items-center gap-3.5 bg-white/[0.04] rounded-xl p-4 border border-white/[0.06]">
@@ -594,7 +645,7 @@ export default async function HomePage() {
                 </div>
                 <div>
                   <h4 className="text-[14px] font-semibold text-white">Spec Sheet</h4>
-                  <p className="text-[12px] text-white/40">$25 — Auto-generated PDF</p>
+                  <p className="text-[12px] text-white/60">$25 — Auto-generated PDF</p>
                 </div>
               </div>
               <div className="flex items-center gap-3.5 bg-white/[0.04] rounded-xl p-4 border border-white/[0.06]">
@@ -605,7 +656,7 @@ export default async function HomePage() {
                 </div>
                 <div>
                   <h4 className="text-[14px] font-semibold text-white">Verified Badge</h4>
-                  <p className="text-[12px] text-white/40">$149/year — Build trust instantly</p>
+                  <p className="text-[12px] text-white/60">$149/year — Build trust instantly</p>
                 </div>
               </div>
             </div>
@@ -617,54 +668,53 @@ export default async function HomePage() {
 
         {/* CTA Section - Premium */}
         <section className="py-14 md:py-16 lg:py-20 bg-white">
-          <div className="max-w-[1280px] mx-auto px-6 md:px-8 text-center">
-            <h2 className="text-[32px] md:text-[40px] font-bold text-navy-900 tracking-tight mb-6">
-              Ready to Get Started?
+          <div className="max-w-[1280px] mx-auto px-5 md:px-8 text-center">
+            <h2 className="text-[28px] md:text-[36px] font-bold text-navy-900 tracking-tight mb-5">
+              Join 850+ Verified Sellers on The Rail Exchange
             </h2>
-            <p className="text-[16px] md:text-[17px] text-slate-500 mb-12 max-w-xl mx-auto leading-relaxed">
-              Join thousands of rail industry professionals already using The Rail Exchange
-              to buy, sell, and connect.
+            <p className="text-[16px] md:text-[17px] text-slate-500 mb-10 max-w-xl mx-auto leading-relaxed">
+              List your equipment for free. Connect with buyers nationwide.
+              Average response time under 24 hours.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
-                href="/auth/register" 
-                className="inline-flex items-center justify-center h-14 px-10 bg-rail-orange text-white text-[16px] font-semibold rounded-xl shadow-md hover:bg-[#e55f15] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+                href="/listings/create" 
+                className="inline-flex items-center justify-center h-14 px-8 bg-rail-orange text-white text-[16px] font-semibold rounded-xl shadow-md hover:bg-[#e55f15] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
               >
-                Create Free Account
+                List Your Equipment Free
               </Link>
               <Link 
                 href="/listings" 
-                className="inline-flex items-center justify-center h-14 px-10 bg-white border-2 border-navy-900 text-navy-900 text-[16px] font-semibold rounded-xl hover:bg-navy-900 hover:text-white transition-all duration-200"
+                className="inline-flex items-center justify-center h-14 px-8 bg-white border-2 border-navy-900 text-navy-900 text-[16px] font-semibold rounded-xl hover:bg-navy-900 hover:text-white transition-all duration-200"
               >
-                Browse Marketplace
+                Browse Equipment Now
               </Link>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Footer - Premium Refinements with Mobile Fix */}
-      <footer className="w-full bg-[#0a1825] text-white px-6 py-16">
+      {/* Footer - Premium with Mobile Safe Zones */}
+      <footer className="w-full bg-[#0a1825] text-white px-5 md:px-6 pt-14 pb-20 md:pb-14">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:justify-between gap-12 pb-12 border-b border-white/[0.08]">
+          <div className="flex flex-col md:flex-row md:justify-between gap-10 pb-10 border-b border-white/[0.08]">
             {/* Brand Column */}
             <div className="flex flex-col gap-3 text-center md:text-left">
-              <Link href="/" className="inline-flex items-center justify-center md:justify-start mb-3">
+              <Link href="/" className="inline-flex items-center justify-center md:justify-start mb-2">
                 <span className="text-[18px] font-bold text-white">The Rail</span>
                 <span className="text-[18px] font-bold text-rail-orange ml-1">Exchange</span>
                 <span className="text-rail-orange text-[10px] font-medium ml-0.5">™</span>
               </Link>
-              <p className="text-[13px] text-white/50 leading-relaxed mb-4 max-w-[280px] mx-auto md:mx-0">
-                The premier marketplace for the rail industry. Buy, sell, and connect with
-                verified professionals.
+              <p className="text-[14px] text-white/70 leading-relaxed mb-3 max-w-[280px] mx-auto md:mx-0">
+                The marketplace where rail professionals trade equipment, materials, and services.
               </p>
               {/* Social Icons */}
-              <div className="flex items-center justify-center md:justify-start gap-4">
+              <div className="flex items-center justify-center md:justify-start gap-3">
                 <a 
                   href="https://www.linkedin.com/company/the-rail-exchange" 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-white/40 hover:text-white transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  className="text-white/50 hover:text-white transition-colors duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-white/10"
                   aria-label="Follow us on LinkedIn"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -675,45 +725,42 @@ export default async function HomePage() {
             </div>
 
             {/* Marketplace Links */}
-            <div className="flex flex-col gap-3 text-center md:text-left">
-              <h4 className="text-[13px] font-semibold text-white/80 uppercase tracking-wider mb-2">Marketplace</h4>
-              <ul className="space-y-2.5">
-                <li><Link href="/listings" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Browse All</Link></li>
-                <li><Link href="/listings?category=locomotives" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Equipment</Link></li>
-                <li><Link href="/listings?category=track-materials" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Materials</Link></li>
-                <li><Link href="/listings?category=services" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Services</Link></li>
+            <div className="flex flex-col gap-2 text-center md:text-left">
+              <h4 className="text-[13px] font-semibold text-white/90 uppercase tracking-wider mb-2">Marketplace</h4>
+              <ul className="space-y-3 md:space-y-2">
+                <li><Link href="/listings" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">Browse All</Link></li>
+                <li><Link href="/listings?category=locomotives" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">Rolling Stock</Link></li>
+                <li><Link href="/listings?category=track-materials" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">Track & Materials</Link></li>
+                <li><Link href="/listings?category=maintenance-of-way" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">MOW Equipment</Link></li>
               </ul>
             </div>
 
             {/* Contractors Links */}
-            <div className="flex flex-col gap-3 text-center md:text-left">
-              <h4 className="text-[13px] font-semibold text-white/80 uppercase tracking-wider mb-2">Contractors</h4>
-              <ul className="space-y-2.5">
-                <li><Link href="/contractors" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Find Contractors</Link></li>
-                <li><Link href="/dashboard/contractor/profile" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Join as Contractor</Link></li>
-                <li><Link href="/contractors?verified=true" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Verified Only</Link></li>
+            <div className="flex flex-col gap-2 text-center md:text-left">
+              <h4 className="text-[13px] font-semibold text-white/90 uppercase tracking-wider mb-2">Contractors</h4>
+              <ul className="space-y-3 md:space-y-2">
+                <li><Link href="/contractors" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">Find Contractors</Link></li>
+                <li><Link href="/dashboard/contractor/profile" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">Join as Contractor</Link></li>
+                <li><Link href="/contractors?verified=true" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">Verified Only</Link></li>
               </ul>
             </div>
 
             {/* Company Links */}
-            <div className="flex flex-col gap-3 text-center md:text-left">
-              <h4 className="text-[13px] font-semibold text-white/80 uppercase tracking-wider mb-2">Company</h4>
-              <ul className="space-y-2.5">
-                <li><Link href="/about" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">About Us</Link></li>
-                <li><Link href="/contact" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Contact</Link></li>
-                <li><Link href="/privacy" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="text-[13px] text-white/50 hover:text-white transition-colors leading-relaxed">Terms of Service</Link></li>
+            <div className="flex flex-col gap-2 text-center md:text-left">
+              <h4 className="text-[13px] font-semibold text-white/90 uppercase tracking-wider mb-2">Company</h4>
+              <ul className="space-y-3 md:space-y-2">
+                <li><Link href="/about" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">About Us</Link></li>
+                <li><Link href="/contact" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">Contact</Link></li>
+                <li><Link href="/privacy" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">Terms of Service</Link></li>
               </ul>
             </div>
           </div>
 
           {/* Copyright */}
-          <div className="text-center text-xs text-gray-400 mt-10">
-            <p className="mb-2">
+          <div className="text-center text-[13px] text-white/50 mt-8">
+            <p>
               © {new Date().getFullYear()} The Rail Exchange™. All rights reserved.
-            </p>
-            <p className="text-white/30">
-              Made with precision for the rail industry.
             </p>
           </div>
         </div>
