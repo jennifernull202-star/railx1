@@ -141,11 +141,11 @@ export default async function HomePage() {
       <main className="flex-1">
         {/* Hero Section - Premium Background Image */}
         <section 
-          className="relative bg-cover bg-center bg-no-repeat min-h-[85vh] overflow-hidden pt-20 md:pt-28"
+          className="relative bg-cover bg-center bg-no-repeat min-h-[85vh] overflow-hidden pt-16 md:pt-20"
           style={{ backgroundImage: "url('/hero-rail.jpg')" }}
         >
-          {/* Dark Overlay - Gradient per spec */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/10 z-10" />
+          {/* Dark Overlay - Strong gradient for readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/40 z-10" />
           
           <div className="relative z-20 container-rail max-w-[1280px] mx-auto px-6 md:px-8 py-14 md:py-20 lg:py-24 flex items-center">
             <div className="max-w-4xl mx-auto text-center">
