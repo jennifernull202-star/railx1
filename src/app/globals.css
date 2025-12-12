@@ -302,6 +302,16 @@ body {
 .delay-400 { animation-delay: 400ms; }
 .delay-500 { animation-delay: 500ms; }
 
+/* Marquee Animation for Activity Ticker */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
 /* Selection Styling */
 ::selection {
   background-color: rgba(255, 106, 26, 0.2);
