@@ -3,11 +3,12 @@
  * 
  * /dashboard/verification/seller
  * 
- * Allows sellers to:
- * - Upload verification documents (driver's license, business license, EIN, insurance)
- * - Submit for AI verification
- * - View verification status and progress
- * - Complete subscription payment after admin approval
+ * Two-tier seller verification system:
+ * - Standard ($29): 24-hour AI verification
+ * - Priority ($49): Instant AI verification + 3-day ranking boost
+ * 
+ * Verification is REQUIRED to create listings.
+ * Expires after 1 year - requires renewal.
  */
 
 'use client';
@@ -27,6 +28,10 @@ import {
   CreditCard,
   Info,
   RefreshCw,
+  Zap,
+  Crown,
+  Calendar,
+  TrendingUp,
 } from 'lucide-react';
 
 interface VerificationDocument {
@@ -37,6 +42,7 @@ interface VerificationDocument {
 
 interface VerificationData {
   status: string;
+  verificationTier: 'standard' | 'priority' | null;
   documents: VerificationDocument[];
   aiVerification: {
     status: string;
@@ -48,12 +54,16 @@ interface VerificationData {
     rejectionReason?: string;
   };
   subscriptionStatus?: string;
+  approvedAt?: string;
+  expiresAt?: string;
 }
 
 interface UserStatus {
   isVerifiedSeller: boolean;
   verifiedSellerStatus: string;
+  verifiedSellerTier: 'standard' | 'priority' | null;
   verifiedSellerExpiresAt?: string;
+  verifiedSellerApprovedAt?: string;
 }
 
 const DOCUMENT_TYPES = [
@@ -62,6 +72,43 @@ const DOCUMENT_TYPES = [
   { id: 'ein_document', label: 'EIN Document (IRS Letter)', required: false, description: 'IRS confirmation letter with your EIN' },
   { id: 'insurance_certificate', label: 'Insurance Certificate', required: false, description: 'Business liability insurance (optional)' },
 ];
+
+const VERIFICATION_TIERS = {
+  standard: {
+    id: 'standard',
+    name: 'Standard Verification',
+    price: 29,
+    features: [
+      'AI identity verification',
+      'AI fraud check',
+      'AI authenticity check',
+      'Verified Seller badge',
+      '24-hour approval SLA',
+      'Valid for 1 year',
+    ],
+    slaText: '24-hour approval',
+    icon: Shield,
+    color: 'blue',
+    popular: false,
+  },
+  priority: {
+    id: 'priority',
+    name: 'Priority Verification',
+    price: 49,
+    features: [
+      'Instant AI verification',
+      'AI identity + fraud + authenticity checks',
+      'Priority Verified Seller badge',
+      '3-day ranking boost for first listing',
+      'Priority AI queue for re-checks',
+      'Valid for 1 year',
+    ],
+    slaText: 'Instant approval',
+    icon: Zap,
+    color: 'amber',
+    popular: true,
+  },
+};
 
 export default function SellerVerificationPage() {
   const { status: sessionStatus } = useSession();
@@ -72,13 +119,14 @@ export default function SellerVerificationPage() {
   const [verification, setVerification] = useState<VerificationData | null>(null);
   const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [checkingOut, setCheckingOut] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [selectedTier, setSelectedTier] = useState<'standard' | 'priority'>('priority');
 
   const fetchVerificationStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/verification/seller/upload');
+      const res = await fetch('/api/verification/seller/status');
       if (res.ok) {
         const data = await res.json();
         setVerification(data.verification);
@@ -94,12 +142,11 @@ export default function SellerVerificationPage() {
   // Check for success/cancel from Stripe checkout
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
-      setSuccess('Payment successful! Your Verified Seller badge is now active.');
-      // Refresh data
+      setSuccess('Payment successful! Your Seller Verification is now active. You can create listings!');
       fetchVerificationStatus();
     }
     if (searchParams.get('canceled') === 'true') {
-      setError('Payment was canceled. Complete payment to activate your badge.');
+      setError('Payment was canceled. Complete payment to activate your verification.');
     }
   }, [searchParams, fetchVerificationStatus]);
 
@@ -118,7 +165,6 @@ export default function SellerVerificationPage() {
     setError('');
 
     try {
-      // Get presigned upload URL
       const res = await fetch('/api/verification/seller/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -135,20 +181,16 @@ export default function SellerVerificationPage() {
         throw new Error(data.error || 'Failed to get upload URL');
       }
 
-      // Upload file to S3
       const uploadRes = await fetch(data.uploadUrl, {
         method: 'PUT',
         body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
+        headers: { 'Content-Type': file.type },
       });
 
       if (!uploadRes.ok) {
         throw new Error('Failed to upload file');
       }
 
-      // Refresh verification status
       await fetchVerificationStatus();
       setSuccess(`${DOCUMENT_TYPES.find(d => d.id === documentType)?.label} uploaded successfully`);
     } catch (err) {
@@ -158,49 +200,55 @@ export default function SellerVerificationPage() {
     }
   };
 
-  const handleSubmitForVerification = async () => {
-    setSubmitting(true);
+  const handleCheckout = async (tier: 'standard' | 'priority') => {
+    setCheckingOut(tier);
     setError('');
-    setSuccess('');
 
     try {
-      const res = await fetch('/api/verification/seller/submit', {
+      const res = await fetch('/api/verification/seller/checkout', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Submission failed');
+        throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      setSuccess('Documents submitted for verification! We will review them shortly.');
-      await fetchVerificationStatus();
+      // Redirect to Stripe checkout
+      window.location.href = data.checkoutUrl;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Submission failed');
-    } finally {
-      setSubmitting(false);
+      setError(err instanceof Error ? err.message : 'Checkout failed');
+      setCheckingOut(null);
     }
   };
 
   const getStatusDisplay = () => {
     if (!userStatus) return null;
 
-    const statusConfig: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-      'none': { icon: Shield, color: 'text-slate-400', label: 'Not Verified' },
-      'pending-ai': { icon: Clock, color: 'text-blue-500', label: 'Pending AI Review' },
-      'pending-admin': { icon: Clock, color: 'text-amber-500', label: 'Pending Admin Review' },
-      'active': { icon: CheckCircle2, color: 'text-emerald-500', label: 'Verified Seller — Active' },
-      'revoked': { icon: XCircle, color: 'text-red-500', label: 'Badge Revoked' },
-      'expired': { icon: AlertTriangle, color: 'text-amber-500', label: 'Badge Expired' },
+    const statusConfig: Record<string, { icon: React.ElementType; color: string; label: string; bgColor: string }> = {
+      'none': { icon: Shield, color: 'text-slate-400', label: 'Not Verified', bgColor: 'bg-slate-50' },
+      'pending-ai': { icon: Clock, color: 'text-blue-500', label: 'Pending AI Review', bgColor: 'bg-blue-50' },
+      'pending-admin': { icon: Clock, color: 'text-amber-500', label: 'Pending Admin Review', bgColor: 'bg-amber-50' },
+      'pending-payment': { icon: CreditCard, color: 'text-purple-500', label: 'Pending Payment', bgColor: 'bg-purple-50' },
+      'active': { icon: CheckCircle2, color: 'text-emerald-500', label: 'Verified Seller — Active', bgColor: 'bg-emerald-50' },
+      'revoked': { icon: XCircle, color: 'text-red-500', label: 'Verification Revoked', bgColor: 'bg-red-50' },
+      'expired': { icon: AlertTriangle, color: 'text-amber-500', label: 'Verification Expired', bgColor: 'bg-amber-50' },
     };
 
     const config = statusConfig[userStatus.verifiedSellerStatus] || statusConfig['none'];
     const Icon = config.icon;
 
     return (
-      <div className={`flex items-center gap-2 ${config.color}`}>
-        <Icon className="w-5 h-5" />
-        <span className="font-semibold">{config.label}</span>
+      <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${config.bgColor}`}>
+        <Icon className={`w-5 h-5 ${config.color}`} />
+        <span className={`font-semibold ${config.color}`}>{config.label}</span>
+        {userStatus.verifiedSellerTier && (
+          <span className="ml-2 px-2 py-0.5 bg-white rounded text-xs font-medium capitalize">
+            {userStatus.verifiedSellerTier} Tier
+          </span>
+        )}
       </div>
     );
   };
@@ -210,23 +258,35 @@ export default function SellerVerificationPage() {
     return verification.documents.find(d => d.type === typeId);
   };
 
-  const canSubmit = () => {
+  const hasRequiredDocuments = () => {
     if (!verification) return false;
     const hasDriversLicense = verification.documents.some(d => d.type === 'drivers_license');
     const hasBusinessDoc = verification.documents.some(d => 
       d.type === 'business_license' || d.type === 'ein_document'
     );
-    return hasDriversLicense && hasBusinessDoc && 
-      ['draft', 'none', undefined].includes(verification.status) &&
-      userStatus?.verifiedSellerStatus !== 'pending-ai' &&
-      userStatus?.verifiedSellerStatus !== 'pending-admin';
+    return hasDriversLicense && hasBusinessDoc;
   };
 
-  const canResubmit = () => {
-    return verification?.adminReview?.status === 'rejected' ||
-      userStatus?.verifiedSellerStatus === 'expired' ||
-      userStatus?.verifiedSellerStatus === 'revoked';
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
   };
+
+  const getDaysRemaining = () => {
+    if (!userStatus?.verifiedSellerExpiresAt) return null;
+    const expiresAt = new Date(userStatus.verifiedSellerExpiresAt);
+    const now = new Date();
+    const diff = expiresAt.getTime() - now.getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
+
+  const isExpired = userStatus?.verifiedSellerStatus === 'expired';
+  const isActive = userStatus?.verifiedSellerStatus === 'active' && userStatus?.isVerifiedSeller;
+  const needsRenewal = isExpired || (getDaysRemaining() !== null && getDaysRemaining()! <= 30);
 
   if (sessionStatus === 'loading' || loading) {
     return (
@@ -241,10 +301,10 @@ export default function SellerVerificationPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-navy-900 mb-2">
-          Verified Seller Program
+          Seller Verification
         </h1>
         <p className="text-slate-500">
-          Get a verified badge to increase trust and visibility with buyers
+          Verification is required to create listings on The Rail Exchange
         </p>
       </div>
 
@@ -264,294 +324,307 @@ export default function SellerVerificationPage() {
 
       {/* Status Overview Card */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-navy-900 mb-4">Status Overview</h2>
+        <h2 className="text-lg font-semibold text-navy-900 mb-4">Verification Status</h2>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            {getStatusDisplay()}
-            {userStatus?.verifiedSellerExpiresAt && userStatus.verifiedSellerStatus === 'active' && (
-              <p className="text-sm text-slate-500 mt-1">
-                Renews: {new Date(userStatus.verifiedSellerExpiresAt).toLocaleDateString()}
-              </p>
-            )}
-          </div>
+          <div>{getStatusDisplay()}</div>
           
-          {userStatus?.isVerifiedSeller && (
-            <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg border border-blue-100">
-              <Shield className="w-5 h-5 text-blue-600" />
-              <span className="text-sm font-medium text-blue-700">Badge Active</span>
+          {isActive && (
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1.5 text-slate-500">
+                <Calendar className="w-4 h-4" />
+                <span>Good Until: <strong className="text-navy-900">{formatDate(userStatus?.verifiedSellerExpiresAt)}</strong></span>
+              </div>
+              {getDaysRemaining() !== null && getDaysRemaining()! <= 60 && (
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  getDaysRemaining()! <= 7 ? 'bg-red-100 text-red-700' :
+                  getDaysRemaining()! <= 30 ? 'bg-amber-100 text-amber-700' :
+                  'bg-blue-100 text-blue-700'
+                }`}>
+                  {getDaysRemaining()} days remaining
+                </span>
+              )}
             </div>
           )}
         </div>
-
-        {/* Verification Progress */}
-        {verification && verification.status !== 'draft' && (
-          <div className="mt-6 pt-6 border-t border-slate-100">
-            <h3 className="text-sm font-semibold text-navy-900 mb-4">Verification Progress</h3>
-            <div className="flex items-center gap-2">
-              {/* AI Review */}
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
-                verification.aiVerification.status === 'pending' 
-                  ? 'bg-slate-100 text-slate-600' 
-                  : verification.aiVerification.status === 'passed'
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : verification.aiVerification.status === 'flagged'
-                  ? 'bg-amber-100 text-amber-700'
-                  : 'bg-red-100 text-red-700'
-              }`}>
-                {verification.aiVerification.status === 'pending' ? (
-                  <Clock className="w-3 h-3" />
-                ) : verification.aiVerification.status === 'passed' ? (
-                  <CheckCircle2 className="w-3 h-3" />
-                ) : (
-                  <AlertTriangle className="w-3 h-3" />
-                )}
-                AI Review
-              </div>
-              <span className="text-slate-300">→</span>
-              
-              {/* Admin Review */}
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
-                verification.adminReview.status === 'pending' 
-                  ? 'bg-slate-100 text-slate-600' 
-                  : verification.adminReview.status === 'approved'
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'bg-red-100 text-red-700'
-              }`}>
-                {verification.adminReview.status === 'pending' ? (
-                  <Clock className="w-3 h-3" />
-                ) : verification.adminReview.status === 'approved' ? (
-                  <CheckCircle2 className="w-3 h-3" />
-                ) : (
-                  <XCircle className="w-3 h-3" />
-                )}
-                Admin Review
-              </div>
-              <span className="text-slate-300">→</span>
-              
-              {/* Subscription */}
-              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
-                verification.subscriptionStatus === 'active' 
-                  ? 'bg-emerald-100 text-emerald-700' 
-                  : 'bg-slate-100 text-slate-600'
-              }`}>
-                <CreditCard className="w-3 h-3" />
-                Subscription
-              </div>
-            </div>
-
-            {/* AI Flags */}
-            {verification.aiVerification.flags.length > 0 && (
-              <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                <p className="text-sm font-medium text-amber-800 mb-2">AI Review Flags:</p>
-                <ul className="text-sm text-amber-700 space-y-1">
-                  {verification.aiVerification.flags.map((flag, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                      {flag}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Rejection Reason */}
-            {verification.adminReview.rejectionReason && (
-              <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-100">
-                <p className="text-sm font-medium text-red-800 mb-1">Rejection Reason:</p>
-                <p className="text-sm text-red-700">{verification.adminReview.rejectionReason}</p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Active Badge Display */}
-      {userStatus?.isVerifiedSeller && (
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 mb-6 text-white">
+      {isActive && !needsRenewal && (
+        <div className={`rounded-2xl p-6 mb-6 text-white ${
+          userStatus?.verifiedSellerTier === 'priority' 
+            ? 'bg-gradient-to-r from-amber-500 to-orange-600' 
+            : 'bg-gradient-to-r from-blue-600 to-blue-700'
+        }`}>
           <div className="flex items-center gap-4 mb-4">
             <div className="w-16 h-16 bg-white/20 rounded-xl flex items-center justify-center">
-              <Shield className="w-10 h-10 text-white" />
+              {userStatus?.verifiedSellerTier === 'priority' ? (
+                <Crown className="w-10 h-10 text-white" />
+              ) : (
+                <Shield className="w-10 h-10 text-white" />
+              )}
             </div>
             <div>
-              <h2 className="text-xl font-bold">Verified Seller Badge Active</h2>
-              <p className="text-blue-100">Your badge is visible across the platform</p>
+              <h2 className="text-xl font-bold">
+                {userStatus?.verifiedSellerTier === 'priority' ? 'Priority Verified Seller' : 'Verified Seller'}
+              </h2>
+              <p className="text-white/80">Your badge is visible across the platform</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="text-blue-200">Started:</span>
-              <span className="ml-2 font-medium">
-                {verification?.status === 'active' ? new Date().toLocaleDateString() : 'N/A'}
-              </span>
+              <span className="text-white/70">Approved:</span>
+              <span className="ml-2 font-medium">{formatDate(userStatus?.verifiedSellerApprovedAt)}</span>
             </div>
             <div>
-              <span className="text-blue-200">Renews:</span>
-              <span className="ml-2 font-medium">
-                {userStatus.verifiedSellerExpiresAt 
-                  ? new Date(userStatus.verifiedSellerExpiresAt).toLocaleDateString()
-                  : 'N/A'}
-              </span>
+              <span className="text-white/70">Expires:</span>
+              <span className="ml-2 font-medium">{formatDate(userStatus?.verifiedSellerExpiresAt)}</span>
             </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-white/20">
+            <a 
+              href="/listings/create"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white text-navy-900 font-semibold rounded-lg hover:bg-white/90 transition-colors"
+            >
+              <TrendingUp className="w-4 h-4" />
+              Create a Listing
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Renewal Warning / Expired State */}
+      {needsRenewal && (
+        <div className={`rounded-2xl p-6 mb-6 border-2 ${
+          isExpired ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'
+        }`}>
+          <div className="flex items-start gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+              isExpired ? 'bg-red-100' : 'bg-amber-100'
+            }`}>
+              <AlertTriangle className={`w-6 h-6 ${isExpired ? 'text-red-600' : 'text-amber-600'}`} />
+            </div>
+            <div className="flex-1">
+              <h3 className={`text-lg font-semibold ${isExpired ? 'text-red-800' : 'text-amber-800'}`}>
+                {isExpired ? 'Your Verification Has Expired' : 'Verification Expiring Soon'}
+              </h3>
+              <p className={`mt-1 ${isExpired ? 'text-red-700' : 'text-amber-700'}`}>
+                {isExpired 
+                  ? 'You cannot create or edit listings until you renew your verification.'
+                  : `Your verification expires on ${formatDate(userStatus?.verifiedSellerExpiresAt)}. Renew now to keep your listings active.`
+                }
+              </p>
+              <button
+                onClick={() => setSelectedTier(userStatus?.verifiedSellerTier || 'standard')}
+                className={`mt-4 px-4 py-2 font-semibold rounded-lg transition-colors ${
+                  isExpired 
+                    ? 'bg-red-600 text-white hover:bg-red-700' 
+                    : 'bg-amber-600 text-white hover:bg-amber-700'
+                }`}
+              >
+                <RefreshCw className="w-4 h-4 inline mr-2" />
+                Renew Verification
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tier Selection - Show for new users or renewals */}
+      {(!isActive || needsRenewal) && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-navy-900 mb-2">
+            {needsRenewal ? 'Renew Your Verification' : 'Choose Your Verification Tier'}
+          </h2>
+          <p className="text-sm text-slate-500 mb-6">
+            Select a verification tier to start selling on The Rail Exchange
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {Object.values(VERIFICATION_TIERS).map((tier) => {
+              const Icon = tier.icon;
+              const isSelected = selectedTier === tier.id;
+              
+              return (
+                <div
+                  key={tier.id}
+                  onClick={() => setSelectedTier(tier.id as 'standard' | 'priority')}
+                  className={`relative p-5 rounded-xl border-2 cursor-pointer transition-all ${
+                    isSelected 
+                      ? tier.id === 'priority'
+                        ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
+                        : 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  {tier.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-amber-500 text-white text-xs font-bold rounded-full">
+                      RECOMMENDED
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      tier.id === 'priority' ? 'bg-amber-100' : 'bg-blue-100'
+                    }`}>
+                      <Icon className={`w-5 h-5 ${
+                        tier.id === 'priority' ? 'text-amber-600' : 'text-blue-600'
+                      }`} />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-navy-900">{tier.name}</h3>
+                      <p className="text-sm text-slate-500">{tier.slaText}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <span className="text-3xl font-bold text-navy-900">${tier.price}</span>
+                    <span className="text-slate-500 ml-1">one-time</span>
+                  </div>
+                  
+                  <ul className="space-y-2 mb-4">
+                    {tier.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                          tier.id === 'priority' ? 'text-amber-500' : 'text-blue-500'
+                        }`} />
+                        <span className="text-slate-600">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  
+                  <div className={`w-5 h-5 rounded-full border-2 absolute top-5 right-5 flex items-center justify-center ${
+                    isSelected 
+                      ? tier.id === 'priority' 
+                        ? 'border-amber-500 bg-amber-500' 
+                        : 'border-blue-500 bg-blue-500'
+                      : 'border-slate-300'
+                  }`}>
+                    {isSelected && <CheckCircle2 className="w-3 h-3 text-white" />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Checkout Button */}
+          <div className="mt-6">
+            {hasRequiredDocuments() ? (
+              <button
+                onClick={() => handleCheckout(selectedTier)}
+                disabled={checkingOut !== null}
+                className={`w-full py-3 font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 ${
+                  selectedTier === 'priority'
+                    ? 'bg-amber-500 text-white hover:bg-amber-600'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                } disabled:opacity-50`}
+              >
+                {checkingOut ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <CreditCard className="w-5 h-5" />
+                )}
+                {needsRenewal ? 'Renew Verification' : 'Continue to Payment'} — ${VERIFICATION_TIERS[selectedTier].price}
+              </button>
+            ) : (
+              <div className="p-4 bg-slate-50 rounded-xl text-center">
+                <p className="text-slate-600">
+                  Please upload the required documents below before proceeding to payment.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Document Upload Section */}
-      {!userStatus?.isVerifiedSeller && (
-        <>
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
-            <h2 className="text-lg font-semibold text-navy-900 mb-2">Upload Documents</h2>
-            <p className="text-sm text-slate-500 mb-6">
-              Upload the required documents below. All documents are stored securely and only accessible by admins.
-            </p>
+      {(!isActive || needsRenewal) && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-navy-900 mb-2">Upload Documents</h2>
+          <p className="text-sm text-slate-500 mb-6">
+            Upload the required documents below. All documents are stored securely and only accessible by admins.
+          </p>
 
-            <div className="space-y-4">
-              {DOCUMENT_TYPES.map((docType) => {
-                const uploaded = getDocumentStatus(docType.id);
-                const isUploading = uploading === docType.id;
+          <div className="space-y-4">
+            {DOCUMENT_TYPES.map((docType) => {
+              const uploaded = getDocumentStatus(docType.id);
+              const isUploading = uploading === docType.id;
 
-                return (
-                  <div 
-                    key={docType.id}
-                    className="p-4 border border-slate-200 rounded-xl hover:border-slate-300 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          uploaded ? 'bg-emerald-100' : 'bg-slate-100'
-                        }`}>
-                          {uploaded ? (
-                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                          ) : (
-                            <FileText className="w-5 h-5 text-slate-400" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-navy-900">
-                            {docType.label}
-                            {docType.required && !docType.id.includes('business') && (
-                              <span className="text-red-500 ml-1">*</span>
-                            )}
-                            {docType.id === 'business_license' && (
-                              <span className="text-slate-500 text-sm ml-1">(or EIN required)</span>
-                            )}
-                          </p>
-                          <p className="text-sm text-slate-500">{docType.description}</p>
-                          {uploaded && (
-                            <p className="text-xs text-emerald-600 mt-1">
-                              ✓ {uploaded.fileName} uploaded
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <label className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                        isUploading 
-                          ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                          : uploaded
-                          ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                          : 'bg-navy-900 text-white hover:bg-navy-800'
+              return (
+                <div 
+                  key={docType.id}
+                  className="p-4 border border-slate-200 rounded-xl hover:border-slate-300 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                        uploaded ? 'bg-emerald-100' : 'bg-slate-100'
                       }`}>
-                        {isUploading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                        {uploaded ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                         ) : (
-                          <Upload className="w-4 h-4" />
+                          <FileText className="w-5 h-5 text-slate-400" />
                         )}
-                        {uploaded ? 'Replace' : 'Upload'}
-                        <input
-                          type="file"
-                          accept="image/*,.pdf"
-                          className="hidden"
-                          disabled={isUploading}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileUpload(docType.id, file);
-                          }}
-                        />
-                      </label>
+                      </div>
+                      <div>
+                        <p className="font-medium text-navy-900">
+                          {docType.label}
+                          {docType.required && !docType.id.includes('business') && (
+                            <span className="text-red-500 ml-1">*</span>
+                          )}
+                          {docType.id === 'business_license' && (
+                            <span className="text-slate-500 text-sm ml-1">(or EIN required)</span>
+                          )}
+                        </p>
+                        <p className="text-sm text-slate-500">{docType.description}</p>
+                        {uploaded && (
+                          <p className="text-xs text-emerald-600 mt-1">
+                            ✓ {uploaded.fileName} uploaded
+                          </p>
+                        )}
+                      </div>
                     </div>
+                    
+                    <label className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      isUploading 
+                        ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                        : uploaded
+                        ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        : 'bg-navy-900 text-white hover:bg-navy-800'
+                    }`}>
+                      {isUploading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4" />
+                      )}
+                      {uploaded ? 'Replace' : 'Upload'}
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="hidden"
+                        disabled={isUploading}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileUpload(docType.id, file);
+                        }}
+                      />
+                    </label>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Submit Button */}
-            <div className="mt-6 pt-6 border-t border-slate-100">
-              {canSubmit() && (
-                <button
-                  onClick={handleSubmitForVerification}
-                  disabled={submitting}
-                  className="w-full py-3 bg-rail-orange text-white font-semibold rounded-xl hover:bg-[#e55f15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {submitting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Shield className="w-5 h-5" />
-                  )}
-                  Submit for Verification
-                </button>
-              )}
-              
-              {canResubmit() && (
-                <button
-                  onClick={handleSubmitForVerification}
-                  disabled={submitting}
-                  className="w-full py-3 bg-navy-900 text-white font-semibold rounded-xl hover:bg-navy-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {submitting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-5 h-5" />
-                  )}
-                  Resubmit for Verification
-                </button>
-              )}
-
-              {!canSubmit() && !canResubmit() && verification && (
-                <div className="text-center py-3 text-slate-500">
-                  {userStatus?.verifiedSellerStatus === 'pending-ai' && (
-                    <p>AI verification in progress...</p>
-                  )}
-                  {userStatus?.verifiedSellerStatus === 'pending-admin' && (
-                    <p>Awaiting admin review...</p>
-                  )}
                 </div>
-              )}
-            </div>
+              );
+            })}
           </div>
-
-          {/* Pricing Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
-            <h2 className="text-lg font-semibold text-navy-900 mb-4">Subscription Pricing</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="p-4 border border-blue-200 bg-blue-50/50 rounded-xl">
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-2xl font-bold text-navy-900">$9.99</span>
-                  <span className="text-slate-500">/month</span>
-                </div>
-                <p className="text-sm text-slate-600">Billed monthly. Cancel anytime.</p>
-              </div>
-              <div className="p-4 border border-slate-200 rounded-xl">
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-2xl font-bold text-navy-900">$99</span>
-                  <span className="text-slate-500">/year</span>
-                </div>
-                <p className="text-sm text-slate-600">Save $20/year with annual billing.</p>
-              </div>
-            </div>
-          </div>
-        </>
+        </div>
       )}
 
       {/* Benefits Section */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-navy-900 mb-4">Verified Seller Benefits</h2>
+        <h2 className="text-lg font-semibold text-navy-900 mb-4">Why Verify?</h2>
         <div className="grid md:grid-cols-2 gap-4">
           {[
+            { title: 'Create Listings', desc: 'Verification is required to list equipment for sale' },
             { title: 'Trust Badge', desc: 'Blue verified badge on all your listings' },
-            { title: 'Priority Display', desc: 'Higher visibility in search results' },
             { title: 'Buyer Confidence', desc: 'Buyers prefer verified sellers' },
-            { title: 'Professional Image', desc: 'Show you mean business' },
+            { title: '1-Year Validity', desc: 'One payment covers you for a full year' },
           ].map((benefit, i) => (
             <div key={i} className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />

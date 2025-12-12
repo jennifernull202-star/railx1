@@ -124,9 +124,9 @@ export async function POST(request: NextRequest) {
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   const { purchaseType, purchaseId, addonType, listingId, contractorId, userId, subscriptionType, tier, promoCode, type, verificationId } = session.metadata || {};
 
-  // Handle verified seller subscription
-  if (type === 'verified_seller' && verificationId) {
-    await handleVerifiedSellerCheckout(session, userId!, verificationId);
+  // Handle seller verification (one-time payment)
+  if ((type === 'seller_verification' || type === 'verified_seller') && verificationId && userId) {
+    await handleVerifiedSellerCheckout(session, userId, verificationId);
     return;
   }
 
@@ -233,11 +233,21 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
 }
 
 // Handle verified seller subscription checkout
+/**
+ * Handle seller verification one-time payment completion
+ * 
+ * Two-tier system:
+ * - Standard ($29): 24-hour AI approval SLA, 1-year validity
+ * - Priority ($49): Instant verification, 3-day ranking boost, 1-year validity
+ */
 async function handleVerifiedSellerCheckout(
   session: Stripe.Checkout.Session,
   userId: string,
   verificationId: string
 ) {
+  const { tier } = session.metadata || {};
+  const verificationTier = (tier === 'priority' ? 'priority' : 'standard') as 'standard' | 'priority';
+
   const user = await User.findById(userId);
   if (!user) {
     console.error(`User not found for verified seller checkout: ${userId}`);
@@ -250,45 +260,71 @@ async function handleVerifiedSellerCheckout(
     return;
   }
 
-  // Get the subscription from Stripe
-  const stripe = getStripe();
-  const subscriptionId = session.subscription as string;
-  let subscriptionEnd: Date | null = null;
-
-  if (subscriptionId) {
-    try {
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId) as Stripe.Subscription;
-      if (subscription.items?.data?.[0]?.current_period_end) {
-        subscriptionEnd = new Date(subscription.items.data[0].current_period_end * 1000);
-      }
-    } catch (err) {
-      console.error('Failed to retrieve subscription:', err);
-    }
+  const now = new Date();
+  
+  // Calculate expiration: 1 year from now
+  const oneYearFromNow = new Date(now);
+  oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+  
+  // Priority tier gets 3-day ranking boost
+  let rankingBoostExpiresAt: Date | null = null;
+  if (verificationTier === 'priority') {
+    rankingBoostExpiresAt = new Date(now);
+    rankingBoostExpiresAt.setDate(rankingBoostExpiresAt.getDate() + 3);
   }
 
   // Update verification record
-  verification.stripeSubscriptionId = subscriptionId;
-  verification.subscriptionStatus = 'active';
-  verification.status = 'active';
-  verification.statusHistory.push({
-    status: 'active',
-    changedAt: new Date(),
-    reason: 'Subscription payment completed',
-  });
+  verification.stripePaymentId = session.payment_intent as string;
+  verification.verificationTier = verificationTier;
+  verification.approvedAt = now;
+  verification.expiresAt = oneYearFromNow;
+  // Reset renewal reminder dates (undefined = not sent yet)
+  verification.renewalRemindersSent = { thirtyDay: undefined, sevenDay: undefined, dayOf: undefined };
+  
+  if (rankingBoostExpiresAt) {
+    verification.rankingBoostExpiresAt = rankingBoostExpiresAt;
+  }
+  
+  // For priority tier: instant approval
+  // For standard tier: set to pending-review (24h SLA for AI)
+  if (verificationTier === 'priority') {
+    verification.status = 'active';
+    verification.statusHistory.push({
+      status: 'active',
+      changedAt: now,
+      reason: 'Priority verification payment completed - instant activation',
+    });
+    
+    // CRITICAL: Activate verified seller on user for priority
+    user.isVerifiedSeller = true;
+    user.verifiedSellerStatus = 'active';
+    user.verifiedSellerTier = 'priority';
+    user.verifiedSellerApprovedAt = now;
+    user.verifiedSellerStartedAt = now;
+    user.verifiedSellerExpiresAt = oneYearFromNow;
+    user.verifiedSellerRankingBoostExpiresAt = rankingBoostExpiresAt;
+    user.stripeCustomerId = session.customer as string;
+    
+    console.log(`Priority Verified Seller activated for user ${userId} - expires ${oneYearFromNow.toISOString()}`);
+  } else {
+    // Standard tier: payment received, pending AI review (24h SLA)
+    verification.status = 'pending-ai';
+    verification.statusHistory.push({
+      status: 'pending-ai',
+      changedAt: now,
+      reason: 'Standard verification payment completed - pending 24h AI review',
+    });
+    
+    // Set user status to pending-ai until AI review completes
+    user.verifiedSellerStatus = 'pending-ai';
+    user.verifiedSellerTier = 'standard';
+    user.stripeCustomerId = session.customer as string;
+    
+    console.log(`Standard Verified Seller payment received for user ${userId} - pending AI review`);
+  }
+
   await verification.save();
-
-  // CRITICAL: Activate verified seller badge on user
-  // Badge only activates after: AI review + Admin approval + Valid paid subscription
-  user.isVerifiedSeller = true;
-  user.verifiedSellerStatus = 'active';
-  user.verifiedSellerStartedAt = new Date();
-  user.verifiedSellerExpiresAt = subscriptionEnd || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  user.verifiedSellerSubscriptionId = subscriptionId;
-  user.verifiedSellerLastAICheck = verification.lastAIRevalidation || null;
-  user.stripeCustomerId = session.customer as string;
   await user.save();
-
-  console.log(`Verified Seller badge activated for user ${userId}`);
 }
 
 // Handle add-on purchase completion

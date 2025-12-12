@@ -77,6 +77,12 @@ const STEPS = [
   { id: 5, name: 'Review', description: 'Review and publish' },
 ];
 
+interface VerificationStatus {
+  isVerified: boolean;
+  status: string;
+  expiresAt?: string;
+}
+
 export default function CreateListingPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -84,6 +90,8 @@ export default function CreateListingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null);
+  const [checkingVerification, setCheckingVerification] = useState(true);
   
   const [formData, setFormData] = useState<ListingFormData>({
     title: '',
@@ -111,6 +119,31 @@ export default function CreateListingPage() {
   
   // #8 fix: localStorage key for draft auto-save
   const DRAFT_STORAGE_KEY = 'railx-listing-draft';
+  
+  // Check seller verification status
+  useEffect(() => {
+    const checkVerification = async () => {
+      if (status !== 'authenticated') return;
+      
+      try {
+        const res = await fetch('/api/verification/seller/status');
+        if (res.ok) {
+          const data = await res.json();
+          setVerificationStatus({
+            isVerified: data.userStatus?.isVerifiedSeller && data.userStatus?.verifiedSellerStatus === 'active',
+            status: data.userStatus?.verifiedSellerStatus || 'none',
+            expiresAt: data.userStatus?.verifiedSellerExpiresAt,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to check verification status:', err);
+      } finally {
+        setCheckingVerification(false);
+      }
+    };
+    
+    checkVerification();
+  }, [status]);
   
   // #8 fix: Restore draft from localStorage on mount
   useEffect(() => {
@@ -337,7 +370,7 @@ export default function CreateListingPage() {
   };
 
   // Redirect if not authenticated
-  if (status === 'loading') {
+  if (status === 'loading' || checkingVerification) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rail-orange" />
@@ -348,6 +381,105 @@ export default function CreateListingPage() {
   if (status === 'unauthenticated') {
     router.push('/auth/login?callbackUrl=/listings/create');
     return null;
+  }
+
+  // Check if seller verification is required
+  if (verificationStatus && !verificationStatus.isVerified) {
+    const isExpired = verificationStatus.status === 'expired';
+    
+    return (
+      <>
+        {/* Navigation */}
+        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-surface-border/50">
+          <nav className="container-rail">
+            <div className="flex items-center justify-between py-4">
+              <Link href="/" className="flex items-center">
+                <span className="text-heading-lg font-bold text-navy-900">The Rail</span>
+                <span className="text-heading-lg font-bold text-rail-orange ml-1">Exchange</span>
+                <span className="text-rail-orange text-sm font-medium ml-0.5">™</span>
+              </Link>
+              <div className="flex items-center gap-4">
+                <Link href="/dashboard" className="text-body-md font-medium text-text-secondary hover:text-navy-900">
+                  ← Back to Dashboard
+                </Link>
+              </div>
+            </div>
+          </nav>
+        </header>
+
+        <main className="flex-1 bg-surface-secondary py-16">
+          <div className="container-rail max-w-2xl">
+            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
+              <div className={`w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-6 ${
+                isExpired ? 'bg-red-100' : 'bg-amber-100'
+              }`}>
+                <svg 
+                  className={`w-10 h-10 ${isExpired ? 'text-red-600' : 'text-amber-600'}`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" 
+                  />
+                </svg>
+              </div>
+              
+              <h1 className="text-2xl font-bold text-navy-900 mb-3">
+                {isExpired ? 'Verification Expired' : 'Verification Required'}
+              </h1>
+              
+              <p className="text-slate-500 mb-8 max-w-md mx-auto">
+                {isExpired 
+                  ? 'Your seller verification has expired. Please renew to continue creating and managing listings.'
+                  : 'Seller verification is required to create listings on The Rail Exchange. Complete verification to start selling.'
+                }
+              </p>
+              
+              <div className="space-y-4">
+                <Link
+                  href="/dashboard/verification/seller"
+                  className={`inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-xl transition-colors ${
+                    isExpired 
+                      ? 'bg-red-600 text-white hover:bg-red-700' 
+                      : 'bg-rail-orange text-white hover:bg-[#e55f15]'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  {isExpired ? 'Renew Verification' : 'Get Verified — From $29'}
+                </Link>
+                
+                <div className="flex items-center justify-center gap-6 text-sm text-slate-500">
+                  <span className="flex items-center gap-1.5">
+                    <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    AI Identity Check
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Valid for 1 Year
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Unlimited Listings
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </>
+    );
   }
 
   return (

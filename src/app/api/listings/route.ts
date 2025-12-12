@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // ================================================================
-    // LISTING LIMIT CHECK
+    // SELLER VERIFICATION CHECK (Required to create listings)
     // ================================================================
     const user = await User.findById(session.user.id);
     
@@ -238,7 +238,68 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's seller tier (default to BUYER if not set)
+    // Check if user is verified seller
+    if (!user.isVerifiedSeller || user.verifiedSellerStatus !== 'active') {
+      // Check if expired
+      if (user.verifiedSellerStatus === 'expired') {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Your seller verification has expired. Please renew to continue creating listings.',
+            code: 'VERIFICATION_EXPIRED',
+            data: {
+              verificationStatus: 'expired',
+              renewalRequired: true,
+              renewalUrl: '/dashboard/verification/seller',
+            }
+          },
+          { status: 403 }
+        );
+      }
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Seller verification is required to create listings. Please complete verification to continue.',
+          code: 'VERIFICATION_REQUIRED',
+          data: {
+            verificationStatus: user.verifiedSellerStatus || 'none',
+            verificationRequired: true,
+            verificationUrl: '/dashboard/verification/seller',
+          }
+        },
+        { status: 403 }
+      );
+    }
+
+    // Check if verification is about to expire (within 7 days)
+    if (user.verifiedSellerExpiresAt) {
+      const daysUntilExpiration = Math.ceil(
+        (new Date(user.verifiedSellerExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      );
+      if (daysUntilExpiration <= 0) {
+        // Actually expired - update status
+        user.verifiedSellerStatus = 'expired';
+        user.isVerifiedSeller = false;
+        await user.save();
+        
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Your seller verification has expired. Please renew to continue creating listings.',
+            code: 'VERIFICATION_EXPIRED',
+            data: {
+              verificationStatus: 'expired',
+              renewalRequired: true,
+              renewalUrl: '/dashboard/verification/seller',
+            }
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Get user's seller tier (for any future tier-based limits)
     const sellerTier = (user.sellerTier || SELLER_TIERS.BUYER) as SellerTier;
     
     // Count user's current active listings
@@ -248,23 +309,7 @@ export async function POST(request: NextRequest) {
       isActive: true,
     });
 
-    // Check if user is on buyer tier (cannot create listings)
-    if (sellerTier === SELLER_TIERS.BUYER) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'A seller subscription is required to create listings. Please upgrade to Seller Basic or higher.',
-          code: 'SUBSCRIPTION_REQUIRED',
-          data: {
-            currentTier: sellerTier,
-            upgradeRequired: true,
-          }
-        },
-        { status: 403 }
-      );
-    }
-
-    // Check if user can create more listings
+    // Check if user can create more listings (unlimited for verified sellers)
     if (!canCreateListing(sellerTier, activeListingCount)) {
       const tierConfig = SELLER_TIER_CONFIG[sellerTier];
       const remaining = getRemainingListingSlots(sellerTier, activeListingCount);

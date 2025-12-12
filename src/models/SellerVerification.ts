@@ -76,14 +76,25 @@ export interface ISellerVerification {
   // Admin review
   adminReview: IAdminReview;
   
-  // Stripe subscription
-  stripeSubscriptionId?: string;
+  // Verification tier (standard = $29, priority = $49)
+  verificationTier: 'standard' | 'priority' | null;
+  
+  // Stripe payment (one-time, not subscription)
+  stripePaymentId?: string;
+  stripeSubscriptionId?: string; // Legacy, kept for backwards compat
   subscriptionStatus?: 'pending' | 'active' | 'past_due' | 'canceled' | 'expired';
   subscriptionPriceId?: string;
   subscriptionPeriod?: 'monthly' | 'yearly';
   
   // Overall status
-  status: 'draft' | 'pending-ai' | 'pending-admin' | 'active' | 'revoked' | 'expired';
+  status: 'draft' | 'pending-ai' | 'pending-admin' | 'pending-payment' | 'active' | 'revoked' | 'expired';
+  
+  // Expiration tracking (1 year from approval)
+  approvedAt?: Date;
+  expiresAt?: Date;
+  
+  // Priority tier benefits
+  rankingBoostExpiresAt?: Date; // 3-day boost for first listing
   
   // Audit trail
   statusHistory: Array<{
@@ -96,6 +107,11 @@ export interface ISellerVerification {
   // Renewal tracking
   lastAIRevalidation?: Date;
   nextAIRevalidation?: Date;
+  renewalRemindersSent?: {
+    thirtyDay?: Date;
+    sevenDay?: Date;
+    dayOf?: Date;
+  };
   
   createdAt: Date;
   updatedAt: Date;
@@ -241,6 +257,12 @@ const SellerVerificationSchema = new Schema<ISellerVerificationDocument, ISeller
         status: 'pending',
       }),
     },
+    verificationTier: {
+      type: String,
+      enum: ['standard', 'priority', null],
+      default: null,
+    },
+    stripePaymentId: String,
     stripeSubscriptionId: String,
     subscriptionStatus: {
       type: String,
@@ -253,15 +275,23 @@ const SellerVerificationSchema = new Schema<ISellerVerificationDocument, ISeller
     },
     status: {
       type: String,
-      enum: ['draft', 'pending-ai', 'pending-admin', 'active', 'revoked', 'expired'],
+      enum: ['draft', 'pending-ai', 'pending-admin', 'pending-payment', 'active', 'revoked', 'expired'],
       default: 'draft',
     },
+    approvedAt: Date,
+    expiresAt: Date,
+    rankingBoostExpiresAt: Date,
     statusHistory: {
       type: [StatusHistorySchema],
       default: [],
     },
     lastAIRevalidation: Date,
     nextAIRevalidation: Date,
+    renewalRemindersSent: {
+      thirtyDay: Date,
+      sevenDay: Date,
+      dayOf: Date,
+    },
   },
   {
     timestamps: true,

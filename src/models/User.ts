@@ -104,10 +104,13 @@ export interface IUser {
   // ============================================
   isVerifiedSeller: boolean;
   verifiedSellerStatus: 'none' | 'pending-ai' | 'pending-admin' | 'active' | 'revoked' | 'expired';
+  verifiedSellerTier: 'standard' | 'priority' | null; // NEW: Two-tier system
+  verifiedSellerApprovedAt: Date | null; // NEW: When verification was approved
+  verifiedSellerExpiresAt: Date | null; // NEW: 1 year from approval
   verifiedSellerStartedAt: Date | null;
-  verifiedSellerExpiresAt: Date | null;
   verifiedSellerSubscriptionId: string | null;
   verifiedSellerLastAICheck: Date | null;
+  verifiedSellerRankingBoostExpiresAt: Date | null; // NEW: Priority tier gets 3-day boost
   
   createdAt: Date;
   updatedAt: Date;
@@ -407,11 +410,20 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
       enum: ['none', 'pending-ai', 'pending-admin', 'active', 'revoked', 'expired'],
       default: 'none',
     },
-    verifiedSellerStartedAt: {
+    verifiedSellerTier: {
+      type: String,
+      enum: ['standard', 'priority', null],
+      default: null,
+    },
+    verifiedSellerApprovedAt: {
       type: Date,
       default: null,
     },
     verifiedSellerExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    verifiedSellerStartedAt: {
       type: Date,
       default: null,
     },
@@ -420,6 +432,10 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
       default: null,
     },
     verifiedSellerLastAICheck: {
+      type: Date,
+      default: null,
+    },
+    verifiedSellerRankingBoostExpiresAt: {
       type: Date,
       default: null,
     },

@@ -127,6 +127,71 @@ export const SELLER_TIER_CONFIG: Record<SellerTier, SellerTierConfig> = {
 };
 
 // ============================================================================
+// SELLER VERIFICATION TIERS (Required to create listings)
+// ============================================================================
+
+export const SELLER_VERIFICATION_TIERS = {
+  STANDARD: 'standard',
+  PRIORITY: 'priority',
+} as const;
+
+export type SellerVerificationTier = typeof SELLER_VERIFICATION_TIERS[keyof typeof SELLER_VERIFICATION_TIERS];
+
+export interface SellerVerificationTierConfig {
+  id: SellerVerificationTier;
+  name: string;
+  description: string;
+  price: number; // One-time payment in cents
+  features: string[];
+  stripePriceId: string;
+  slaHours: number; // AI processing SLA
+  badge?: string;
+  rankingBoostDays?: number; // First listing boost
+  popular?: boolean; // Show as recommended
+}
+
+export const SELLER_VERIFICATION_CONFIG: Record<SellerVerificationTier, SellerVerificationTierConfig> = {
+  [SELLER_VERIFICATION_TIERS.STANDARD]: {
+    id: SELLER_VERIFICATION_TIERS.STANDARD,
+    name: 'Standard Verification',
+    description: 'Required verification to create listings',
+    price: 2900, // $29.00
+    features: [
+      'AI identity verification',
+      'AI fraud check',
+      'AI authenticity check',
+      'Verified Seller badge',
+      '24-hour approval SLA',
+      'Valid for 1 year',
+    ],
+    stripePriceId: process.env.STRIPE_PRICE_SELLER_VERIFIED || '',
+    slaHours: 24,
+    popular: false,
+  },
+  [SELLER_VERIFICATION_TIERS.PRIORITY]: {
+    id: SELLER_VERIFICATION_TIERS.PRIORITY,
+    name: 'Priority Verification',
+    description: 'Instant verification with premium benefits',
+    price: 4900, // $49.00
+    features: [
+      'Instant AI verification',
+      'AI identity verification',
+      'AI fraud check',
+      'AI authenticity check',
+      'Priority Verified Seller badge',
+      '3-day ranking boost for first listing',
+      'Priority AI queue for re-checks',
+      'Valid for 1 year',
+    ],
+    stripePriceId: process.env.STRIPE_PRICE_PREMIUM_SELLER_VERIFIED || '',
+    slaHours: 0, // Instant
+    badge: 'Priority Verified Seller',
+    rankingBoostDays: 3,
+    popular: true,
+  },
+};
+
+// ============================================================================
 // CONTRACTOR TIERS
 // ============================================================================
 
@@ -389,18 +454,20 @@ export const RANKING_WEIGHTS = {
 
 // ============================================================================
 // LISTING LIMITS (by seller tier)
+// Everyone can sell with verification - listing limits are unlimited
 // ============================================================================
 
 export const LISTING_LIMITS: Record<SellerTier, number> = {
-  [SELLER_TIERS.BUYER]: 0,
-  [SELLER_TIERS.BASIC]: 3,
-  [SELLER_TIERS.PLUS]: 10,
+  [SELLER_TIERS.BUYER]: -1, // Unlimited (but requires verification)
+  [SELLER_TIERS.BASIC]: -1, // Unlimited (but requires verification)
+  [SELLER_TIERS.PLUS]: -1, // Unlimited
   [SELLER_TIERS.PRO]: -1, // Unlimited
   [SELLER_TIERS.ENTERPRISE]: -1, // Unlimited
 };
 
 /**
  * Check if a user can create a new listing based on their tier
+ * NOTE: Seller verification is required separately - check isVerifiedSeller
  */
 export function canCreateListing(tier: SellerTier, currentListingCount: number): boolean {
   const limit = LISTING_LIMITS[tier];
@@ -457,14 +524,24 @@ export function getContractorTierConfig(tier: ContractorTier): ContractorTierCon
 }
 
 /**
- * Get all seller tiers for pricing display (excluding buyer)
+ * Get all seller tiers for pricing display (excluding buyer - now removed as subscription isn't needed)
+ * Sellers only need verification, not a subscription tier
  */
 export function getSellerTiersForDisplay(): SellerTierConfig[] {
   return [
-    SELLER_TIER_CONFIG[SELLER_TIERS.BASIC],
     SELLER_TIER_CONFIG[SELLER_TIERS.PLUS],
     SELLER_TIER_CONFIG[SELLER_TIERS.PRO],
     SELLER_TIER_CONFIG[SELLER_TIERS.ENTERPRISE],
+  ];
+}
+
+/**
+ * Get seller verification tiers for display
+ */
+export function getSellerVerificationTiersForDisplay(): SellerVerificationTierConfig[] {
+  return [
+    SELLER_VERIFICATION_CONFIG[SELLER_VERIFICATION_TIERS.STANDARD],
+    SELLER_VERIFICATION_CONFIG[SELLER_VERIFICATION_TIERS.PRIORITY],
   ];
 }
 
