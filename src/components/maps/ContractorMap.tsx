@@ -27,8 +27,10 @@ export interface ContractorMapItem {
   businessDescription?: string;
   logo?: string;
   services: string[];
+  contractorTypes?: string[];
   regionsServed: string[];
   verificationStatus: 'pending' | 'verified' | 'rejected' | 'expired';
+  visibilityTier?: 'none' | 'verified' | 'featured' | 'priority';
   verifiedBadgePurchased?: boolean;
   yearsInBusiness?: number;
   location: {
@@ -42,14 +44,16 @@ export interface ContractorMapItem {
 export interface ContractorMapProps {
   contractors: ContractorMapItem[];
   serviceOptions?: Array<{ value: string; label: string }>;
+  contractorTypeOptions?: Array<{ value: string; label: string }>;
   onContractorSelect?: (id: string) => void;
-  onFilterChange?: (filters: { service?: string; location?: string; verifiedOnly?: boolean }) => void;
+  onFilterChange?: (filters: { service?: string; contractorType?: string; location?: string; verifiedOnly?: boolean }) => void;
   className?: string;
 }
 
 const ContractorMap: React.FC<ContractorMapProps> = ({
   contractors,
   serviceOptions = [],
+  contractorTypeOptions = [],
   onContractorSelect,
   onFilterChange,
   className,
@@ -58,6 +62,7 @@ const ContractorMap: React.FC<ContractorMapProps> = ({
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [filters, setFilters] = React.useState({
     service: '',
+    contractorType: '',
     location: '',
     verifiedOnly: false,
   });
@@ -67,7 +72,12 @@ const ContractorMap: React.FC<ContractorMapProps> = ({
   // Filter contractors
   const filteredContractors = React.useMemo(() => {
     return contractors.filter((contractor) => {
+      // Filter by legacy service
       if (filters.service && !contractor.services.includes(filters.service)) {
+        return false;
+      }
+      // Filter by new contractor type
+      if (filters.contractorType && (!contractor.contractorTypes || !contractor.contractorTypes.includes(filters.contractorType))) {
         return false;
       }
       if (filters.verifiedOnly && contractor.verificationStatus !== 'verified') {
@@ -106,6 +116,11 @@ const ContractorMap: React.FC<ContractorMapProps> = ({
         bounds.extend(position);
 
         const isVerified = contractor.verificationStatus === 'verified' && contractor.verifiedBadgePurchased;
+        const isPriority = contractor.visibilityTier === 'priority';
+        const isFeatured = contractor.visibilityTier === 'featured';
+        
+        // Marker color based on visibility tier
+        const markerColor = isPriority ? '#EAB308' : isFeatured ? '#FF6A1A' : isVerified ? '#10B981' : '#6B7280';
         
         const marker = new google.maps.Marker({
           position,
@@ -113,12 +128,13 @@ const ContractorMap: React.FC<ContractorMapProps> = ({
           title: contractor.businessName,
           icon: {
             path: google.maps.SymbolPath.CIRCLE,
-            scale: 10,
-            fillColor: isVerified ? '#10B981' : '#FF6A1A',
+            scale: isPriority ? 12 : isFeatured ? 11 : 10,
+            fillColor: markerColor,
             fillOpacity: 1,
             strokeColor: '#FFFFFF',
             strokeWeight: 2,
           },
+          zIndex: isPriority ? 100 : isFeatured ? 50 : 10,
         });
 
         marker.addListener('click', () => {
@@ -172,7 +188,7 @@ const ContractorMap: React.FC<ContractorMapProps> = ({
             />
           </div>
 
-          {/* Service Filter */}
+          {/* Service Filter (Legacy) */}
           <Select value={filters.service} onValueChange={(v) => handleFilterChange('service', v)}>
             <SelectTrigger className="w-48 h-10">
               <SelectValue placeholder="All Services" />
@@ -186,6 +202,23 @@ const ContractorMap: React.FC<ContractorMapProps> = ({
               ))}
             </SelectContent>
           </Select>
+
+          {/* Contractor Type Filter (New) */}
+          {contractorTypeOptions.length > 0 && (
+            <Select value={filters.contractorType} onValueChange={(v) => handleFilterChange('contractorType', v)}>
+              <SelectTrigger className="w-48 h-10">
+                <SelectValue placeholder="All Contractor Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Contractor Types</SelectItem>
+                {contractorTypeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
           {/* Verified Only Toggle */}
           <Button

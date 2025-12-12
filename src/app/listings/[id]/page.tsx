@@ -13,6 +13,7 @@ import Listing from '@/models/Listing';
 import mongoose from 'mongoose';
 import ContactSellerForm from '@/components/ContactSellerForm';
 import { VerifiedSellerBadgeWithLabel } from '@/components/VerifiedSellerBadge';
+import RelevantContractors from '@/components/contractor/RelevantContractors';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -64,6 +65,57 @@ interface ListingData {
     value: string;
     unit?: string;
   }>;
+  // BUYER AUDIT: Structured equipment fields
+  equipment?: {
+    reportingMarks?: string;
+    manufacturer?: string;
+    model?: string;
+    yearBuilt?: number;
+    yearRebuilt?: number;
+    horsepower?: number;
+    tractionMotors?: string;
+    fuelCapacity?: number;
+    engineHours?: number;
+    mileage?: number;
+    weight?: number;
+    gauge?: string;
+    aarCarType?: string;
+    loadLimit?: number;
+    lightWeight?: number;
+    insideLength?: number;
+    insideWidth?: number;
+    insideHeight?: number;
+    cubicCapacity?: number;
+    numberOfAxles?: number;
+    fraCompliant?: boolean;
+    dotCompliant?: boolean;
+    hazmatCertified?: boolean;
+    lastInspectionDate?: Date;
+    nextInspectionDue?: Date;
+    availability?: string;
+    currentLocation?: {
+      railroad?: string;
+      station?: string;
+      trackNumber?: string;
+    };
+    previousOwners?: string[];
+    maintenanceHistory?: Array<{
+      date: Date;
+      type: string;
+      description: string;
+      vendor?: string;
+    }>;
+    muCapable?: boolean;
+    airBrakeType?: string;
+    couplerType?: string;
+    handbrakeType?: string;
+  };
+  priceHistory?: Array<{
+    amount: number;
+    changedAt: Date;
+    reason?: string;
+  }>;
+  daysOnMarket?: number;
   quantity: number;
   quantityUnit?: string;
   shippingOptions: {
@@ -354,7 +406,392 @@ export default async function ListingDetailPage({ params }: PageProps) {
                 </div>
               </div>
 
-              {/* Specifications */}
+              {/* BUYER AUDIT: Structured Equipment Specifications */}
+              {listing.equipment && (
+                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="heading-lg">Technical Specifications</h2>
+                    {/* Export button */}
+                    <a
+                      href={`/api/listings/${listing._id}/export?format=pdf`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm font-medium text-rail-orange hover:text-rail-orange-dark"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Export Specs
+                    </a>
+                  </div>
+                  
+                  {/* Identity & Registration */}
+                  {(listing.equipment.reportingMarks || listing.equipment.manufacturer || listing.equipment.model) && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Identity & Registration</h3>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        {listing.equipment.reportingMarks && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Reporting Marks</span>
+                            <span className="text-body-sm font-mono font-semibold text-navy-900">{listing.equipment.reportingMarks}</span>
+                          </div>
+                        )}
+                        {listing.equipment.manufacturer && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Manufacturer</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.manufacturer}</span>
+                          </div>
+                        )}
+                        {listing.equipment.model && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Model</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.model}</span>
+                          </div>
+                        )}
+                        {listing.equipment.yearBuilt && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Year Built</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.yearBuilt}</span>
+                          </div>
+                        )}
+                        {listing.equipment.yearRebuilt && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Year Rebuilt</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.yearRebuilt}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Locomotive-specific specs */}
+                  {listing.category === 'locomotives' && (listing.equipment.horsepower || listing.equipment.engineHours || listing.equipment.mileage) && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Power & Performance</h3>
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {listing.equipment.horsepower && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Horsepower</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.horsepower.toLocaleString()} HP</span>
+                          </div>
+                        )}
+                        {listing.equipment.tractionMotors && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Traction Motors</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.tractionMotors}</span>
+                          </div>
+                        )}
+                        {listing.equipment.fuelCapacity && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Fuel Capacity</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.fuelCapacity.toLocaleString()} gal</span>
+                          </div>
+                        )}
+                        {listing.equipment.engineHours && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Engine Hours</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.engineHours.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {listing.equipment.mileage && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Mileage</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.mileage.toLocaleString()} mi</span>
+                          </div>
+                        )}
+                        {listing.equipment.muCapable !== undefined && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">MU Capable</span>
+                            <span className={`text-body-sm font-semibold ${listing.equipment.muCapable ? 'text-green-600' : 'text-text-tertiary'}`}>
+                              {listing.equipment.muCapable ? 'Yes' : 'No'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Freight car-specific specs */}
+                  {(listing.equipment.aarCarType || listing.equipment.loadLimit || listing.equipment.cubicCapacity) && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Capacity & Dimensions</h3>
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {listing.equipment.aarCarType && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">AAR Car Type</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.aarCarType}</span>
+                          </div>
+                        )}
+                        {listing.equipment.loadLimit && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Load Limit</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.loadLimit.toLocaleString()} lbs</span>
+                          </div>
+                        )}
+                        {listing.equipment.lightWeight && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Light Weight</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.lightWeight.toLocaleString()} lbs</span>
+                          </div>
+                        )}
+                        {listing.equipment.insideLength && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Inside Length</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.insideLength}&apos;</span>
+                          </div>
+                        )}
+                        {listing.equipment.insideWidth && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Inside Width</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.insideWidth}&apos;</span>
+                          </div>
+                        )}
+                        {listing.equipment.insideHeight && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Inside Height</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.insideHeight}&apos;</span>
+                          </div>
+                        )}
+                        {listing.equipment.cubicCapacity && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Cubic Capacity</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.cubicCapacity.toLocaleString()} cu ft</span>
+                          </div>
+                        )}
+                        {listing.equipment.numberOfAxles && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Number of Axles</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.numberOfAxles}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mechanical specs */}
+                  {(listing.equipment.airBrakeType || listing.equipment.couplerType || listing.equipment.gauge) && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Mechanical</h3>
+                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {listing.equipment.gauge && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Gauge</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.gauge}</span>
+                          </div>
+                        )}
+                        {listing.equipment.weight && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Weight</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.weight.toLocaleString()} lbs</span>
+                          </div>
+                        )}
+                        {listing.equipment.airBrakeType && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Air Brake Type</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.airBrakeType}</span>
+                          </div>
+                        )}
+                        {listing.equipment.couplerType && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Coupler Type</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.couplerType}</span>
+                          </div>
+                        )}
+                        {listing.equipment.handbrakeType && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Handbrake</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.handbrakeType}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Availability */}
+                  {(listing.equipment.availability || listing.equipment.currentLocation) && (
+                    <div className="mb-6">
+                      <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Availability</h3>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        {listing.equipment.availability && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Status</span>
+                            <span className="text-body-sm font-semibold text-navy-900 capitalize">{listing.equipment.availability.replace('-', ' ')}</span>
+                          </div>
+                        )}
+                        {listing.equipment.currentLocation?.railroad && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Current Railroad</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.currentLocation.railroad}</span>
+                          </div>
+                        )}
+                        {listing.equipment.currentLocation?.station && (
+                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
+                            <span className="text-body-sm text-text-secondary">Station</span>
+                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.currentLocation.station}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* BUYER AUDIT: FRA Compliance Module */}
+              {listing.equipment && (listing.equipment.fraCompliant !== undefined || listing.equipment.dotCompliant !== undefined || listing.equipment.hazmatCertified !== undefined) && (
+                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
+                  <h2 className="heading-lg mb-6">Compliance & Certifications</h2>
+                  <div className="grid sm:grid-cols-3 gap-4">
+                    <div className={`p-4 rounded-xl text-center ${listing.equipment.fraCompliant ? 'bg-green-50 border-2 border-green-200' : 'bg-surface-secondary border border-surface-border'}`}>
+                      <div className={`w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center ${listing.equipment.fraCompliant ? 'bg-green-100' : 'bg-gray-100'}`}>
+                        {listing.equipment.fraCompliant ? (
+                          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className={`text-body-sm font-semibold ${listing.equipment.fraCompliant ? 'text-green-800' : 'text-text-tertiary'}`}>FRA Compliant</p>
+                      <p className="text-xs text-text-secondary mt-1">
+                        {listing.equipment.fraCompliant ? 'Approved for Class I operations' : 'Not FRA certified'}
+                      </p>
+                    </div>
+
+                    <div className={`p-4 rounded-xl text-center ${listing.equipment.dotCompliant ? 'bg-green-50 border-2 border-green-200' : 'bg-surface-secondary border border-surface-border'}`}>
+                      <div className={`w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center ${listing.equipment.dotCompliant ? 'bg-green-100' : 'bg-gray-100'}`}>
+                        {listing.equipment.dotCompliant ? (
+                          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className={`text-body-sm font-semibold ${listing.equipment.dotCompliant ? 'text-green-800' : 'text-text-tertiary'}`}>DOT Compliant</p>
+                      <p className="text-xs text-text-secondary mt-1">
+                        {listing.equipment.dotCompliant ? 'DOT regulations met' : 'Not DOT certified'}
+                      </p>
+                    </div>
+
+                    <div className={`p-4 rounded-xl text-center ${listing.equipment.hazmatCertified ? 'bg-green-50 border-2 border-green-200' : 'bg-surface-secondary border border-surface-border'}`}>
+                      <div className={`w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center ${listing.equipment.hazmatCertified ? 'bg-green-100' : 'bg-gray-100'}`}>
+                        {listing.equipment.hazmatCertified ? (
+                          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        )}
+                      </div>
+                      <p className={`text-body-sm font-semibold ${listing.equipment.hazmatCertified ? 'text-green-800' : 'text-text-tertiary'}`}>Hazmat Certified</p>
+                      <p className="text-xs text-text-secondary mt-1">
+                        {listing.equipment.hazmatCertified ? 'Hazmat approved' : 'Not hazmat certified'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Inspection Dates */}
+                  {(listing.equipment.lastInspectionDate || listing.equipment.nextInspectionDue) && (
+                    <div className="mt-4 pt-4 border-t border-surface-border">
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {listing.equipment.lastInspectionDate && (
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-xs text-text-secondary">Last Inspection</p>
+                              <p className="text-body-sm font-semibold text-navy-900">
+                                {new Date(listing.equipment.lastInspectionDate).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {listing.equipment.nextInspectionDue && (
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              new Date(listing.equipment.nextInspectionDue) < new Date() ? 'bg-red-100' : 'bg-green-100'
+                            }`}>
+                              <svg className={`w-5 h-5 ${
+                                new Date(listing.equipment.nextInspectionDue) < new Date() ? 'text-red-600' : 'text-green-600'
+                              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            <div>
+                              <p className="text-xs text-text-secondary">Next Inspection Due</p>
+                              <p className={`text-body-sm font-semibold ${
+                                new Date(listing.equipment.nextInspectionDue) < new Date() ? 'text-red-600' : 'text-navy-900'
+                              }`}>
+                                {new Date(listing.equipment.nextInspectionDue).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* BUYER AUDIT: Price History (if available) */}
+              {listing.priceHistory && listing.priceHistory.length > 1 && (
+                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
+                  <h2 className="heading-lg mb-4">Price History</h2>
+                  <div className="space-y-3">
+                    {listing.priceHistory.slice().reverse().map((entry, index) => (
+                      <div key={index} className="flex items-center justify-between py-2 border-b border-surface-border last:border-0">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            index === 0 ? 'bg-green-100' : 'bg-gray-100'
+                          }`}>
+                            {index === 0 ? (
+                              <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 4a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-body-sm font-semibold text-navy-900">
+                              ${entry.amount.toLocaleString()}
+                            </p>
+                            <p className="text-xs text-text-secondary">
+                              {new Date(entry.changedAt).toLocaleDateString()}
+                              {entry.reason && ` • ${entry.reason}`}
+                            </p>
+                          </div>
+                        </div>
+                        {index > 0 && listing.priceHistory && (
+                          <span className={`text-sm font-medium ${
+                            entry.amount < listing.priceHistory[listing.priceHistory.length - 1 - index + 1]?.amount 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }`}>
+                            {entry.amount < (listing.priceHistory[listing.priceHistory.length - 1 - index + 1]?.amount || 0)
+                              ? `↓ $${((listing.priceHistory[listing.priceHistory.length - 1 - index + 1]?.amount || 0) - entry.amount).toLocaleString()}`
+                              : `↑ $${(entry.amount - (listing.priceHistory[listing.priceHistory.length - 1 - index + 1]?.amount || 0)).toLocaleString()}`
+                            }
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Specifications (legacy) */}
               {listing.specifications && listing.specifications.length > 0 && (
                 <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
                   <h2 className="heading-lg mb-6">Specifications</h2>
@@ -479,6 +916,12 @@ export default async function ListingDetailPage({ params }: PageProps) {
                         Qty: {listing.quantity} {listing.quantityUnit}
                       </p>
                     )}
+                    {/* BUYER AUDIT: Days on market indicator */}
+                    {listing.daysOnMarket !== undefined && (
+                      <p className={`text-body-sm mt-1 ${listing.daysOnMarket <= 7 ? 'text-green-600 font-medium' : 'text-text-secondary'}`}>
+                        {listing.daysOnMarket <= 1 ? 'New listing today!' : `Listed ${listing.daysOnMarket} days ago`}
+                      </p>
+                    )}
                   </div>
 
                   {/* Location */}
@@ -590,6 +1033,13 @@ export default async function ListingDetailPage({ params }: PageProps) {
                     </div>
                   )}
                 </div>
+
+                {/* Relevant Contractors - Matched by Equipment Category */}
+                <RelevantContractors 
+                  equipmentCategory={listing.category} 
+                  className="mt-6"
+                  maxContractors={3}
+                />
 
                 {/* Stats */}
                 <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 mt-6">

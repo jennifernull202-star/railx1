@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Menu, X, ArrowLeft } from 'lucide-react';
+import { Menu, X, ArrowLeft, Search, Heart, Bell } from 'lucide-react';
 
 interface SiteHeaderProps {
   variant?: 'default' | 'transparent';
   showCTA?: boolean;
   ctaText?: string;
   ctaHref?: string;
+  showSearch?: boolean;
 }
 
 const navLinks = [
@@ -26,16 +27,55 @@ export default function SiteHeader({
   showCTA = true,
   ctaText = 'List Your Equipment',
   ctaHref = '/listings/create',
+  showSearch = true,
 }: SiteHeaderProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [watchlistCount, setWatchlistCount] = useState(0);
+  const [notificationCount, setNotificationCount] = useState(0);
 
   const isActive = (href: string) => pathname === href;
   
   // Don't show back button on homepage
   const showBackButton = pathname !== '/';
+  
+  // Hide inline search on search page and homepage
+  const shouldShowSearch = showSearch && pathname !== '/search' && pathname !== '/';
+  
+  // BUYER AUDIT: Fetch watchlist and notification counts
+  const fetchCounts = useCallback(async () => {
+    if (!session?.user) return;
+    try {
+      const [watchlistRes, notifRes] = await Promise.all([
+        fetch('/api/watchlist?countOnly=true'),
+        fetch('/api/notifications?unreadOnly=true&countOnly=true'),
+      ]);
+      if (watchlistRes.ok) {
+        const data = await watchlistRes.json();
+        setWatchlistCount(data.count || 0);
+      }
+      if (notifRes.ok) {
+        const data = await notifRes.json();
+        setNotificationCount(data.count || 0);
+      }
+    } catch {
+      // Silently fail - counts are nice-to-have
+    }
+  }, [session?.user]);
+  
+  useEffect(() => {
+    fetchCounts();
+  }, [fetchCounts]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <header
@@ -70,7 +110,7 @@ export default function SiteHeader({
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-10">
+          <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -85,11 +125,55 @@ export default function SiteHeader({
               </Link>
             ))}
           </div>
+          
+          {/* BUYER AUDIT: Search Bar */}
+          {shouldShowSearch && (
+            <form onSubmit={handleSearch} className="hidden lg:flex items-center">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search equipment..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-[200px] xl:w-[260px] h-9 pl-9 pr-3 text-sm bg-slate-100 border-0 rounded-lg placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rail-orange/30 focus:bg-white transition-all"
+                />
+              </div>
+            </form>
+          )}
 
           {/* Auth/CTA Buttons */}
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3">
             {session?.user ? (
               <>
+                {/* BUYER AUDIT: Watchlist Icon with Count */}
+                <Link
+                  href="/dashboard/watchlist"
+                  className="relative hidden sm:flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-rail-orange transition-colors"
+                  title="My Watchlist"
+                >
+                  <Heart className="w-[18px] h-[18px]" />
+                  {watchlistCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-rail-orange text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {watchlistCount > 99 ? '99+' : watchlistCount}
+                    </span>
+                  )}
+                </Link>
+                
+                {/* BUYER AUDIT: Notification Bell with Count */}
+                <Link
+                  href="/dashboard/notifications"
+                  className="relative hidden sm:flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-rail-orange transition-colors"
+                  title="Notifications"
+                >
+                  <Bell className="w-[18px] h-[18px]" />
+                  {notificationCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </span>
+                  )}
+                </Link>
+                
                 <Link
                   href="/dashboard"
                   className="hidden sm:inline-flex text-[15px] font-medium text-navy-900 hover:text-rail-orange transition-colors duration-200"

@@ -4,3 +4,4 @@
 
 export { GlobalSearchBar, type GlobalSearchBarProps } from './GlobalSearchBar';
 export { FilterBar, type FilterBarProps, type FilterSection, type FilterOption } from './FilterBar';
+export { MarketplaceSearchFilters, type MarketplaceFilters } from './MarketplaceSearchFilters';

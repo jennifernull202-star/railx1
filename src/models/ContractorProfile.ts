@@ -30,6 +30,10 @@ export interface IVerificationResult {
   aiRecommendation?: 'approved' | 'rejected' | 'needs_review'; // AI's recommendation for admin reference only
 }
 
+// ============================================
+// LEGACY: ServiceCategory (kept for backward compatibility)
+// NEW: Use ContractorType from @/config/contractor-types
+// ============================================
 export type ServiceCategory = 
   | 'track-construction'
   | 'track-maintenance'
@@ -48,6 +52,40 @@ export type ServiceCategory =
   | 'training'
   | 'emergency-response'
   | 'other';
+
+// ============================================
+// STRUCTURED CONTRACTOR TYPES (NEW)
+// ============================================
+// Primary contractor types from config
+export type ContractorTypeValue = 
+  | 'track-construction'
+  | 'railcar-repair'
+  | 'locomotive-service'
+  | 'mow'
+  | 'signal-communications'
+  | 'electrical-power'
+  | 'environmental'
+  | 'hazmat-spill'
+  | 'emergency-response'
+  | 'rerail-derailment'
+  | 'inspection-compliance'
+  | 'transport-logistics'
+  | 'scrap-decommission'
+  | 'engineering-consulting'
+  | 'other';
+
+// Selected sub-services structure
+export interface ISelectedSubServices {
+  [contractorType: string]: string[]; // contractorType -> array of sub-service IDs
+}
+
+// "Other" type additional info
+export interface IOtherTypeInfo {
+  description: string; // Max 150 chars, required if "other" is selected
+  submittedAt: Date;
+  normalized?: boolean; // Admin has reviewed and normalized
+  normalizedTo?: ContractorTypeValue[]; // Admin-assigned types after review
+}
 
 export interface IAddress {
   street?: string;
@@ -80,7 +118,20 @@ export interface IContractorProfile {
   logo?: string;
   coverImage?: string;
   address: IAddress;
-  // Services & Capabilities
+  
+  // ============================================
+  // STRUCTURED CONTRACTOR TYPES (PRIMARY CLASSIFICATION)
+  // ============================================
+  // Primary contractor types - REQUIRED, at least one must be selected
+  contractorTypes: ContractorTypeValue[];
+  // Selected sub-services for each contractor type (optional)
+  subServices?: ISelectedSubServices;
+  // "Other" type info - required if "other" is in contractorTypes
+  otherTypeInfo?: IOtherTypeInfo;
+  
+  // ============================================
+  // LEGACY: Services (kept for backward compatibility)
+  // ============================================
   services: ServiceCategory[];
   serviceDescription?: string;
   regionsServed: string[];
@@ -98,6 +149,108 @@ export interface IContractorProfile {
   verifiedAt?: Date;
   verifiedBadgePurchased: boolean;
   verifiedBadgeExpiresAt?: Date;
+  renewalRemindersSent?: {
+    thirtyDay?: Date;
+    sevenDay?: Date;
+    dayOf?: Date;
+  };
+  
+  // ============================================
+  // PAID VISIBILITY TIER (Required for any directory visibility)
+  // ============================================
+  // visibilityTier: 'none' | 'verified' | 'featured' | 'priority'
+  // No tier = not visible anywhere. 'verified' = base paid tier.
+  visibilityTier: 'none' | 'verified' | 'featured' | 'priority';
+  visibilitySubscriptionStatus: 'none' | 'active' | 'past_due' | 'canceled' | 'expired';
+  visibilitySubscriptionId?: string; // Stripe subscription ID
+  visibilityExpiresAt?: Date;
+  
+  // Verification gate (must pass BEFORE subscribing to visibility tier)
+  verificationPurchasedAt?: Date;
+  verificationPaymentId?: string; // Stripe payment intent ID
+  
+  // ============================================
+  // BUYER AUDIT: Enhanced contractor discovery
+  // ============================================
+  
+  // Certifications
+  certifications?: {
+    fra?: {
+      certified: boolean;
+      certificationNumber?: string;
+      expiresAt?: Date;
+    };
+    aar?: {
+      certified: boolean;
+      certificationNumber?: string;
+      expiresAt?: Date;
+    };
+    osha?: {
+      tenHour?: boolean;
+      thirtyHour?: boolean;
+      certificationDate?: Date;
+    };
+    drugFreeWorkplace?: boolean;
+    dotCompliant?: boolean;
+  };
+  
+  // Safety record
+  safetyRecord?: {
+    emrRating?: number;           // Experience Modification Rate
+    incidentRate?: number;        // OSHA incident rate
+    lastSafetyAudit?: Date;
+    yearsWithoutIncident?: number;
+  };
+  
+  // Insurance details (pulled from verification)
+  insuranceDetails?: {
+    generalLiability?: number;    // Coverage amount
+    workersComp?: boolean;
+    professionalLiability?: number;
+    autoLiability?: number;
+    expiresAt?: Date;
+  };
+  
+  // Project portfolio
+  projectPortfolio?: {
+    title: string;
+    description: string;
+    images: string[];
+    completedAt?: Date;
+    clientName?: string;
+    projectValue?: number;
+  }[];
+  
+  // Availability calendar
+  availability?: {
+    status: 'available' | 'limited' | 'booked';
+    bookedUntil?: Date;
+    nextAvailableDate?: Date;
+    notes?: string;
+  };
+  
+  // Major equipment owned
+  majorEquipment?: {
+    name: string;
+    type: string;
+    quantity?: number;
+    description?: string;
+  }[];
+  
+  // Service area map (for geospatial)
+  serviceAreaCoordinates?: {
+    type: 'Polygon';
+    coordinates: number[][][];
+  };
+  
+  // Response metrics
+  responseMetrics?: {
+    avgResponseTimeHours?: number;
+    responseTimeLabel?: 'within-1h' | 'within-4h' | 'within-24h' | 'within-48h' | 'slow';
+    totalInquiriesReceived?: number;
+    quotesProvided?: number;
+  };
+  
   // Portfolio
   photos: string[];
   portfolioImages: string[];
@@ -121,6 +274,8 @@ export interface IContractorProfile {
 export interface IContractorProfileMethods {
   calculateCompleteness(): number;
   isVerified(): boolean;
+  isVisibleInSearch(): boolean;  // HARD gate: verified + paid visibility tier
+  getSearchRankBoost(): number;  // For sorting by tier
 }
 
 export interface IContractorProfileDocument 
@@ -222,7 +377,68 @@ const ContractorProfileSchema = new Schema<
       type: AddressSchema,
       required: true,
     },
-    // Services & Capabilities
+    
+    // ============================================
+    // STRUCTURED CONTRACTOR TYPES (PRIMARY CLASSIFICATION)
+    // ============================================
+    contractorTypes: {
+      type: [String],
+      enum: [
+        'track-construction',
+        'railcar-repair',
+        'locomotive-service',
+        'mow',
+        'signal-communications',
+        'electrical-power',
+        'environmental',
+        'hazmat-spill',
+        'emergency-response',
+        'rerail-derailment',
+        'inspection-compliance',
+        'transport-logistics',
+        'scrap-decommission',
+        'engineering-consulting',
+        'other',
+      ],
+      required: [true, 'At least one contractor type is required'],
+      validate: [
+        {
+          validator: function (v: string[]) {
+            return v.length > 0;
+          },
+          message: 'At least one contractor type must be selected',
+        },
+        {
+          validator: function (v: string[]) {
+            // Cannot select ONLY "other"
+            if (v.length === 1 && v[0] === 'other') {
+              return false;
+            }
+            return true;
+          },
+          message: 'Cannot select only "Other". Please select at least one primary contractor type.',
+        },
+      ],
+      index: true,
+    },
+    subServices: {
+      type: Schema.Types.Mixed, // { [contractorType]: string[] }
+      default: {},
+    },
+    otherTypeInfo: {
+      description: {
+        type: String,
+        maxlength: [150, 'Other description cannot exceed 150 characters'],
+        trim: true,
+      },
+      submittedAt: { type: Date },
+      normalized: { type: Boolean, default: false },
+      normalizedTo: [{ type: String }],
+    },
+    
+    // ============================================
+    // LEGACY: Services (kept for backward compatibility)
+    // ============================================
     services: {
       type: [String],
       enum: [
@@ -244,13 +460,7 @@ const ContractorProfileSchema = new Schema<
         'emergency-response',
         'other',
       ],
-      required: [true, 'At least one service is required'],
-      validate: {
-        validator: function (v: string[]) {
-          return v.length > 0;
-        },
-        message: 'At least one service must be selected',
-      },
+      default: [],
     },
     serviceDescription: {
       type: String,
@@ -323,6 +533,130 @@ const ContractorProfileSchema = new Schema<
     verifiedBadgeExpiresAt: {
       type: Date,
     },
+    renewalRemindersSent: {
+      thirtyDay: { type: Date },
+      sevenDay: { type: Date },
+      dayOf: { type: Date },
+    },
+    
+    // ============================================
+    // PAID VISIBILITY TIER (Required for any directory visibility)
+    // ============================================
+    visibilityTier: {
+      type: String,
+      enum: ['none', 'verified', 'featured', 'priority'],
+      default: 'none',
+      index: true,
+    },
+    visibilitySubscriptionStatus: {
+      type: String,
+      enum: ['none', 'active', 'past_due', 'canceled', 'expired'],
+      default: 'none',
+      index: true,
+    },
+    visibilitySubscriptionId: {
+      type: String,
+      sparse: true, // Allow null/undefined but enforce uniqueness when set
+    },
+    visibilityExpiresAt: {
+      type: Date,
+    },
+    verificationPurchasedAt: {
+      type: Date,
+    },
+    verificationPaymentId: {
+      type: String,
+    },
+    
+    // ============================================
+    // BUYER AUDIT: Enhanced contractor discovery schema
+    // ============================================
+    
+    // Certifications
+    certifications: {
+      fra: {
+        certified: { type: Boolean, default: false },
+        certificationNumber: { type: String },
+        expiresAt: { type: Date },
+      },
+      aar: {
+        certified: { type: Boolean, default: false },
+        certificationNumber: { type: String },
+        expiresAt: { type: Date },
+      },
+      osha: {
+        tenHour: { type: Boolean, default: false },
+        thirtyHour: { type: Boolean, default: false },
+        certificationDate: { type: Date },
+      },
+      drugFreeWorkplace: { type: Boolean, default: false },
+      dotCompliant: { type: Boolean, default: false },
+    },
+    
+    // Safety record
+    safetyRecord: {
+      emrRating: { type: Number },
+      incidentRate: { type: Number },
+      lastSafetyAudit: { type: Date },
+      yearsWithoutIncident: { type: Number },
+    },
+    
+    // Insurance details
+    insuranceDetails: {
+      generalLiability: { type: Number },
+      workersComp: { type: Boolean },
+      professionalLiability: { type: Number },
+      autoLiability: { type: Number },
+      expiresAt: { type: Date },
+    },
+    
+    // Project portfolio
+    projectPortfolio: [{
+      title: { type: String, required: true },
+      description: { type: String },
+      images: [{ type: String }],
+      completedAt: { type: Date },
+      clientName: { type: String },
+      projectValue: { type: Number },
+    }],
+    
+    // Availability calendar
+    availability: {
+      status: { 
+        type: String, 
+        enum: ['available', 'limited', 'booked'],
+        default: 'available',
+      },
+      bookedUntil: { type: Date },
+      nextAvailableDate: { type: Date },
+      notes: { type: String },
+    },
+    
+    // Major equipment owned
+    majorEquipment: [{
+      name: { type: String, required: true },
+      type: { type: String },
+      quantity: { type: Number },
+      description: { type: String },
+    }],
+    
+    // Service area map
+    serviceAreaCoordinates: {
+      type: { type: String, enum: ['Polygon'] },
+      coordinates: { type: [[[Number]]] },
+    },
+    
+    // Response metrics
+    responseMetrics: {
+      avgResponseTimeHours: { type: Number },
+      responseTimeLabel: { 
+        type: String, 
+        enum: ['within-1h', 'within-4h', 'within-24h', 'within-48h', 'slow'],
+      },
+      totalInquiriesReceived: { type: Number, default: 0 },
+      quotesProvided: { type: Number, default: 0 },
+    },
+    
     // Portfolio
     photos: {
       type: [String],
@@ -434,6 +768,63 @@ ContractorProfileSchema.methods.isVerified = function (): boolean {
   return this.verificationStatus === 'verified';
 };
 
+/**
+ * HARD VISIBILITY GATE
+ * Contractor MUST be:
+ * 1. Verified (verificationStatus === 'verified')
+ * 2. Have an active paid visibility tier (visibilityTier !== 'none')
+ * 3. Subscription must be active (visibilitySubscriptionStatus === 'active')
+ * 4. Visibility must not be expired
+ */
+ContractorProfileSchema.methods.isVisibleInSearch = function (): boolean {
+  // Gate 1: Must be verified
+  if (this.verificationStatus !== 'verified') {
+    return false;
+  }
+  
+  // Gate 2: Must have a paid visibility tier
+  if (!this.visibilityTier || this.visibilityTier === 'none') {
+    return false;
+  }
+  
+  // Gate 3: Subscription must be active
+  if (this.visibilitySubscriptionStatus !== 'active') {
+    return false;
+  }
+  
+  // Gate 4: Visibility must not be expired
+  if (this.visibilityExpiresAt && new Date(this.visibilityExpiresAt) < new Date()) {
+    return false;
+  }
+  
+  // Gate 5: Verification must not be expired
+  if (this.verifiedBadgeExpiresAt && new Date(this.verifiedBadgeExpiresAt) < new Date()) {
+    return false;
+  }
+  
+  return true;
+};
+
+/**
+ * Get search rank boost based on visibility tier
+ */
+ContractorProfileSchema.methods.getSearchRankBoost = function (): number {
+  if (!this.isVisibleInSearch()) {
+    return 0;
+  }
+  
+  switch (this.visibilityTier) {
+    case 'priority':
+      return 3.0;
+    case 'featured':
+      return 2.0;
+    case 'verified':
+      return 1.0;
+    default:
+      return 0;
+  }
+};
+
 // ============================================
 // MIDDLEWARE
 // ============================================
@@ -459,17 +850,49 @@ ContractorProfileSchema.statics.findByUserId = async function (
 };
 
 /**
- * Find verified contractors
+ * Find PAID VERIFIED contractors (HARD VISIBILITY GATE)
+ * Only returns contractors who:
+ * 1. Are verified
+ * 2. Have an active paid visibility tier
+ * 3. Have active subscription
+ * 4. Are not expired
+ * 
+ * Sorted by visibility tier (priority > featured > verified)
  */
 ContractorProfileSchema.statics.findVerifiedContractors = async function (
   limit = 20
 ): Promise<IContractorProfileDocument[]> {
+  const now = new Date();
+  
   return this.find({
+    // HARD GATE: Must be verified
     verificationStatus: 'verified',
+    // HARD GATE: Must have a paid visibility tier
+    visibilityTier: { $in: ['verified', 'featured', 'priority'] },
+    // HARD GATE: Subscription must be active
+    visibilitySubscriptionStatus: 'active',
+    // HARD GATE: Visibility not expired
+    $or: [
+      { visibilityExpiresAt: { $gt: now } },
+      { visibilityExpiresAt: { $exists: false } },
+    ],
+    // HARD GATE: Verification not expired
+    $and: [
+      {
+        $or: [
+          { verifiedBadgeExpiresAt: { $gt: now } },
+          { verifiedBadgeExpiresAt: { $exists: false } },
+        ],
+      },
+    ],
     isPublished: true,
     isActive: true,
   })
-    .sort({ verifiedBadgePurchased: -1, createdAt: -1 })
+    // Sort by tier: priority first, then featured, then verified
+    .sort({ 
+      visibilityTier: -1, // 'priority' > 'featured' > 'verified' alphabetically reversed
+      createdAt: -1,
+    })
     .limit(limit);
 };
 

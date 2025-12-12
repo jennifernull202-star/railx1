@@ -96,6 +96,91 @@ export interface Specification {
   unit?: string;
 }
 
+// ============================================
+// STRUCTURED EQUIPMENT FIELDS (BUYER AUDIT UPGRADE)
+// ============================================
+
+// Manufacturer enum for locomotives and rolling stock
+export type EquipmentManufacturer = 
+  | 'EMD' | 'GE' | 'Wabtec' | 'Alco' | 'MLW' | 'BLW' 
+  | 'Trinity' | 'Greenbrier' | 'FreightCar America' | 'National Steel Car'
+  | 'TrinityRail' | 'GATX' | 'Union Tank Car' | 'American Railcar'
+  | 'Progress Rail' | 'Siemens' | 'Stadler' | 'Alstom' | 'Other';
+
+// AAR Car Type codes
+export type AARCarType = 
+  | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'J' | 'K' 
+  | 'L' | 'M' | 'N' | 'P' | 'R' | 'S' | 'T' | 'U' | 'V' | 'W' | 'X' | 'Z';
+
+// Availability status
+export type EquipmentAvailability = 'immediate' | 'storage' | 'in-service' | 'lease-return' | 'pending-repair';
+
+// Seller type expanded
+export type SellerType = 'individual' | 'dealer' | 'contractor' | 'railroad' | 'leasing-company' | 'scrap-yard';
+
+// Structured equipment data interface
+export interface EquipmentData {
+  // Core identifiers
+  reportingMarks?: string;           // BNSF 1234, UP 5678
+  manufacturer?: string;             // EMD, GE, Trinity, etc.
+  model?: string;                    // GP38-2, SD70MAC, etc.
+  yearBuilt?: number;
+  yearRebuilt?: number;
+  serialNumber?: string;
+  
+  // Locomotive-specific
+  horsepower?: number;
+  engineHours?: number;
+  mileage?: number;
+  tractionMotors?: string;           // D77, GE752
+  trucks?: string;                   // Blomberg B, HTC
+  fuelCapacity?: number;             // gallons
+  sandCapacity?: number;             // cubic feet
+  dynamicBrakes?: boolean;
+  multipleUnitCapable?: boolean;
+  engineType?: string;               // 16-645E3, 7FDL16
+  
+  // Freight car specific
+  aarCarType?: string;               // T, B, G, H, etc.
+  loadLimit?: number;                // pounds
+  lightWeight?: number;              // pounds
+  insideLength?: number;             // feet
+  insideWidth?: number;              // feet
+  insideHeight?: number;             // feet
+  cubicCapacity?: number;            // cubic feet
+  tankCapacity?: number;             // gallons
+  commodityLastCarried?: string;
+  axleCount?: number;                // 4, 6, 8
+  
+  // Track materials specific
+  railWeight?: number;               // lbs per yard
+  railLength?: number;               // feet
+  tieType?: string;                  // wood, concrete, composite
+  
+  // Regulatory & compliance
+  fraCompliant?: boolean;
+  fraClass?: string;                 // Class I, II, III
+  lastFraInspection?: Date;
+  lastServiceDate?: Date;
+  lastQualificationDate?: Date;      // For tank cars
+  dotSpec?: string;                  // DOT-111, DOT-117
+  
+  // Availability & quantity
+  availability?: EquipmentAvailability;
+  quantityAvailable?: number;
+  minimumOrder?: number;
+  
+  // Gauge
+  gauge?: string;                    // standard, narrow, etc.
+}
+
+// Price history tracking
+export interface PriceHistoryEntry {
+  amount: number;
+  changedAt: Date;
+  reason?: string;
+}
+
 // Media interface
 export interface ListingMedia {
   url: string;
@@ -118,10 +203,11 @@ export interface IListingDocument extends Document {
   
   // Seller info
   sellerId: Types.ObjectId;
-  sellerType: 'individual' | 'dealer' | 'contractor';
+  sellerType: SellerType;
   
   // Pricing
   price: ListingPrice;
+  priceHistory?: PriceHistoryEntry[];
   
   // Location
   location: ListingLocation;
@@ -130,7 +216,12 @@ export interface IListingDocument extends Document {
   media: ListingMedia[];
   primaryImageUrl?: string;
   
-  // Specifications
+  // ============================================
+  // STRUCTURED EQUIPMENT DATA (Buyer Audit Upgrade)
+  // ============================================
+  equipment: EquipmentData;
+  
+  // Legacy specifications (kept for backward compatibility)
   specifications: Specification[];
   
   // Inventory
@@ -163,6 +254,9 @@ export interface IListingDocument extends Document {
   viewCount: number;
   inquiryCount: number;
   saveCount: number;
+  
+  // Days on market tracking
+  daysOnMarket?: number;
   
   // Timestamps
   publishedAt?: Date;
@@ -236,8 +330,9 @@ const ListingSchema = new Schema<IListingDocument, IListingModel>(
     },
     sellerType: {
       type: String,
-      enum: ['individual', 'dealer', 'contractor'],
+      enum: ['individual', 'dealer', 'contractor', 'railroad', 'leasing-company', 'scrap-yard'],
       default: 'individual',
+      index: true,
     },
     
     // Pricing
@@ -252,6 +347,13 @@ const ListingSchema = new Schema<IListingDocument, IListingModel>(
       originalAmount: Number,
       pricePerUnit: String,
     },
+    
+    // Price history tracking
+    priceHistory: [{
+      amount: { type: Number, required: true },
+      changedAt: { type: Date, default: Date.now },
+      reason: String,
+    }],
     
     // Location
     location: {
@@ -288,12 +390,74 @@ const ListingSchema = new Schema<IListingDocument, IListingModel>(
     },
     primaryImageUrl: String,
     
-    // Specifications
+    // Legacy Specifications (backward compatibility)
     specifications: [{
       label: { type: String, required: true },
       value: { type: String, required: true },
       unit: String,
     }],
+    
+    // ============================================
+    // STRUCTURED EQUIPMENT DATA (Buyer Audit Upgrade)
+    // ============================================
+    equipment: {
+      // Core identifiers
+      reportingMarks: { type: String, trim: true, index: true },
+      manufacturer: { type: String, trim: true, index: true },
+      model: { type: String, trim: true, index: true },
+      yearBuilt: { type: Number, index: true },
+      yearRebuilt: { type: Number },
+      serialNumber: { type: String, trim: true },
+      
+      // Locomotive-specific
+      horsepower: { type: Number, index: true },
+      engineHours: { type: Number },
+      mileage: { type: Number },
+      tractionMotors: { type: String },
+      trucks: { type: String },
+      fuelCapacity: { type: Number },
+      sandCapacity: { type: Number },
+      dynamicBrakes: { type: Boolean },
+      multipleUnitCapable: { type: Boolean },
+      engineType: { type: String },
+      
+      // Freight car specific
+      aarCarType: { type: String, trim: true, index: true },
+      loadLimit: { type: Number },
+      lightWeight: { type: Number },
+      insideLength: { type: Number },
+      insideWidth: { type: Number },
+      insideHeight: { type: Number },
+      cubicCapacity: { type: Number },
+      tankCapacity: { type: Number },
+      commodityLastCarried: { type: String },
+      axleCount: { type: Number },
+      
+      // Track materials specific
+      railWeight: { type: Number },
+      railLength: { type: Number },
+      tieType: { type: String },
+      
+      // Regulatory & compliance
+      fraCompliant: { type: Boolean, index: true },
+      fraClass: { type: String },
+      lastFraInspection: { type: Date },
+      lastServiceDate: { type: Date },
+      lastQualificationDate: { type: Date },
+      dotSpec: { type: String },
+      
+      // Availability & quantity
+      availability: { 
+        type: String, 
+        enum: ['immediate', 'storage', 'in-service', 'lease-return', 'pending-repair'],
+        index: true,
+      },
+      quantityAvailable: { type: Number },
+      minimumOrder: { type: Number },
+      
+      // Gauge
+      gauge: { type: String, default: 'standard' },
+    },
     
     // Inventory
     quantity: { type: Number, default: 1, min: 0 },
@@ -357,6 +521,7 @@ const ListingSchema = new Schema<IListingDocument, IListingModel>(
     viewCount: { type: Number, default: 0 },
     inquiryCount: { type: Number, default: 0 },
     saveCount: { type: Number, default: 0 },
+    daysOnMarket: { type: Number, default: 0 },
     
     // Timestamps
     publishedAt: Date,
@@ -382,10 +547,26 @@ const ListingSchema = new Schema<IListingDocument, IListingModel>(
   }
 );
 
-// Create text index for search
+// Create text index for search including equipment fields
 ListingSchema.index(
-  { title: 'text', description: 'text', tags: 'text' },
-  { weights: { title: 10, tags: 5, description: 1 } }
+  { 
+    title: 'text', 
+    description: 'text', 
+    tags: 'text',
+    'equipment.reportingMarks': 'text',
+    'equipment.model': 'text',
+    'equipment.manufacturer': 'text',
+  },
+  { 
+    weights: { 
+      title: 10, 
+      'equipment.reportingMarks': 8,
+      'equipment.model': 6,
+      tags: 5, 
+      'equipment.manufacturer': 4,
+      description: 1 
+    } 
+  }
 );
 
 // Compound indexes for common queries
@@ -393,6 +574,15 @@ ListingSchema.index({ category: 1, status: 1, 'premiumAddOns.featured.active': -
 ListingSchema.index({ sellerId: 1, status: 1, createdAt: -1 });
 ListingSchema.index({ 'location.state': 1, category: 1, status: 1 });
 ListingSchema.index({ 'location.coordinates': '2dsphere' });
+
+// Equipment-specific indexes for buyer search (Buyer Audit Upgrade)
+ListingSchema.index({ 'equipment.yearBuilt': 1, category: 1, status: 1 });
+ListingSchema.index({ 'equipment.horsepower': 1, category: 1, status: 1 });
+ListingSchema.index({ 'equipment.manufacturer': 1, 'equipment.model': 1, status: 1 });
+ListingSchema.index({ 'equipment.fraCompliant': 1, category: 1, status: 1 });
+ListingSchema.index({ 'equipment.availability': 1, status: 1 });
+ListingSchema.index({ sellerType: 1, status: 1, createdAt: -1 });
+ListingSchema.index({ quantity: 1, status: 1 });
 
 // Generate slug from title
 ListingSchema.statics.generateSlug = async function (title: string): Promise<string> {
@@ -422,9 +612,28 @@ ListingSchema.pre('save', async function () {
     this.primaryImageUrl = primaryMedia.url;
   }
   
+  // Track price history when price changes
+  if (this.isModified('price.amount') && this.price.amount) {
+    if (!this.priceHistory) {
+      this.priceHistory = [];
+    }
+    this.priceHistory.push({
+      amount: this.price.amount,
+      changedAt: new Date(),
+      reason: this.isNew ? 'Initial price' : 'Price update',
+    });
+  }
+  
   // Set publishedAt when status changes to active
   if (this.isModified('status') && this.status === 'active' && !this.publishedAt) {
     this.publishedAt = new Date();
+  }
+  
+  // Calculate days on market
+  if (this.publishedAt) {
+    const now = new Date();
+    const diff = now.getTime() - this.publishedAt.getTime();
+    this.daysOnMarket = Math.floor(diff / (1000 * 60 * 60 * 24));
   }
   
   // Set soldAt when status changes to sold

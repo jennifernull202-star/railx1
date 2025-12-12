@@ -44,9 +44,20 @@ interface ListingItem {
     city: string;
     state: string;
   };
+  quantity?: number;
+  equipment?: {
+    manufacturer?: string;
+    model?: string;
+    yearBuilt?: number;
+  };
+  sellerId?: {
+    isVerifiedSeller?: boolean;
+  };
   viewCount: number;
   premiumAddOns: {
     featured: { active: boolean };
+    premium?: { active: boolean };
+    elite?: { active: boolean };
     boosted: { active: boolean };
   };
   createdAt: string;
@@ -179,7 +190,8 @@ async function getListings(searchParams: SearchParams) {
 
   const [listings, total] = await Promise.all([
     Listing.find(query)
-      .select('title slug category condition primaryImageUrl price location viewCount premiumAddOns createdAt')
+      .select('title slug category condition primaryImageUrl price location quantity equipment viewCount premiumAddOns createdAt sellerId')
+      .populate('sellerId', 'isVerifiedSeller')
       .sort(sort)
       .skip(skip)
       .limit(limit)
@@ -213,6 +225,11 @@ function ListingCard({ listing }: { listing: ListingItem }) {
     ? '/marketplace/featured-example'
     : `/listings/${listing.slug || listing._id}`;
 
+  // Build equipment title: Manufacturer + Model or fallback to title
+  const equipmentTitle = listing.equipment?.manufacturer && listing.equipment?.model
+    ? `${listing.equipment.manufacturer} ${listing.equipment.model}`
+    : listing.equipment?.manufacturer || listing.equipment?.model || listing.title;
+
   return (
     <Link
       href={href}
@@ -224,8 +241,9 @@ function ListingCard({ listing }: { listing: ListingItem }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={listing.primaryImageUrl}
-            alt={listing.title}
+            alt={equipmentTitle}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -235,43 +253,66 @@ function ListingCard({ listing }: { listing: ListingItem }) {
           </div>
         )}
 
-        {/* Featured Badge */}
-        {listing.premiumAddOns?.featured?.active && (
-          <div className="absolute top-3 left-3 badge-featured text-xs">
-            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        {/* Tier Badges - Top Left */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1">
+          {listing.premiumAddOns?.elite?.active && (
+            <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[10px] px-2 py-0.5 rounded font-semibold shadow-sm">
+              ELITE
+            </span>
+          )}
+          {listing.premiumAddOns?.premium?.active && !listing.premiumAddOns?.elite?.active && (
+            <span className="bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded font-semibold shadow-sm">
+              PREMIUM
+            </span>
+          )}
+          {listing.premiumAddOns?.featured?.active && !listing.premiumAddOns?.premium?.active && !listing.premiumAddOns?.elite?.active && (
+            <span className="bg-rail-orange text-white text-[10px] px-2 py-0.5 rounded font-semibold shadow-sm">
+              FEATURED
+            </span>
+          )}
+        </div>
+
+        {/* Verified Seller Badge - Top Right */}
+        {listing.sellerId?.isVerifiedSeller && (
+          <div className="absolute top-3 right-3 bg-green-600 text-white text-[10px] px-2 py-0.5 rounded font-semibold shadow-sm flex items-center gap-1">
+            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
-            Featured
+            VERIFIED
           </div>
         )}
-
-        {/* Condition Badge */}
-        <div className="absolute bottom-3 right-3">
-          <span className="bg-white/90 backdrop-blur-sm text-navy-900 text-xs font-medium px-2 py-1 rounded">
-            {CONDITION_LABELS[listing.condition] || listing.condition}
-          </span>
-        </div>
       </div>
 
-      {/* Content */}
+      {/* Content - Fast Decision Support */}
       <div className="p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-caption font-medium text-rail-orange">
-            {CATEGORY_LABELS[listing.category] || listing.category}
-          </span>
-        </div>
-
-        <h3 className="text-body-md font-semibold text-navy-900 group-hover:text-rail-orange transition-colors line-clamp-2 mb-2">
-          {listing.title}
+        {/* Manufacturer + Model (Primary identifier) */}
+        <h3 className="text-body-md font-semibold text-navy-900 group-hover:text-rail-orange transition-colors line-clamp-2 mb-1">
+          {equipmentTitle}
         </h3>
 
-        <p className="text-heading-sm font-bold text-navy-900 mb-2">
+        {/* Year Built + Quantity Row */}
+        <div className="flex items-center gap-3 mb-2 text-caption text-text-secondary">
+          {listing.equipment?.yearBuilt && (
+            <span>Built {listing.equipment.yearBuilt}</span>
+          )}
+          {listing.quantity && listing.quantity > 1 && (
+            <span className="font-medium text-navy-900">
+              Qty: {listing.quantity}
+            </span>
+          )}
+        </div>
+
+        {/* Price */}
+        <p className="text-heading-sm font-bold text-rail-orange mb-2">
           {formatPrice(listing.price)}
         </p>
 
-        <div className="flex items-center justify-between text-caption text-text-secondary">
-          <span>{listing.location.city}, {listing.location.state}</span>
-          <span>{listing.viewCount} views</span>
+        {/* Location */}
+        <div className="flex items-center text-caption text-text-secondary">
+          <svg className="w-3 h-3 mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          </svg>
+          {listing.location.city}, {listing.location.state}
         </div>
       </div>
     </Link>

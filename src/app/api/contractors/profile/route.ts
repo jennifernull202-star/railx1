@@ -50,6 +50,11 @@ export async function GET() {
             phone: profile.businessPhone,
             website: profile.website || '',
           },
+          // Contractor types
+          contractorTypes: profile.contractorTypes || [],
+          subServices: profile.subServices || {},
+          otherTypeInfo: profile.otherTypeInfo || null,
+          // Location
           primaryState: profile.address?.state || '',
           serviceAreas: profile.regionsServed || [],
           serviceRadius: '', // Not stored in current model
@@ -70,9 +75,12 @@ export async function GET() {
 
 /**
  * POST /api/contractors/profile
- * Create or update contractor profile (FREE - no documents)
+ * Create or update contractor profile with structured contractor types
  * 
- * Uses minimum required fields from the model.
+ * REQUIRED:
+ * - companyName (business name)
+ * - contactInfo.email
+ * - contractorTypes (at least one, cannot be only "other")
  */
 export async function POST(request: NextRequest) {
   try {
@@ -87,6 +95,9 @@ export async function POST(request: NextRequest) {
       companyName,
       contactInfo,
       description,
+      contractorTypes,
+      subServices,
+      otherTypeInfo,
       services,
       primaryState,
       serviceAreas,
@@ -108,6 +119,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate contractor types (REQUIRED)
+    if (!contractorTypes || contractorTypes.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one contractor type must be selected' },
+        { status: 400 }
+      );
+    }
+
+    // Cannot select only "Other"
+    if (contractorTypes.length === 1 && contractorTypes[0] === 'other') {
+      return NextResponse.json(
+        { error: 'Cannot select only "Other". Please select at least one primary contractor type.' },
+        { status: 400 }
+      );
+    }
+
+    // If "Other" is selected, description is required
+    if (contractorTypes.includes('other') && !otherTypeInfo?.description?.trim()) {
+      return NextResponse.json(
+        { error: 'Please provide a description for "Other" services' },
+        { status: 400 }
+      );
+    }
+
     await connectDB();
 
     const userId = new Types.ObjectId(session.user.id);
@@ -123,7 +158,15 @@ export async function POST(request: NextRequest) {
       businessEmail: contactInfo.email.trim(),
       businessPhone: contactInfo.phone?.trim() || 'Contact via email',
       website: contactInfo.website?.trim() || '',
-      // Services - use provided or default
+      // NEW: Structured contractor types (PRIMARY CLASSIFICATION)
+      contractorTypes: contractorTypes,
+      subServices: subServices || {},
+      otherTypeInfo: contractorTypes.includes('other') && otherTypeInfo ? {
+        description: otherTypeInfo.description?.trim().substring(0, 150),
+        submittedAt: new Date(),
+        normalized: false,
+      } : undefined,
+      // Legacy services - use provided or default
       services: services?.length > 0 ? services : ['other'],
       // Regions - use provided or default
       regionsServed: serviceAreas?.length > 0 ? serviceAreas : [primaryState || 'Nationwide'],

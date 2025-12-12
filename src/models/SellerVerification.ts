@@ -24,6 +24,7 @@ export interface IVerificationDocument {
   fileName: string;
   uploadedAt: Date;
   expirationDate?: Date;
+  documentHash?: string; // Perceptual hash for duplicate detection
 }
 
 export interface IAIVerificationResult {
@@ -150,6 +151,11 @@ const VerificationDocumentSchema = new Schema({
   expirationDate: {
     type: Date,
     default: null,
+  },
+  documentHash: {
+    type: String,
+    default: null,
+    index: true, // Index for duplicate detection queries
   },
 }, { _id: false });
 

@@ -7,6 +7,10 @@
  * Two tiers:
  * - Standard ($29): 24-hour AI verification
  * - Priority ($49): Instant verification + 3-day ranking boost
+ * 
+ * BUSINESS RULES (Verification Hierarchy):
+ * - If already CONTRACTOR verified → Cannot buy seller verification (already covered)
+ * - If already SELLER verified → Cannot buy again (can upgrade to CONTRACTOR)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -16,6 +20,8 @@ import Stripe from 'stripe';
 import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import SellerVerification from '@/models/SellerVerification';
+import { VERIFICATION_TYPES } from '@/config/verification';
+import { validateVerificationPurchase, getVerificationResult } from '@/lib/verification';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -45,18 +51,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Check if already verified and not expired
-    if (user.isVerifiedSeller && user.verifiedSellerStatus === 'active') {
-      const expiresAt = user.verifiedSellerExpiresAt;
-      if (expiresAt && new Date(expiresAt) > new Date()) {
-        // Check if more than 30 days remaining
-        const daysRemaining = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-        if (daysRemaining > 30) {
-          return NextResponse.json(
-            { error: 'Your verification is still active. Renewal available within 30 days of expiration.' },
-            { status: 400 }
-          );
-        }
+    // ================================================================
+    // VERIFICATION HIERARCHY CHECK
+    // Prevents double-purchasing and ensures hierarchy is respected
+    // ================================================================
+    const verificationError = validateVerificationPurchase(user, VERIFICATION_TYPES.SELLER);
+    if (verificationError) {
+      return NextResponse.json({ error: verificationError }, { status: 400 });
+    }
+
+    // Additional check: Allow renewal within 30 days of expiration
+    const verificationResult = getVerificationResult(user);
+    if (verificationResult.type === VERIFICATION_TYPES.SELLER && 
+        verificationResult.status === 'active' &&
+        verificationResult.expiresAt) {
+      const daysRemaining = Math.ceil(
+        (verificationResult.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      );
+      if (daysRemaining > 30) {
+        return NextResponse.json(
+          { error: 'Your verification is still active. Renewal available within 30 days of expiration.' },
+          { status: 400 }
+        );
       }
     }
 

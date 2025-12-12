@@ -15,6 +15,18 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerifiedSellerBadgeCompact } from '@/components/VerifiedSellerBadge';
 
+// Equipment data subset for card display
+export interface ListingCardEquipment {
+  reportingMarks?: string;
+  manufacturer?: string;
+  model?: string;
+  yearBuilt?: number;
+  horsepower?: number;
+  fraCompliant?: boolean;
+  availability?: string;
+  aarCarType?: string;
+}
+
 export interface ListingCardProps {
   id: string;
   slug?: string;
@@ -48,6 +60,12 @@ export interface ListingCardProps {
   isWatchlisted?: boolean;
   onWatchlistToggle?: (id: string) => void;
   className?: string;
+  
+  // BUYER AUDIT: Structured equipment fields
+  equipment?: ListingCardEquipment;
+  quantity?: number;
+  daysOnMarket?: number;
+  inquiryCount?: number;
 }
 
 function formatPrice(price: ListingCardProps['price']): string {
@@ -89,6 +107,11 @@ const ListingCard: React.FC<ListingCardProps> = ({
   isWatchlisted,
   onWatchlistToggle,
   className,
+  // BUYER AUDIT: New equipment fields
+  equipment,
+  quantity,
+  daysOnMarket,
+  inquiryCount,
 }) => {
   // Route featured-example to its special page, others to standard listing page
   const href = id === 'featured-example' 
@@ -208,10 +231,22 @@ const ListingCard: React.FC<ListingCardProps> = ({
         </button>
 
         {/* Condition Badge */}
-        <div className="absolute bottom-3 left-3">
+        <div className="absolute bottom-3 left-3 flex gap-1.5">
           <Badge variant="outline" className="bg-white/90 text-navy-900 border-0 text-xs capitalize">
             {condition}
           </Badge>
+          {/* BUYER AUDIT: FRA Compliant badge */}
+          {equipment?.fraCompliant && (
+            <Badge className="bg-green-600 text-white border-0 text-xs font-medium">
+              FRA
+            </Badge>
+          )}
+          {/* BUYER AUDIT: Quantity badge */}
+          {quantity && quantity > 1 && (
+            <Badge className="bg-blue-600 text-white border-0 text-xs font-medium">
+              {quantity} avail
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -232,6 +267,54 @@ const ListingCard: React.FC<ListingCardProps> = ({
           <p className="text-lg font-bold text-navy-900 mb-2">
             {formatPrice(price)}
           </p>
+
+          {/* BUYER AUDIT: Equipment Details Line */}
+          {equipment && (equipment.reportingMarks || equipment.manufacturer || equipment.yearBuilt) && (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-secondary mb-2">
+              {equipment.reportingMarks && (
+                <span className="font-mono font-medium text-navy-900">
+                  {equipment.reportingMarks}
+                </span>
+              )}
+              {equipment.yearBuilt && (
+                <span>{equipment.yearBuilt}</span>
+              )}
+              {equipment.manufacturer && equipment.model && (
+                <span className="truncate max-w-[120px]">
+                  {equipment.manufacturer} {equipment.model}
+                </span>
+              )}
+              {equipment.manufacturer && !equipment.model && (
+                <span>{equipment.manufacturer}</span>
+              )}
+              {equipment.horsepower && (
+                <span className="text-text-tertiary">
+                  {equipment.horsepower.toLocaleString()} HP
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* BUYER AUDIT: Social Proof Line */}
+          {(daysOnMarket !== undefined || inquiryCount !== undefined) && (
+            <div className="flex items-center gap-2 text-xs text-text-tertiary mb-2">
+              {daysOnMarket !== undefined && (
+                <span className={cn(
+                  daysOnMarket <= 7 && 'text-green-600 font-medium'
+                )}>
+                  {daysOnMarket <= 1 ? 'New today' : `${daysOnMarket}d ago`}
+                </span>
+              )}
+              {inquiryCount !== undefined && inquiryCount > 0 && (
+                <span className="flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  {inquiryCount} {inquiryCount === 1 ? 'inquiry' : 'inquiries'}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Location & Seller */}
           <div className="flex items-center justify-between text-xs text-text-secondary">

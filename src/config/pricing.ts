@@ -192,12 +192,16 @@ export const SELLER_VERIFICATION_CONFIG: Record<SellerVerificationTier, SellerVe
 };
 
 // ============================================================================
-// CONTRACTOR TIERS
+// CONTRACTOR TIERS — PAID VISIBILITY ONLY
 // ============================================================================
+// No free tier. Contractors MUST be verified AND subscribed to appear anywhere.
+// Verification is a one-time annual payment. Visibility tiers are monthly.
 
 export const CONTRACTOR_TIERS = {
-  FREE: 'free',
-  VERIFIED: 'verified',
+  NONE: 'none',               // Default - NOT visible anywhere (must verify + subscribe)
+  VERIFIED: 'verified',       // Base tier - paid verification, appears in search/maps
+  FEATURED: 'featured',       // Priority placement, highlighted on maps
+  PRIORITY: 'priority',       // Top placement, limited slots, premium badge
 } as const;
 
 export type ContractorTier = typeof CONTRACTOR_TIERS[keyof typeof CONTRACTOR_TIERS];
@@ -206,44 +210,160 @@ export interface ContractorTierConfig {
   id: ContractorTier;
   name: string;
   description: string;
-  priceMonthly: number;  // in cents
+  priceMonthly: number;  // in cents (0 for base after verification)
   priceYearly?: number;  // in cents
   features: string[];
   stripePriceIdMonthly?: string;
   stripePriceIdYearly?: string;
+  searchRankBoost: number;      // Multiplier for search ranking
+  mapHighlight: boolean;        // Highlighted on maps
+  listingPlacement: boolean;    // Appears on equipment listings
+  limitedSlots?: number;        // Per region/category limit (undefined = unlimited)
+  badge?: string;               // Badge text
+  isHidden?: boolean;           // Not shown on pricing page
 }
 
 export const CONTRACTOR_TIER_CONFIG: Record<ContractorTier, ContractorTierConfig> = {
-  [CONTRACTOR_TIERS.FREE]: {
-    id: CONTRACTOR_TIERS.FREE,
-    name: 'Contractor',
-    description: 'Basic contractor profile',
+  [CONTRACTOR_TIERS.NONE]: {
+    id: CONTRACTOR_TIERS.NONE,
+    name: 'Unverified',
+    description: 'Not visible in contractor directory. Must verify to appear.',
     priceMonthly: 0,
     features: [
-      'Basic contractor profile',
-      'Contact information display',
-      'Service area listing',
-      'Standard search visibility',
+      'Create contractor profile (private)',
+      'Cannot appear in search',
+      'Cannot appear on maps',
+      'Cannot receive inquiries',
     ],
+    searchRankBoost: 0,
+    mapHighlight: false,
+    listingPlacement: false,
+    isHidden: true, // Don't show on pricing page
   },
   [CONTRACTOR_TIERS.VERIFIED]: {
     id: CONTRACTOR_TIERS.VERIFIED,
     name: 'Verified Contractor',
-    description: 'Stand out with verification and premium placement',
-    priceMonthly: 10000, // $100.00
-    priceYearly: 120000, // $1200/year
+    description: 'Verified and visible in contractor directory',
+    priceMonthly: 0, // Included with verification
     features: [
+      'Appears in contractor search',
+      'Visible on contractor map',
+      'Can receive inquiries',
       'Verified badge on profile',
-      'Priority search placement',
-      'Enhanced profile visibility',
-      'Trust indicators for buyers',
-      'Featured in contractor directory',
-      'Document verification included',
-      'Analytics dashboard',
+      'Contact information display',
+      'Service area listing',
+    ],
+    searchRankBoost: 1.0,
+    mapHighlight: false,
+    listingPlacement: false,
+  },
+  [CONTRACTOR_TIERS.FEATURED]: {
+    id: CONTRACTOR_TIERS.FEATURED,
+    name: 'Featured Contractor',
+    description: 'Priority placement with enhanced visibility',
+    priceMonthly: 9900, // $99.00/month
+    priceYearly: 99000, // $990/year (2 months free)
+    features: [
+      'Everything in Verified',
+      'Priority placement in search results',
+      'Highlighted on contractor map',
+      'Appears on relevant equipment listings',
+      'Featured badge on profile',
+      '2x search ranking boost',
+    ],
+    stripePriceIdMonthly: process.env.STRIPE_PRICE_CONTRACTOR_FEATURED_MONTHLY || '',
+    stripePriceIdYearly: process.env.STRIPE_PRICE_CONTRACTOR_FEATURED_YEARLY || '',
+    searchRankBoost: 2.0,
+    mapHighlight: true,
+    listingPlacement: true,
+    badge: 'Featured',
+  },
+  [CONTRACTOR_TIERS.PRIORITY]: {
+    id: CONTRACTOR_TIERS.PRIORITY,
+    name: 'Priority Contractor',
+    description: 'Top placement with exclusive positioning',
+    priceMonthly: 19900, // $199.00/month
+    priceYearly: 199000, // $1990/year (2 months free)
+    features: [
+      'Everything in Featured',
+      'Always first in search results',
+      'Premium highlighted badge',
+      'First on equipment listing pages',
+      'Limited slots per region (5 max)',
+      '3x search ranking boost',
       'Priority support',
     ],
-    stripePriceIdMonthly: process.env.STRIPE_PRICE_CONTRACTOR_VERIFIED_MONTHLY || process.env.NEXT_PUBLIC_STRIPE_PRICE_CONTRACTOR_VERIFIED || '',
-    stripePriceIdYearly: process.env.STRIPE_PRICE_CONTRACTOR_VERIFIED_YEARLY || '',
+    stripePriceIdMonthly: process.env.STRIPE_PRICE_CONTRACTOR_PRIORITY_MONTHLY || '',
+    stripePriceIdYearly: process.env.STRIPE_PRICE_CONTRACTOR_PRIORITY_YEARLY || '',
+    searchRankBoost: 3.0,
+    mapHighlight: true,
+    listingPlacement: true,
+    limitedSlots: 5, // Per region
+    badge: 'Priority',
+  },
+};
+
+// ============================================================================
+// CONTRACTOR VERIFICATION (Required BEFORE any visibility)
+// ============================================================================
+// One-time annual payment. Must complete:
+// - Identity verification
+// - Business verification
+// - Insurance upload
+// - Compliance confirmation
+
+export const CONTRACTOR_VERIFICATION_TIERS = {
+  STANDARD: 'standard',
+  PRIORITY: 'priority',
+} as const;
+
+export type ContractorVerificationTier = typeof CONTRACTOR_VERIFICATION_TIERS[keyof typeof CONTRACTOR_VERIFICATION_TIERS];
+
+export interface ContractorVerificationConfig {
+  id: ContractorVerificationTier;
+  name: string;
+  description: string;
+  price: number; // One-time payment in cents
+  features: string[];
+  stripePriceId: string;
+  slaHours: number;
+  validityDays: number; // 365 = 1 year
+}
+
+export const CONTRACTOR_VERIFICATION_CONFIG: Record<ContractorVerificationTier, ContractorVerificationConfig> = {
+  [CONTRACTOR_VERIFICATION_TIERS.STANDARD]: {
+    id: CONTRACTOR_VERIFICATION_TIERS.STANDARD,
+    name: 'Contractor Verification',
+    description: 'Required to appear in directory and receive inquiries',
+    price: 9900, // $99.00
+    features: [
+      'Identity verification',
+      'Business verification',
+      'Insurance verification',
+      'Compliance confirmation',
+      'Verified Contractor badge',
+      '24-hour processing',
+      'Valid for 1 year',
+    ],
+    stripePriceId: process.env.STRIPE_PRICE_CONTRACTOR_VERIFIED_MONTHLY || '',
+    slaHours: 24,
+    validityDays: 365,
+  },
+  [CONTRACTOR_VERIFICATION_TIERS.PRIORITY]: {
+    id: CONTRACTOR_VERIFICATION_TIERS.PRIORITY,
+    name: 'Priority Contractor Verification',
+    description: 'Fast-track verification with immediate visibility',
+    price: 14900, // $149.00
+    features: [
+      'Everything in Standard',
+      'Instant processing',
+      'Priority badge for first 7 days',
+      '7-day Featured placement included',
+      'Valid for 1 year',
+    ],
+    stripePriceId: process.env.STRIPE_PRICE_CONTRACTOR_PRIORITY_VERIFICATION || '',
+    slaHours: 0, // Instant
+    validityDays: 365,
   },
 };
 
@@ -547,11 +667,13 @@ export function getSellerVerificationTiersForDisplay(): SellerVerificationTierCo
 
 /**
  * Get all contractor tiers for pricing display
+ * Excludes NONE tier (hidden/internal)
  */
 export function getContractorTiersForDisplay(): ContractorTierConfig[] {
   return [
-    CONTRACTOR_TIER_CONFIG[CONTRACTOR_TIERS.FREE],
     CONTRACTOR_TIER_CONFIG[CONTRACTOR_TIERS.VERIFIED],
+    CONTRACTOR_TIER_CONFIG[CONTRACTOR_TIERS.FEATURED],
+    CONTRACTOR_TIER_CONFIG[CONTRACTOR_TIERS.PRIORITY],
   ];
 }
 

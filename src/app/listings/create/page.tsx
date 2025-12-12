@@ -17,6 +17,7 @@ import { US_STATES } from '@/lib/constants';
 import LocationAutocomplete, { LocationResult } from '@/components/search/LocationAutocomplete';
 import BulkPhotoUpload, { UploadedImage } from '@/components/forms/BulkPhotoUpload';
 import { useUnsavedChanges } from '@/lib/hooks/useUnsavedChanges';
+import PublishUpsellModal from '@/components/PublishUpsellModal';
 
 const CATEGORY_LABELS: Record<string, { label: string; description: string }> = {
   'locomotives': { label: 'Locomotives', description: 'Diesel, electric, and switcher locomotives' },
@@ -92,6 +93,7 @@ export default function CreateListingPage() {
   const [error, setError] = useState('');
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null);
   const [checkingVerification, setCheckingVerification] = useState(true);
+  const [showUpsellModal, setShowUpsellModal] = useState(false);
   
   const [formData, setFormData] = useState<ListingFormData>({
     title: '',
@@ -300,6 +302,114 @@ export default function CreateListingPage() {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
+  // Opens upsell modal before publishing
+  const handlePublishClick = () => {
+    if (!validateStep(currentStep)) return;
+    setShowUpsellModal(true);
+  };
+
+  // Publish with selected add-ons (redirects to checkout)
+  const handlePublishWithAddons = async (selectedAddons: string[]) => {
+    if (!validateStep(currentStep)) return;
+
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      // First create the listing as active
+      const listingData = buildListingData(false);
+      
+      const res = await fetch('/api/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(listingData),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to create listing');
+      }
+
+      const listingId = data.data._id;
+
+      // Create checkout session for add-ons
+      const checkoutRes = await fetch('/api/checkout/listing-addons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingId,
+          addons: selectedAddons,
+          successUrl: `${window.location.origin}/listings/${data.data.slug}?addons=success`,
+          cancelUrl: `${window.location.origin}/listings/${data.data.slug}?addons=cancelled`,
+        }),
+      });
+
+      const checkoutData = await checkoutRes.json();
+
+      if (!checkoutData.success || !checkoutData.url) {
+        // If checkout fails, still redirect to listing (it's already published)
+        clearDraft();
+        router.push(`/listings/${data.data.slug}`);
+        return;
+      }
+
+      clearDraft();
+      // Redirect to Stripe checkout
+      window.location.href = checkoutData.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setShowUpsellModal(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Publish without add-ons
+  const handlePublishWithoutAddons = async () => {
+    setShowUpsellModal(false);
+    await handleSubmit(false);
+  };
+
+  // Build listing data object
+  const buildListingData = (asDraft: boolean) => ({
+    title: formData.title,
+    description: formData.description,
+    category: formData.category,
+    subcategory: formData.subcategory,
+    condition: formData.condition,
+    status: asDraft ? 'draft' : 'active',
+    price: {
+      type: formData.priceType,
+      amount: formData.priceAmount ? parseFloat(formData.priceAmount) : undefined,
+      currency: 'USD',
+    },
+    location: {
+      city: formData.city,
+      state: formData.state,
+      zipCode: formData.zipCode,
+      country: 'USA',
+      lat: formData.lat,
+      lng: formData.lng,
+    },
+    media: media.filter(m => !m.uploading && !m.error).map((m, i) => ({
+      url: m.url,
+      type: 'image' as const,
+      caption: '',
+      isPrimary: m.isPrimary,
+      order: i,
+    })),
+    specifications: specifications.filter(s => s.label && s.value),
+    quantity: parseInt(formData.quantity) || 1,
+    quantityUnit: formData.quantityUnit,
+    shippingOptions: {
+      localPickup: formData.localPickup,
+      sellerShips: formData.sellerShips,
+      buyerArranges: formData.buyerArranges,
+    },
+    tags: formData.tags,
+  });
+
   const handleSubmit = async (asDraft: boolean = false) => {
     if (!validateStep(currentStep)) return;
 
@@ -307,43 +417,7 @@ export default function CreateListingPage() {
     setError('');
 
     try {
-      const listingData = {
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
-        subcategory: formData.subcategory,
-        condition: formData.condition,
-        status: asDraft ? 'draft' : 'active',
-        price: {
-          type: formData.priceType,
-          amount: formData.priceAmount ? parseFloat(formData.priceAmount) : undefined,
-          currency: 'USD',
-        },
-        location: {
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
-          country: 'USA',
-          lat: formData.lat,
-          lng: formData.lng,
-        },
-        media: media.filter(m => !m.uploading && !m.error).map((m, i) => ({
-          url: m.url,
-          type: 'image' as const,
-          caption: '',
-          isPrimary: m.isPrimary,
-          order: i,
-        })),
-        specifications: specifications.filter(s => s.label && s.value),
-        quantity: parseInt(formData.quantity) || 1,
-        quantityUnit: formData.quantityUnit,
-        shippingOptions: {
-          localPickup: formData.localPickup,
-          sellerShips: formData.sellerShips,
-          buyerArranges: formData.buyerArranges,
-        },
-        tags: formData.tags,
-      };
+      const listingData = buildListingData(asDraft);
 
       const res = await fetch('/api/listings', {
         method: 'POST',
@@ -1096,7 +1170,7 @@ export default function CreateListingPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleSubmit(false)}
+                      onClick={handlePublishClick}
                       disabled={isSubmitting}
                       className="btn-primary"
                     >
@@ -1113,6 +1187,15 @@ export default function CreateListingPage() {
           </div>
         </div>
       </main>
+
+      {/* Publish Upsell Modal */}
+      <PublishUpsellModal
+        isOpen={showUpsellModal}
+        onClose={() => setShowUpsellModal(false)}
+        onPublishWithAddons={handlePublishWithAddons}
+        onPublishWithoutAddons={handlePublishWithoutAddons}
+        listingTitle={formData.title || 'Your Listing'}
+      />
     </>
   );
 }

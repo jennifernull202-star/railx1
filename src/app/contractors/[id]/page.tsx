@@ -11,6 +11,8 @@ import { getImageUrl } from '@/lib/utils';
 import connectDB from '@/lib/db';
 import ContractorProfile from '@/models/ContractorProfile';
 import { SERVICE_CATEGORIES } from '@/lib/constants';
+import { CONTRACTOR_TYPE_CONFIG, type ContractorType } from '@/config/contractor-types';
+import ContractorTypeDisplay from '@/components/contractor/ContractorTypeDisplay';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -46,11 +48,25 @@ export default async function ContractorProfilePage({ params }: PageProps) {
     notFound();
   }
 
-  // Get service labels
+  // Check if contractor has new contractor types
+  const hasContractorTypes = contractor.contractorTypes && contractor.contractorTypes.length > 0;
+  
+  // Get type labels for display (use new types if available, fallback to legacy)
+  const typeLabels = hasContractorTypes
+    ? contractor.contractorTypes.map((typeId: string) => {
+        const config = CONTRACTOR_TYPE_CONFIG[typeId as ContractorType];
+        return config?.label || typeId;
+      })
+    : [];
+
+  // Get service labels (legacy support)
   const serviceLabels = contractor.services.map((serviceId: string) => {
     const service = SERVICE_CATEGORIES.find((s) => s.id === serviceId);
     return service?.label || serviceId;
   });
+
+  // Display labels - prefer new types, fallback to legacy services
+  const displayLabels = hasContractorTypes ? typeLabels : serviceLabels;
 
   return (
     <>
@@ -135,7 +151,7 @@ export default async function ContractorProfilePage({ params }: PageProps) {
                           : ''}{contractor.yearsInBusiness} years in business
                       </p>
                       <div className="flex flex-wrap gap-2">
-                        {serviceLabels.slice(0, 4).map((label: string) => (
+                        {displayLabels.slice(0, 4).map((label: string) => (
                           <span
                             key={label}
                             className="px-3 py-1 bg-surface-secondary rounded-full text-body-sm font-medium text-navy-900"
@@ -143,9 +159,9 @@ export default async function ContractorProfilePage({ params }: PageProps) {
                             {label}
                           </span>
                         ))}
-                        {serviceLabels.length > 4 && (
+                        {displayLabels.length > 4 && (
                           <span className="px-3 py-1 bg-surface-secondary rounded-full text-body-sm font-medium text-text-secondary">
-                            +{serviceLabels.length - 4} more
+                            +{displayLabels.length - 4} more
                           </span>
                         )}
                       </div>
@@ -194,7 +210,21 @@ export default async function ContractorProfilePage({ params }: PageProps) {
                 )}
               </div>
 
-              {/* Services */}
+              {/* Contractor Types (New - shows if available) */}
+              {hasContractorTypes && (
+                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
+                  <h2 className="heading-lg mb-6">Specializations</h2>
+                  <ContractorTypeDisplay
+                    contractorTypes={contractor.contractorTypes}
+                    subServices={contractor.subServices}
+                    otherTypeInfo={contractor.otherTypeInfo}
+                    variant="full"
+                  />
+                </div>
+              )}
+
+              {/* Services (Legacy - only shows if no new contractor types) */}
+              {!hasContractorTypes && contractor.services && contractor.services.length > 0 && (
               <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
                 <h2 className="heading-lg mb-6">Services</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -225,6 +255,7 @@ export default async function ContractorProfilePage({ params }: PageProps) {
                   })}
                 </div>
               </div>
+              )}
 
               {/* Equipment */}
               {contractor.equipmentOwned && contractor.equipmentOwned.length > 0 && (

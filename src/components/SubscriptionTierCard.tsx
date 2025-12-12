@@ -260,7 +260,7 @@ export default function SubscriptionTierCard({
   }
 
   // Contractor tier display
-  const contractorTier = subscription.contractorTier || CONTRACTOR_TIERS.FREE;
+  const contractorTier = subscription.contractorTier || CONTRACTOR_TIERS.NONE;
   const contractorConfig = CONTRACTOR_TIER_CONFIG[contractorTier];
 
   if (variant === 'compact') {
@@ -275,7 +275,7 @@ export default function SubscriptionTierCard({
               </span>
             )}
           </div>
-          {contractorTier === CONTRACTOR_TIERS.FREE && (
+          {contractorTier === CONTRACTOR_TIERS.NONE && (
             <Link href="/pricing" className="text-sm text-primary hover:underline">
               Get Verified
             </Link>
@@ -327,7 +327,7 @@ export default function SubscriptionTierCard({
         </div>
 
         <div className="flex flex-wrap gap-3">
-          {contractorTier === CONTRACTOR_TIERS.FREE ? (
+          {contractorTier === CONTRACTOR_TIERS.NONE ? (
             <Link
               href="/pricing"
               className="btn-primary text-sm px-4 py-2"

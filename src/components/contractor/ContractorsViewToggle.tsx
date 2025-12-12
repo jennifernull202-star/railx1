@@ -16,9 +16,11 @@ interface Contractor {
   businessDescription: string;
   logo?: string;
   services: string[];
+  contractorTypes?: string[];
   regionsServed: string[];
   yearsInBusiness: number;
   verificationStatus: string;
+  visibilityTier?: 'none' | 'verified' | 'featured' | 'priority';
   address: {
     city: string;
     state: string;
@@ -119,6 +121,12 @@ export default function ContractorsViewToggle({ contractors, children }: Contrac
       bounds.extend(position);
 
       const isVerified = contractor.verificationStatus === 'verified';
+      const isPriority = contractor.visibilityTier === 'priority';
+      const isFeatured = contractor.visibilityTier === 'featured';
+      
+      // Marker color based on visibility tier
+      const markerColor = isPriority ? '#EAB308' : isFeatured ? '#FF6A1A' : isVerified ? '#10B981' : '#6B7280';
+      const markerScale = isPriority ? 14 : isFeatured ? 12 : 10;
       
       const marker = new google.maps.Marker({
         position,
@@ -126,13 +134,23 @@ export default function ContractorsViewToggle({ contractors, children }: Contrac
         title: contractor.businessName,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: isVerified ? 12 : 10,
-          fillColor: isVerified ? '#10B981' : '#FF6A1A',
+          scale: markerScale,
+          fillColor: markerColor,
           fillOpacity: 1,
           strokeColor: '#ffffff',
           strokeWeight: 2,
         },
+        zIndex: isPriority ? 100 : isFeatured ? 50 : 10,
       });
+
+      // Tier badge for info window
+      const tierBadge = isPriority 
+        ? '<span style="display: inline-block; margin-top: 4px; padding: 2px 6px; background: #FEF3C7; color: #B45309; font-size: 10px; border-radius: 4px;">⭐ Priority</span>'
+        : isFeatured
+        ? '<span style="display: inline-block; margin-top: 4px; padding: 2px 6px; background: #FFEDD5; color: #C2410C; font-size: 10px; border-radius: 4px;">Featured</span>'
+        : isVerified 
+        ? '<span style="display: inline-block; margin-top: 4px; padding: 2px 6px; background: #D1FAE5; color: #059669; font-size: 10px; border-radius: 4px;">✓ Verified</span>' 
+        : '';
 
       // Info window
       const infoWindow = new google.maps.InfoWindow({
@@ -140,7 +158,7 @@ export default function ContractorsViewToggle({ contractors, children }: Contrac
           <div style="padding: 8px; max-width: 200px;">
             <h3 style="margin: 0 0 4px 0; font-weight: 600; font-size: 14px;">${contractor.businessName}</h3>
             <p style="margin: 0; color: #64748b; font-size: 12px;">${contractor.address.city}, ${contractor.address.state}</p>
-            ${isVerified ? '<span style="display: inline-block; margin-top: 4px; padding: 2px 6px; background: #D1FAE5; color: #059669; font-size: 10px; border-radius: 4px;">✓ Verified</span>' : ''}
+            ${tierBadge}
             <a href="/contractors/${contractor._id}" style="display: block; margin-top: 8px; color: #FF6A1A; font-size: 12px; font-weight: 500;">View Profile →</a>
           </div>
         `,

@@ -4,6 +4,12 @@
  * Advanced search with MongoDB text search, filters, and aggregations.
  * Includes add-on ranking boost for featured/premium/elite listings.
  * 
+ * BUYER AUDIT UPGRADE: Full equipment-specific filters
+ * - reportingMarks, manufacturer, model, yearBuilt, horsepower
+ * - FRA compliance, AAR car type, availability
+ * - Radius search with geospatial
+ * - Seller type, verified seller toggle
+ * 
  * Ranking tiers from config:
  * - Featured = +1 tier (250 points)
  * - Premium = +2 tier (500 points)
@@ -14,6 +20,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Listing, { LISTING_CATEGORIES, LISTING_CONDITIONS } from '@/models/Listing';
 import ContractorProfile from '@/models/ContractorProfile';
+import User from '@/models/User';
 import { ADD_ON_RANKING_BOOST, ADD_ON_TYPES } from '@/config/addons';
 
 // Add-on ranking weights for scoring (based on tier system)
@@ -27,19 +34,15 @@ const RANKING_WEIGHTS = {
   specSheet: 10,  // Small bonus for having spec sheet
 };
 
-interface SearchQuery {
-  isActive: boolean;
-  status?: string;
-  $text?: { $search: string };
-  category?: string | { $in: string[] };
-  condition?: string | { $in: string[] };
-  'location.state'?: string;
-  'price.amount'?: { $gte?: number; $lte?: number };
-}
+// Extended search query interface for equipment filters
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SearchQuery = Record<string, any>;
 
 /**
  * GET /api/search
  * Unified search across listings and contractors
+ * 
+ * BUYER AUDIT: Extended filter support
  */
 export async function GET(request: NextRequest) {
   try {
@@ -57,6 +60,32 @@ export async function GET(request: NextRequest) {
     const maxPrice = searchParams.get('maxPrice');
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '20')));
+    
+    // ============================================
+    // BUYER AUDIT: New equipment-specific filters
+    // ============================================
+    const reportingMarks = searchParams.get('reportingMarks');
+    const manufacturer = searchParams.get('manufacturer');
+    const model = searchParams.get('model');
+    const minYearBuilt = searchParams.get('minYearBuilt');
+    const maxYearBuilt = searchParams.get('maxYearBuilt');
+    const minHorsepower = searchParams.get('minHorsepower');
+    const maxHorsepower = searchParams.get('maxHorsepower');
+    const minEngineHours = searchParams.get('minEngineHours');
+    const maxEngineHours = searchParams.get('maxEngineHours');
+    const minMileage = searchParams.get('minMileage');
+    const maxMileage = searchParams.get('maxMileage');
+    const fraCompliant = searchParams.get('fraCompliant');
+    const aarCarType = searchParams.get('aarCarType');
+    const availability = searchParams.get('availability');
+    const sellerType = searchParams.get('sellerType');
+    const verifiedSellerOnly = searchParams.get('verifiedSellerOnly') === 'true';
+    const minQuantity = searchParams.get('minQuantity');
+    
+    // Radius search parameters
+    const lat = searchParams.get('lat');
+    const lng = searchParams.get('lng');
+    const radiusMiles = searchParams.get('radius');
 
     const results: {
       listings?: unknown[];
@@ -64,6 +93,11 @@ export async function GET(request: NextRequest) {
       listingsTotal?: number;
       contractorsTotal?: number;
       suggestions?: string[];
+      facets?: {
+        manufacturers?: { _id: string; count: number }[];
+        yearRange?: { min: number; max: number };
+        priceRange?: { min: number; max: number };
+      };
     } = {};
 
     // Search Listings
@@ -108,6 +142,120 @@ export async function GET(request: NextRequest) {
         if (minPrice) listingQuery['price.amount'].$gte = parseInt(minPrice);
         if (maxPrice) listingQuery['price.amount'].$lte = parseInt(maxPrice);
       }
+      
+      // ============================================
+      // BUYER AUDIT: Equipment-specific filter logic
+      // ============================================
+      
+      // Reporting marks (exact or partial match)
+      if (reportingMarks) {
+        listingQuery['equipment.reportingMarks'] = { 
+          $regex: reportingMarks.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 
+          $options: 'i' 
+        };
+      }
+      
+      // Manufacturer filter (multi-select)
+      if (manufacturer) {
+        const manufacturers = manufacturer.split(',').map(m => m.trim());
+        if (manufacturers.length === 1) {
+          listingQuery['equipment.manufacturer'] = manufacturers[0];
+        } else {
+          listingQuery['equipment.manufacturer'] = { $in: manufacturers };
+        }
+      }
+      
+      // Model filter (partial match)
+      if (model) {
+        listingQuery['equipment.model'] = { $regex: model, $options: 'i' };
+      }
+      
+      // Year built range
+      if (minYearBuilt || maxYearBuilt) {
+        listingQuery['equipment.yearBuilt'] = {};
+        if (minYearBuilt) listingQuery['equipment.yearBuilt'].$gte = parseInt(minYearBuilt);
+        if (maxYearBuilt) listingQuery['equipment.yearBuilt'].$lte = parseInt(maxYearBuilt);
+      }
+      
+      // Horsepower range
+      if (minHorsepower || maxHorsepower) {
+        listingQuery['equipment.horsepower'] = {};
+        if (minHorsepower) listingQuery['equipment.horsepower'].$gte = parseInt(minHorsepower);
+        if (maxHorsepower) listingQuery['equipment.horsepower'].$lte = parseInt(maxHorsepower);
+      }
+      
+      // Engine hours range
+      if (minEngineHours || maxEngineHours) {
+        listingQuery['equipment.engineHours'] = {};
+        if (minEngineHours) listingQuery['equipment.engineHours'].$gte = parseInt(minEngineHours);
+        if (maxEngineHours) listingQuery['equipment.engineHours'].$lte = parseInt(maxEngineHours);
+      }
+      
+      // Mileage range
+      if (minMileage || maxMileage) {
+        listingQuery['equipment.mileage'] = {};
+        if (minMileage) listingQuery['equipment.mileage'].$gte = parseInt(minMileage);
+        if (maxMileage) listingQuery['equipment.mileage'].$lte = parseInt(maxMileage);
+      }
+      
+      // FRA compliance toggle
+      if (fraCompliant === 'true') {
+        listingQuery['equipment.fraCompliant'] = true;
+      }
+      
+      // AAR car type (multi-select)
+      if (aarCarType) {
+        const types = aarCarType.split(',').map(t => t.trim());
+        if (types.length === 1) {
+          listingQuery['equipment.aarCarType'] = types[0];
+        } else {
+          listingQuery['equipment.aarCarType'] = { $in: types };
+        }
+      }
+      
+      // Availability filter
+      if (availability) {
+        const avails = availability.split(',').map(a => a.trim());
+        if (avails.length === 1) {
+          listingQuery['equipment.availability'] = avails[0];
+        } else {
+          listingQuery['equipment.availability'] = { $in: avails };
+        }
+      }
+      
+      // Seller type filter
+      if (sellerType) {
+        const types = sellerType.split(',').map(t => t.trim());
+        if (types.length === 1) {
+          listingQuery.sellerType = types[0];
+        } else {
+          listingQuery.sellerType = { $in: types };
+        }
+      }
+      
+      // Verified seller only filter
+      if (verifiedSellerOnly) {
+        const verifiedSellers = await User.find(
+          { isVerifiedSeller: true },
+          { _id: 1 }
+        ).lean();
+        listingQuery.sellerId = { $in: verifiedSellers.map(s => s._id) };
+      }
+      
+      // Minimum quantity filter (for bulk buyers)
+      if (minQuantity) {
+        listingQuery.quantity = { $gte: parseInt(minQuantity) };
+      }
+      
+      // Radius search using geospatial
+      if (lat && lng && radiusMiles) {
+        const radiusInRadians = parseFloat(radiusMiles) / 3963.2; // Earth radius in miles
+        listingQuery['location.coordinates'] = {
+          $geoWithin: {
+            $centerSphere: [[parseFloat(lng), parseFloat(lat)], radiusInRadians]
+          }
+        };
+      }
 
       // Build projection for text score if searching
       const projection = query
@@ -122,8 +270,8 @@ export async function GET(request: NextRequest) {
 
       const [listings, listingsTotal] = await Promise.all([
         Listing.find(listingQuery, projection)
-          .select('title slug category condition primaryImageUrl price location viewCount premiumAddOns createdAt sellerId')
-          .populate('sellerId', 'isVerifiedSeller')
+          .select('title slug category condition primaryImageUrl price location viewCount inquiryCount premiumAddOns createdAt publishedAt sellerId sellerType quantity equipment daysOnMarket')
+          .populate('sellerId', 'isVerifiedSeller name verifiedSellerStatus')
           .sort(sort as Record<string, 1 | -1>)
           .skip((page - 1) * limit)
           .limit(limit)
@@ -229,6 +377,37 @@ export async function GET(request: NextRequest) {
 
       results.listings = processedListings;
       results.listingsTotal = listingsTotal;
+      
+      // ============================================
+      // BUYER AUDIT: Generate faceted search counts
+      // ============================================
+      if (page === 1) {
+        const [manufacturerFacets, yearRange, priceRange] = await Promise.all([
+          // Get manufacturer counts
+          Listing.aggregate([
+            { $match: { isActive: true, status: 'active', 'equipment.manufacturer': { $exists: true, $ne: null } } },
+            { $group: { _id: '$equipment.manufacturer', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 20 },
+          ]),
+          // Get year range
+          Listing.aggregate([
+            { $match: { isActive: true, status: 'active', 'equipment.yearBuilt': { $exists: true, $ne: null } } },
+            { $group: { _id: null, min: { $min: '$equipment.yearBuilt' }, max: { $max: '$equipment.yearBuilt' } } },
+          ]),
+          // Get price range
+          Listing.aggregate([
+            { $match: { isActive: true, status: 'active', 'price.amount': { $exists: true, $gt: 0 } } },
+            { $group: { _id: null, min: { $min: '$price.amount' }, max: { $max: '$price.amount' } } },
+          ]),
+        ]);
+        
+        results.facets = {
+          manufacturers: manufacturerFacets,
+          yearRange: yearRange[0] || { min: 1950, max: new Date().getFullYear() },
+          priceRange: priceRange[0] || { min: 0, max: 1000000 },
+        };
+      }
     }
 
     // Search Contractors

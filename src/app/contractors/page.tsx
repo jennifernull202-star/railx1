@@ -10,6 +10,7 @@ import { Suspense } from 'react';
 import connectDB from '@/lib/db';
 import ContractorProfile from '@/models/ContractorProfile';
 import { SERVICE_CATEGORIES, US_STATES } from '@/lib/constants';
+import { CONTRACTOR_TYPES, CONTRACTOR_TYPE_CONFIG, type ContractorType } from '@/config/contractor-types';
 import { FeaturedContractorPromoCard } from '@/components/cards';
 import ContractorsViewToggle from '@/components/contractor/ContractorsViewToggle';
 
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
 interface SearchParams {
   service?: string;
   region?: string;
+  contractorType?: string;
   search?: string;
   page?: string;
 }
@@ -31,9 +33,12 @@ interface Contractor {
   businessDescription: string;
   logo?: string;
   services: string[];
+  contractorTypes?: string[];
+  subServices?: Record<string, string[]>;
   regionsServed: string[];
   yearsInBusiness: number;
   verificationStatus: string;
+  visibilityTier: 'verified' | 'featured' | 'priority';
   address: {
     city: string;
     state: string;
@@ -43,15 +48,46 @@ interface Contractor {
 async function getContractors(searchParams: SearchParams) {
   await connectDB();
 
-  const { service, region, search, page = '1' } = searchParams;
+  const { service, region, contractorType, search, page = '1' } = searchParams;
   const limit = 12;
   const skip = (parseInt(page) - 1) * limit;
+  const now = new Date();
 
-  // Build query
+  // ================================================================
+  // HARD VISIBILITY GATE — NO FREE CONTRACTORS
+  // ================================================================
+  // Contractors MUST be:
+  // 1. Verified (verificationStatus === 'verified')
+  // 2. Have an active paid visibility tier (visibilityTier !== 'none')
+  // 3. Subscription must be active (visibilitySubscriptionStatus === 'active')
+  // 4. Visibility and verification must NOT be expired
+  // ================================================================
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const query: any = {
     isActive: true,
     isPublished: true,
+    // HARD GATE: Must be verified
+    verificationStatus: 'verified',
+    // HARD GATE: Must have a paid visibility tier
+    visibilityTier: { $in: ['verified', 'featured', 'priority'] },
+    // HARD GATE: Subscription must be active
+    visibilitySubscriptionStatus: 'active',
+    // HARD GATE: Visibility not expired
+    $or: [
+      { visibilityExpiresAt: { $gt: now } },
+      { visibilityExpiresAt: { $exists: false } },
+      { visibilityExpiresAt: null },
+    ],
+    // HARD GATE: Verification not expired
+    $and: [
+      {
+        $or: [
+          { verifiedBadgeExpiresAt: { $gt: now } },
+          { verifiedBadgeExpiresAt: { $exists: false } },
+          { verifiedBadgeExpiresAt: null },
+        ],
+      },
+    ],
   };
 
   if (service) {
@@ -62,17 +98,29 @@ async function getContractors(searchParams: SearchParams) {
     query.regionsServed = region;
   }
 
+  // Filter by contractor type (new structured types)
+  if (contractorType) {
+    query.contractorTypes = contractorType;
+  }
+
   if (search) {
-    query.$or = [
-      { businessName: { $regex: search, $options: 'i' } },
-      { businessDescription: { $regex: search, $options: 'i' } },
-    ];
+    query.$and = query.$and || [];
+    query.$and.push({
+      $or: [
+        { businessName: { $regex: search, $options: 'i' } },
+        { businessDescription: { $regex: search, $options: 'i' } },
+      ],
+    });
   }
 
   const [contractors, total] = await Promise.all([
     ContractorProfile.find(query)
-      .select('businessName businessDescription logo services regionsServed yearsInBusiness verificationStatus address.city address.state')
-      .sort({ verificationStatus: -1, yearsInBusiness: -1 })
+      .select('businessName businessDescription logo services contractorTypes subServices regionsServed yearsInBusiness verificationStatus visibilityTier address.city address.state')
+      .sort({ 
+        // Priority tier first, then Featured, then Verified
+        visibilityTier: -1, 
+        yearsInBusiness: -1 
+      })
       .skip(skip)
       .limit(limit)
       .lean(),
@@ -88,10 +136,59 @@ async function getContractors(searchParams: SearchParams) {
 }
 
 function ContractorCard({ contractor }: { contractor: Contractor }) {
-  const serviceLabels = contractor.services.slice(0, 3).map((serviceId) => {
-    const service = SERVICE_CATEGORIES.find((s) => s.id === serviceId);
-    return service?.label || serviceId;
-  });
+  // Use new contractor types if available, fallback to legacy services
+  const hasContractorTypes = contractor.contractorTypes && contractor.contractorTypes.length > 0;
+  
+  const typeLabels = hasContractorTypes
+    ? contractor.contractorTypes!.slice(0, 3).map((typeId) => {
+        const config = CONTRACTOR_TYPE_CONFIG[typeId as ContractorType];
+        return config?.label || typeId;
+      })
+    : contractor.services.slice(0, 3).map((serviceId) => {
+        const service = SERVICE_CATEGORIES.find((s) => s.id === serviceId);
+        return service?.label || serviceId;
+      });
+
+  const totalCount = hasContractorTypes 
+    ? contractor.contractorTypes!.length 
+    : contractor.services.length;
+
+  // Visibility tier badge styling
+  const getTierBadge = () => {
+    switch (contractor.visibilityTier) {
+      case 'priority':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-xs font-semibold rounded-full shadow-md">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            Priority
+          </span>
+        );
+      case 'featured':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-rail-orange to-orange-500 text-white text-xs font-semibold rounded-full">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zm7-10a1 1 0 01.707.293l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L13.586 6l-2.293-2.293A1 1 0 0112 2z" clipRule="evenodd" />
+            </svg>
+            Featured
+          </span>
+        );
+      default:
+        return (
+          <span className="badge-verified text-xs">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fillRule="evenodd"
+                d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Verified
+          </span>
+        );
+    }
+  };
 
   return (
     <Link
@@ -101,20 +198,9 @@ function ContractorCard({ contractor }: { contractor: Contractor }) {
       {/* Header */}
       <div className="h-32 bg-gradient-to-br from-navy-900 to-navy-800 relative">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        {contractor.verificationStatus === 'verified' && (
-          <div className="absolute top-4 right-4">
-            <span className="badge-verified text-xs">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              Verified
-            </span>
-          </div>
-        )}
+        <div className="absolute top-4 right-4">
+          {getTierBadge()}
+        </div>
       </div>
 
       {/* Logo & Content */}
@@ -145,9 +231,9 @@ function ContractorCard({ contractor }: { contractor: Contractor }) {
           {contractor.businessDescription}
         </p>
 
-        {/* Services */}
+        {/* Services / Contractor Types */}
         <div className="flex flex-wrap gap-2 mt-4">
-          {serviceLabels.map((label) => (
+          {typeLabels.map((label) => (
             <span
               key={label}
               className="px-2 py-1 bg-surface-secondary rounded text-caption font-medium text-navy-900"
@@ -155,9 +241,9 @@ function ContractorCard({ contractor }: { contractor: Contractor }) {
               {label}
             </span>
           ))}
-          {contractor.services.length > 3 && (
+          {totalCount > 3 && (
             <span className="px-2 py-1 bg-surface-secondary rounded text-caption text-text-tertiary">
-              +{contractor.services.length - 3}
+              +{totalCount - 3}
             </span>
           )}
         </div>
@@ -250,7 +336,7 @@ function Pagination({ currentPage, pages }: { currentPage: number; pages: number
 async function ContractorsList({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
   const { contractors, total, pages, currentPage } = await getContractors(params);
-  const hasFilters = !!(params.service || params.region || params.search);
+  const hasFilters = !!(params.service || params.contractorType || params.region || params.search);
 
   return (
     <ContractorsViewToggle contractors={contractors}>
@@ -354,7 +440,7 @@ export default async function ContractorsPage({
                 </div>
               </div>
 
-              {/* Service Filter */}
+              {/* Service Filter (Legacy) */}
               <select
                 name="service"
                 defaultValue={params.service || ''}
@@ -364,6 +450,20 @@ export default async function ContractorsPage({
                 {SERVICE_CATEGORIES.map((service) => (
                   <option key={service.id} value={service.id}>
                     {service.label}
+                  </option>
+                ))}
+              </select>
+
+              {/* Contractor Type Filter (New) */}
+              <select
+                name="contractorType"
+                defaultValue={params.contractorType || ''}
+                className="form-input min-w-[200px]"
+              >
+                <option value="">All Contractor Types</option>
+                {Object.values(CONTRACTOR_TYPES).filter(t => t !== CONTRACTOR_TYPES.OTHER).map((typeId) => (
+                  <option key={typeId} value={typeId}>
+                    {CONTRACTOR_TYPE_CONFIG[typeId as ContractorType]?.label || typeId}
                   </option>
                 ))}
               </select>
@@ -386,7 +486,7 @@ export default async function ContractorsPage({
                 Search
               </button>
 
-              {(params.search || params.service || params.region) && (
+              {(params.search || params.service || params.contractorType || params.region) && (
                 <Link
                   href="/contractors"
                   className="text-body-sm font-medium text-text-secondary hover:text-navy-900"

@@ -67,7 +67,7 @@ export async function GET() {
       sellerTier: user.sellerTier || SELLER_TIERS.BUYER,
       sellerStatus: user.sellerSubscriptionStatus,
       sellerSubscriptionId: user.sellerSubscriptionId,
-      contractorTier: user.contractorTier || CONTRACTOR_TIERS.FREE,
+      contractorTier: user.contractorTier || CONTRACTOR_TIERS.NONE,
       contractorStatus: user.contractorSubscriptionStatus,
       contractorSubscriptionId: user.contractorSubscriptionId,
       currentPeriodEnd: user.subscriptionCurrentPeriodEnd,

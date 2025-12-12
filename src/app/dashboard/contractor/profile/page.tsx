@@ -1,12 +1,11 @@
 /**
- * THE RAIL EXCHANGE™ — FREE Contractor Profile Page
+ * THE RAIL EXCHANGE™ — Contractor Profile Page
  * 
- * Build your public contractor profile. NO DOCUMENTS REQUIRED.
- * This profile is free and visible in search results.
+ * Build your public contractor profile with structured contractor types.
  * 
  * SECTIONS:
  * 1. Business Information
- * 2. Services Offered
+ * 2. Contractor Types (PRIMARY CLASSIFICATION - REQUIRED)
  * 3. Regions Served
  * 4. Photos / Gallery
  * 
@@ -39,28 +38,8 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-
-// Service categories (NO document-related services)
-const SERVICE_OPTIONS = [
-  { value: 'track-repair', label: 'Track Repair & Maintenance' },
-  { value: 'brush-cutting', label: 'Brush Cutting' },
-  { value: 'derailment-services', label: 'Derailment Services' },
-  { value: 'welding', label: 'Welding' },
-  { value: 'inspection', label: 'Inspection' },
-  { value: 'material-supply', label: 'Material Supply' },
-  { value: 'safety-training', label: 'Safety Training' },
-  { value: 'construction-support', label: 'Construction Support' },
-  { value: 'signal-systems', label: 'Signal Systems' },
-  { value: 'electrical', label: 'Electrical' },
-  { value: 'bridge-structures', label: 'Bridge & Structures' },
-  { value: 'environmental', label: 'Environmental' },
-  { value: 'surveying', label: 'Surveying' },
-  { value: 'engineering', label: 'Engineering' },
-  { value: 'equipment-rental', label: 'Equipment Rental' },
-  { value: 'demolition', label: 'Demolition' },
-  { value: 'consulting', label: 'Consulting' },
-  { value: 'emergency-response', label: 'Emergency Response' },
-];
+import { ContractorTypeSelector } from '@/components/contractor/ContractorTypeSelector';
+import { type ContractorType } from '@/config/contractor-types';
 
 // US States
 const US_STATES = [
@@ -98,7 +77,11 @@ interface ProfileFormData {
   phoneNumber: string;
   website: string;
   description: string;
-  // Services (SECTION 2)
+  // Contractor Types (SECTION 2 - PRIMARY CLASSIFICATION)
+  contractorTypes: ContractorType[];
+  subServices: Record<string, string[]>;
+  otherDescription: string;
+  // Legacy: Services (kept for backward compatibility)
   services: string[];
   customServices: string[];
   // Regions (SECTION 3)
@@ -126,6 +109,9 @@ export default function ContractorProfilePage() {
     phoneNumber: '',
     website: '',
     description: '',
+    contractorTypes: [],
+    subServices: {},
+    otherDescription: '',
     services: [],
     customServices: [],
     primaryState: '',
@@ -134,7 +120,6 @@ export default function ContractorProfilePage() {
     photos: [],
   });
 
-  const [newCustomService, setNewCustomService] = useState('');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   // Fetch existing profile
@@ -148,15 +133,18 @@ export default function ContractorProfilePage() {
             setHasExistingProfile(true);
             setProfileSlug(data.profile.slug || '');
             setFormData({
-              businessName: data.profile.companyName || '',
-              contactEmail: data.profile.contactInfo?.email || session?.user?.email || '',
-              phoneNumber: data.profile.contactInfo?.phone || '',
-              website: data.profile.contactInfo?.website || '',
-              description: data.profile.description || '',
+              businessName: data.profile.companyName || data.profile.businessName || '',
+              contactEmail: data.profile.contactInfo?.email || data.profile.businessEmail || session?.user?.email || '',
+              phoneNumber: data.profile.contactInfo?.phone || data.profile.businessPhone || '',
+              website: data.profile.contactInfo?.website || data.profile.website || '',
+              description: data.profile.description || data.profile.businessDescription || '',
+              contractorTypes: data.profile.contractorTypes || [],
+              subServices: data.profile.subServices || {},
+              otherDescription: data.profile.otherTypeInfo?.description || '',
               services: data.profile.services || [],
               customServices: data.profile.customServices || [],
-              primaryState: data.profile.primaryState || '',
-              additionalStates: data.profile.serviceAreas || [],
+              primaryState: data.profile.primaryState || data.profile.address?.state || '',
+              additionalStates: data.profile.serviceAreas || data.profile.regionsServed || [],
               serviceRadius: data.profile.serviceRadius || '',
               photos: data.profile.photos || [],
             });
@@ -193,27 +181,6 @@ export default function ContractorProfilePage() {
     hasChanges: hasFormChanges && !saving && !success,
     message: 'You have unsaved changes to your contractor profile. Are you sure you want to leave?'
   });
-
-  // Handle service toggle
-  const toggleService = (serviceValue: string) => {
-    setFormData(prev => ({
-      ...prev,
-      services: prev.services.includes(serviceValue)
-        ? prev.services.filter(s => s !== serviceValue)
-        : [...prev.services, serviceValue],
-    }));
-  };
-
-  // Handle custom service add
-  const addCustomService = () => {
-    if (newCustomService.trim() && !formData.customServices.includes(newCustomService.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        customServices: [...prev.customServices, newCustomService.trim()],
-      }));
-      setNewCustomService('');
-    }
-  };
 
   // Handle state toggle for additional states
   const toggleState = (stateValue: string) => {
@@ -293,6 +260,21 @@ export default function ContractorProfilePage() {
       setError('Contact email is required');
       return;
     }
+    // Validate contractor types (required)
+    if (formData.contractorTypes.length === 0) {
+      setError('At least one contractor type must be selected');
+      return;
+    }
+    // Cannot select only "Other"
+    if (formData.contractorTypes.length === 1 && formData.contractorTypes[0] === 'other') {
+      setError('Cannot select only "Other". Please select at least one primary contractor type.');
+      return;
+    }
+    // If "Other" is selected, description is required
+    if (formData.contractorTypes.includes('other') && !formData.otherDescription.trim()) {
+      setError('Please provide a description for "Other" services');
+      return;
+    }
 
     setSaving(true);
     setError('');
@@ -310,6 +292,14 @@ export default function ContractorProfilePage() {
             website: formData.website,
           },
           description: formData.description,
+          // New structured contractor types
+          contractorTypes: formData.contractorTypes,
+          subServices: formData.subServices,
+          otherTypeInfo: formData.contractorTypes.includes('other') ? {
+            description: formData.otherDescription,
+            submittedAt: new Date(),
+          } : undefined,
+          // Legacy services (kept for compatibility)
           services: formData.services,
           customServices: formData.customServices,
           primaryState: formData.primaryState,
@@ -488,67 +478,24 @@ export default function ContractorProfilePage() {
           </div>
           <div>
             <h2 className="text-lg font-semibold text-navy-900">Services Offered</h2>
-            <p className="text-sm text-slate-500">Select all services you provide</p>
+            <p className="text-sm text-slate-500">Select all contractor types that apply to your business</p>
           </div>
         </div>
 
-        {/* Service Chips */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {SERVICE_OPTIONS.map((service) => (
-            <button
-              key={service.value}
-              onClick={() => toggleService(service.value)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                formData.services.includes(service.value)
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              {service.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Custom Services */}
-        {formData.customServices.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {formData.customServices.map((service, index) => (
-              <span
-                key={index}
-                className="px-3 py-1.5 rounded-full text-sm font-medium bg-green-100 text-green-800 flex items-center gap-1"
-              >
-                {service}
-                <button
-                  onClick={() => setFormData(prev => ({
-                    ...prev,
-                    customServices: prev.customServices.filter((_, i) => i !== index),
-                  }))}
-                  className="ml-1 hover:text-green-900"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Add Custom Service */}
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={newCustomService}
-            onChange={(e) => setNewCustomService(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addCustomService()}
-            className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm"
-            placeholder="Add a custom service..."
-          />
-          <button
-            onClick={addCustomService}
-            className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Contractor Type Selector - PRIMARY CLASSIFICATION */}
+        <ContractorTypeSelector
+          selectedTypes={formData.contractorTypes}
+          selectedSubServices={formData.subServices}
+          otherDescription={formData.otherDescription}
+          onChange={(types, subServices, otherDescription) => {
+            setFormData(prev => ({
+              ...prev,
+              contractorTypes: types,
+              subServices,
+              otherDescription: otherDescription || '',
+            }));
+          }}
+        />
       </div>
 
       {/* SECTION 3: Regions Served */}

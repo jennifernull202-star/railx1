@@ -188,9 +188,18 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     // Set isContractor capability flag
     user.isContractor = true;
     
+    // CRITICAL: Set contractor verification status (UNIFIED VERIFICATION HIERARCHY)
+    // Contractor verification is HIGHER than seller - automatically includes seller access
+    user.contractorVerificationStatus = 'active';
+    user.contractorVerificationSubscriptionId = session.subscription as string;
+    
     // CRITICAL: Update ContractorProfile to activate verified badge
-    if (tier === 'verified') {
+    if (tier === 'verified' || tier === 'featured' || tier === 'priority') {
       const ContractorProfile = (await import('@/models/ContractorProfile')).default;
+      // Calculate expiration: 1 year for verification
+      const oneYearFromNow = new Date();
+      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+      
       await ContractorProfile.findOneAndUpdate(
         { userId: user._id },
         {
@@ -198,11 +207,13 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
             verificationStatus: 'verified',
             verifiedBadgePurchased: true,
             verifiedAt: new Date(),
-            verifiedBadgeExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+            verifiedBadgeExpiresAt: oneYearFromNow, // 1 year validity
+            visibilityTier: tier,
+            visibilitySubscriptionStatus: 'active',
           },
         }
       );
-      console.log(`Contractor verified badge activated for user ${userId}`);
+      console.log(`Contractor verified badge activated for user ${userId} - expires ${oneYearFromNow.toISOString()}`);
     }
   }
 
@@ -538,11 +549,11 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     
     // isSeller remains true - capability based, not subscription based
   } else if (user.contractorSubscriptionId === subscription.id) {
-    user.contractorTier = 'free';
+    user.contractorTier = 'none'; // HARD GATE: Canceled = invisible
     user.contractorSubscriptionStatus = 'canceled';
     user.contractorSubscriptionId = null;
     
-    // CRITICAL: Remove verified badge from ContractorProfile
+    // CRITICAL: Remove verified badge AND visibility from ContractorProfile
     const ContractorProfile = (await import('@/models/ContractorProfile')).default;
     await ContractorProfile.findOneAndUpdate(
       { userId: user._id },
@@ -550,6 +561,8 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
         $set: {
           verificationStatus: 'expired',
           verifiedBadgePurchased: false,
+          visibilityTier: 'none',
+          visibilitySubscriptionStatus: 'canceled',
         },
       }
     );

@@ -19,6 +19,10 @@ import {
   SellerTier,
 } from '@/config/pricing';
 import { FEATURED_LISTING_CARD } from '@/lib/featured-listing';
+import { 
+  getVerificationResult,
+  canPublishListings,
+} from '@/lib/verification';
 
 // Define query interface
 interface ListingQuery {
@@ -228,6 +232,10 @@ export async function POST(request: NextRequest) {
 
     // ================================================================
     // SELLER VERIFICATION CHECK (Required to create listings)
+    // Using unified verification hierarchy:
+    // - CONTRACTOR verified: Can create listings (includes seller access)
+    // - SELLER verified: Can create listings
+    // - Not verified: Cannot create listings
     // ================================================================
     const user = await User.findById(session.user.id);
     
@@ -238,17 +246,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is verified seller
-    if (!user.isVerifiedSeller || user.verifiedSellerStatus !== 'active') {
-      // Check if expired
-      if (user.verifiedSellerStatus === 'expired') {
+    // Use unified verification helper
+    const verificationResult = getVerificationResult(user);
+    
+    // Check if user can publish listings
+    if (!canPublishListings(user)) {
+      // Check specific status for appropriate error message
+      if (verificationResult.isExpired) {
         return NextResponse.json(
           { 
             success: false, 
-            error: 'Your seller verification has expired. Please renew to continue creating listings.',
+            error: 'Your verification has expired. Please renew to continue creating listings.',
             code: 'VERIFICATION_EXPIRED',
             data: {
               verificationStatus: 'expired',
+              verificationType: verificationResult.type,
               renewalRequired: true,
               renewalUrl: '/dashboard/verification/seller',
             }
@@ -263,7 +275,8 @@ export async function POST(request: NextRequest) {
           error: 'Seller verification is required to create listings. Please complete verification to continue.',
           code: 'VERIFICATION_REQUIRED',
           data: {
-            verificationStatus: user.verifiedSellerStatus || 'none',
+            verificationStatus: verificationResult.status,
+            verificationType: verificationResult.type,
             verificationRequired: true,
             verificationUrl: '/dashboard/verification/seller',
           }
@@ -273,23 +286,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if verification is about to expire (within 7 days)
-    if (user.verifiedSellerExpiresAt) {
+    const expiresAt = verificationResult.expiresAt;
+    if (expiresAt) {
       const daysUntilExpiration = Math.ceil(
-        (new Date(user.verifiedSellerExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        (expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
       );
       if (daysUntilExpiration <= 0) {
-        // Actually expired - update status
-        user.verifiedSellerStatus = 'expired';
-        user.isVerifiedSeller = false;
+        // Actually expired - update status based on verification type
+        if (verificationResult.type === 'contractor') {
+          user.contractorVerificationStatus = 'revoked';
+        } else if (verificationResult.type === 'seller') {
+          user.verifiedSellerStatus = 'expired';
+          user.isVerifiedSeller = false;
+        }
         await user.save();
         
         return NextResponse.json(
           { 
             success: false, 
-            error: 'Your seller verification has expired. Please renew to continue creating listings.',
+            error: 'Your verification has expired. Please renew to continue creating listings.',
             code: 'VERIFICATION_EXPIRED',
             data: {
               verificationStatus: 'expired',
+              verificationType: verificationResult.type,
               renewalRequired: true,
               renewalUrl: '/dashboard/verification/seller',
             }

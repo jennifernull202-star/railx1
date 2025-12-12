@@ -17,7 +17,7 @@ export type UserRole = 'buyer' | 'seller' | 'contractor' | 'admin';
 
 // Subscription tier types (inline to avoid circular deps)
 export type SellerTierType = 'buyer' | 'basic' | 'plus' | 'pro' | 'enterprise';
-export type ContractorTierType = 'free' | 'verified';
+export type ContractorTierType = 'none' | 'verified' | 'featured' | 'priority';
 export type SubscriptionStatusType = 'active' | 'past_due' | 'canceled' | 'unpaid' | 'trialing' | 'incomplete' | 'incomplete_expired' | 'paused';
 
 export interface IUser {
@@ -112,6 +112,45 @@ export interface IUser {
   verifiedSellerLastAICheck: Date | null;
   verifiedSellerRankingBoostExpiresAt: Date | null; // NEW: Priority tier gets 3-day boost
   
+  // ============================================
+  // BUYER AUDIT: TRUST SIGNALS
+  // ============================================
+  trustSignals: {
+    // Response time tracking (in hours)
+    avgResponseTimeHours?: number;
+    responseTimeLabel?: 'within-1h' | 'within-4h' | 'within-24h' | 'within-48h' | 'slow';
+    totalInquiriesReceived?: number;
+    totalInquiriesResponded?: number;
+    
+    // Transaction history
+    transactionCount?: number;
+    successfulTransactions?: number;
+    
+    // Activity tracking
+    lastActiveAt?: Date;
+    lastActiveLabel?: 'today' | 'this-week' | 'this-month' | 'inactive';
+    
+    // Fleet/inventory indicators (for dealers)
+    fleetSize?: number;
+    fleetSizeLabel?: 'small' | 'medium' | 'large' | 'enterprise';
+    
+    // Railroad affiliation
+    railroadAffiliation?: string; // BNSF, UP, CSX, NS, etc.
+    railroadType?: 'class-i' | 'regional' | 'shortline' | 'industrial' | 'none';
+    
+    // Certifications
+    aarCertified?: boolean;
+    aarCertificationNumber?: string;
+    locationVerified?: boolean;
+    locationVerifiedAt?: Date;
+  };
+  
+  // Recently viewed listings (for buyer dashboard)
+  recentlyViewed?: {
+    listingId: mongoose.Types.ObjectId;
+    viewedAt: Date;
+  }[];
+  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -134,7 +173,7 @@ export interface IUserModel extends Model<IUserDocument> {
 // ============================================
 
 const SELLER_TIER_VALUES: SellerTierType[] = ['buyer', 'basic', 'plus', 'pro', 'enterprise'];
-const CONTRACTOR_TIER_VALUES: ContractorTierType[] = ['free', 'verified'];
+const CONTRACTOR_TIER_VALUES: ContractorTierType[] = ['none', 'verified', 'featured', 'priority'];
 const SUBSCRIPTION_STATUS_VALUES: SubscriptionStatusType[] = [
   'active', 'past_due', 'canceled', 'unpaid', 'trialing', 'incomplete', 'incomplete_expired', 'paused'
 ];
@@ -285,7 +324,7 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
         values: CONTRACTOR_TIER_VALUES,
         message: 'Invalid contractor tier',
       },
-      default: 'free',
+      default: 'none', // IMPORTANT: No free tier. Default is 'none' (invisible)
     },
     contractorSubscriptionStatus: {
       type: String,
@@ -439,6 +478,57 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
       type: Date,
       default: null,
     },
+    
+    // ============================================
+    // BUYER AUDIT: TRUST SIGNALS
+    // ============================================
+    trustSignals: {
+      // Response time tracking
+      avgResponseTimeHours: { type: Number },
+      responseTimeLabel: { 
+        type: String, 
+        enum: ['within-1h', 'within-4h', 'within-24h', 'within-48h', 'slow'],
+      },
+      totalInquiriesReceived: { type: Number, default: 0 },
+      totalInquiriesResponded: { type: Number, default: 0 },
+      
+      // Transaction history
+      transactionCount: { type: Number, default: 0 },
+      successfulTransactions: { type: Number, default: 0 },
+      
+      // Activity tracking
+      lastActiveAt: { type: Date },
+      lastActiveLabel: { 
+        type: String, 
+        enum: ['today', 'this-week', 'this-month', 'inactive'],
+      },
+      
+      // Fleet/inventory indicators
+      fleetSize: { type: Number },
+      fleetSizeLabel: { 
+        type: String, 
+        enum: ['small', 'medium', 'large', 'enterprise'],
+      },
+      
+      // Railroad affiliation
+      railroadAffiliation: { type: String },
+      railroadType: { 
+        type: String, 
+        enum: ['class-i', 'regional', 'shortline', 'industrial', 'none'],
+      },
+      
+      // Certifications
+      aarCertified: { type: Boolean, default: false },
+      aarCertificationNumber: { type: String },
+      locationVerified: { type: Boolean, default: false },
+      locationVerifiedAt: { type: Date },
+    },
+    
+    // Recently viewed listings
+    recentlyViewed: [{
+      listingId: { type: Schema.Types.ObjectId, ref: 'Listing' },
+      viewedAt: { type: Date, default: Date.now },
+    }],
   },
   {
     timestamps: true,
