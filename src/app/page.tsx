@@ -9,6 +9,7 @@ import Link from "next/link";
 import Image from "next/image";
 import HeroSearch from "@/components/HeroSearch";
 import SiteHeader from "@/components/SiteHeader";
+import ScrollToTop from "@/components/ScrollToTop";
 import { getImageUrl } from "@/lib/utils";
 import { FeaturedListingPromoCard } from "@/components/cards";
 import connectDB from "@/lib/db";
@@ -297,10 +298,10 @@ export default async function HomePage() {
               {/* Rolling Stock - Mega Category */}
               <Link
                 href="/listings?category=locomotives"
-                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-rail-orange/30 hover:-translate-y-0.5 transition-all duration-300"
+                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-rail-orange/30 hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="w-12 h-12 mx-auto mb-4 bg-rail-orange/10 rounded-xl flex items-center justify-center group-hover:bg-rail-orange/15 transition-colors duration-300">
-                  <span className="text-2xl">🚂</span>
+                <div className="w-12 h-12 mx-auto mb-4 bg-rail-orange/10 rounded-xl flex items-center justify-center group-hover:bg-rail-orange/15 group-hover:scale-110 transition-all duration-300">
+                  <span className="text-2xl group-hover:animate-bounce">🚂</span>
                 </div>
                 <h3 className="text-[15px] font-semibold text-navy-900 text-center mb-1 group-hover:text-rail-orange transition-colors duration-200">
                   Rolling Stock
@@ -309,7 +310,7 @@ export default async function HomePage() {
                   Locomotives • Freight Cars • Passenger
                 </p>
                 <div className="text-center">
-                  <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 text-slate-600 text-[11px] font-medium rounded-full">
+                  <span className="inline-flex items-center px-2.5 py-1 bg-slate-100 group-hover:bg-rail-orange/10 text-slate-600 group-hover:text-rail-orange text-[11px] font-medium rounded-full transition-colors duration-200">
                     420+ listings
                   </span>
                 </div>
@@ -318,9 +319,9 @@ export default async function HomePage() {
               {/* Track & Infrastructure */}
               <Link
                 href="/listings?category=track-materials"
-                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-navy-900/30 hover:-translate-y-0.5 transition-all duration-300"
+                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-navy-900/30 hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="w-12 h-12 mx-auto mb-4 bg-navy-900/8 rounded-xl flex items-center justify-center group-hover:bg-navy-900/12 transition-colors duration-300">
+                <div className="w-12 h-12 mx-auto mb-4 bg-navy-900/8 rounded-xl flex items-center justify-center group-hover:bg-navy-900/12 group-hover:scale-110 transition-all duration-300">
                   <span className="text-2xl">🛤️</span>
                 </div>
                 <h3 className="text-[15px] font-semibold text-navy-900 text-center mb-1 group-hover:text-rail-orange transition-colors duration-200">
@@ -330,7 +331,7 @@ export default async function HomePage() {
                   Rails • Ties • Turnouts • OTM
                 </p>
                 <div className="text-center">
-                  <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 text-slate-600 text-[11px] font-medium rounded-full">
+                  <span className="inline-flex items-center px-2.5 py-1 bg-slate-100 group-hover:bg-navy-900/10 text-slate-600 group-hover:text-navy-900 text-[11px] font-medium rounded-full transition-colors duration-200">
                     280+ listings
                   </span>
                 </div>
@@ -339,9 +340,9 @@ export default async function HomePage() {
               {/* MOW Equipment */}
               <Link
                 href="/listings?category=maintenance-of-way"
-                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-amber-500/30 hover:-translate-y-0.5 transition-all duration-300"
+                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-amber-500/30 hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="w-12 h-12 mx-auto mb-4 bg-amber-500/10 rounded-xl flex items-center justify-center group-hover:bg-amber-500/15 transition-colors duration-300">
+                <div className="w-12 h-12 mx-auto mb-4 bg-amber-500/10 rounded-xl flex items-center justify-center group-hover:bg-amber-500/15 group-hover:scale-110 transition-all duration-300">
                   <span className="text-2xl">🛠️</span>
                 </div>
                 <h3 className="text-[15px] font-semibold text-navy-900 text-center mb-1 group-hover:text-rail-orange transition-colors duration-200">
@@ -351,7 +352,7 @@ export default async function HomePage() {
                   Tampers • Ballast • Rail Handling
                 </p>
                 <div className="text-center">
-                  <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 text-slate-600 text-[11px] font-medium rounded-full">
+                  <span className="inline-flex items-center px-2.5 py-1 bg-slate-100 group-hover:bg-amber-500/10 text-slate-600 group-hover:text-amber-700 text-[11px] font-medium rounded-full transition-colors duration-200">
                     185+ listings
                   </span>
                 </div>
@@ -360,9 +361,9 @@ export default async function HomePage() {
               {/* Contractors */}
               <Link
                 href="/contractors"
-                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-emerald-500/30 hover:-translate-y-0.5 transition-all duration-300"
+                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-emerald-500/30 hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="w-12 h-12 mx-auto mb-4 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/15 transition-colors duration-300">
+                <div className="w-12 h-12 mx-auto mb-4 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/15 group-hover:scale-110 transition-all duration-300">
                   <span className="text-2xl">👷</span>
                 </div>
                 <h3 className="text-[15px] font-semibold text-navy-900 text-center mb-1 group-hover:text-rail-orange transition-colors duration-200">
@@ -372,7 +373,7 @@ export default async function HomePage() {
                   Verified • Insured • Nationwide
                 </p>
                 <div className="text-center">
-                  <span className="inline-flex items-center px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[11px] font-medium rounded-full">
+                  <span className="inline-flex items-center px-2.5 py-1 bg-emerald-100 group-hover:bg-emerald-200 text-emerald-700 text-[11px] font-medium rounded-full transition-colors duration-200">
                     150+ verified
                   </span>
                 </div>
@@ -381,16 +382,16 @@ export default async function HomePage() {
 
             {/* Secondary Categories Row */}
             <div className="mt-5 flex flex-wrap justify-center gap-2">
-              <Link href="/listings?category=parts-components" className="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-medium rounded-full transition-colors">
+              <Link href="/listings?category=parts-components" className="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-rail-orange hover:text-white text-slate-700 text-[13px] font-medium rounded-full transition-all duration-200 hover:-translate-y-0.5">
                 Parts & Components
               </Link>
-              <Link href="/listings?category=signals-communications" className="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-medium rounded-full transition-colors">
+              <Link href="/listings?category=signals-communications" className="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-rail-orange hover:text-white text-slate-700 text-[13px] font-medium rounded-full transition-all duration-200 hover:-translate-y-0.5">
                 Signals & Communications
               </Link>
-              <Link href="/listings?category=tools-equipment" className="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-medium rounded-full transition-colors">
+              <Link href="/listings?category=tools-equipment" className="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-rail-orange hover:text-white text-slate-700 text-[13px] font-medium rounded-full transition-all duration-200 hover:-translate-y-0.5">
                 Tools & Equipment
               </Link>
-              <Link href="/listings" className="inline-flex items-center px-3 py-1.5 bg-navy-900 hover:bg-navy-800 text-white text-[13px] font-medium rounded-full transition-colors">
+              <Link href="/listings" className="inline-flex items-center px-4 py-2 bg-navy-900 hover:bg-navy-800 text-white text-[13px] font-medium rounded-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 View All →
               </Link>
             </div>
@@ -1064,6 +1065,9 @@ export default async function HomePage() {
             </p>
           </div>
         </div>
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
       </footer>
     </>
   );

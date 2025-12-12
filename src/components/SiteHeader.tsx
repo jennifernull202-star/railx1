@@ -132,16 +132,26 @@ export default function SiteHeader({
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-slate-100">
-            <div className="flex flex-col gap-2">
+        {/* Mobile Navigation - Slide In */}
+        <div 
+          className={`md:hidden fixed inset-0 top-[72px] bg-black/50 z-40 transition-opacity duration-300 ${
+            mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+          onClick={() => setMobileMenuOpen(false)}
+        />
+        <div 
+          className={`md:hidden fixed top-[72px] right-0 bottom-0 w-[280px] bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-out ${
+            mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <div className="p-4 h-full overflow-y-auto">
+            <div className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`px-4 py-3 rounded-lg text-[15px] font-medium transition-colors ${
+                  className={`px-4 py-3.5 rounded-xl text-[15px] font-medium transition-colors min-h-[48px] flex items-center ${
                     isActive(link.href)
                       ? 'bg-rail-orange/10 text-rail-orange'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-navy-900'
@@ -150,12 +160,12 @@ export default function SiteHeader({
                   {link.label}
                 </Link>
               ))}
-              <div className="border-t border-slate-100 mt-2 pt-2">
+              <div className="border-t border-slate-100 mt-3 pt-3">
                 {session?.user ? (
                   <Link
                     href="/dashboard"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-3 rounded-lg text-[15px] font-medium text-navy-900 hover:bg-slate-50"
+                    className="block px-4 py-3.5 rounded-xl text-[15px] font-medium text-navy-900 hover:bg-slate-50 min-h-[48px] flex items-center"
                   >
                     Dashboard
                   </Link>
@@ -164,23 +174,23 @@ export default function SiteHeader({
                     <Link
                       href="/auth/login"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block px-4 py-3 rounded-lg text-[15px] font-medium text-slate-600 hover:bg-slate-50"
+                      className="block px-4 py-3.5 rounded-xl text-[15px] font-medium text-slate-600 hover:bg-slate-50 min-h-[48px]"
                     >
                       Sign In
                     </Link>
                     <Link
                       href="/auth/register"
                       onClick={() => setMobileMenuOpen(false)}
-                      className="block px-4 py-3 mt-2 rounded-lg text-[15px] font-medium bg-rail-orange text-white text-center"
+                      className="block px-4 py-3.5 mt-2 rounded-xl text-[15px] font-semibold bg-rail-orange text-white text-center min-h-[48px] flex items-center justify-center"
                     >
-                      Get Started
+                      Get Started Free
                     </Link>
                   </>
                 )}
               </div>
             </div>
           </div>
-        )}
+        </div>
       </nav>
     </header>
   );
