@@ -37,7 +37,7 @@ export default function ISORespondButton({
 
   const handleRespond = async () => {
     if (status !== 'authenticated') {
-      router.push(`/auth/signin?callbackUrl=/iso/${requestId}`);
+      router.push(`/auth/login?callbackUrl=/iso/${requestId}`);
       return;
     }
 
