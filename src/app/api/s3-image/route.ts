@@ -5,12 +5,16 @@
  * This allows images to be served even when the bucket blocks public access.
  * Streams the image directly instead of redirecting for Next.js Image compatibility.
  * 
+ * SECURITY: Verification documents require authentication and ownership/admin check.
+ * 
  * GET /api/s3-image?key=<s3-key>
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-2',
@@ -24,6 +28,9 @@ const BUCKET_NAME = process.env.AWS_S3_BUCKET || process.env.AWS_S3_BUCKET_NAME 
 
 // Cache presigned URLs for 55 minutes (they expire in 1 hour)
 const urlCache = new Map<string, { url: string; expires: number }>();
+
+// Protected folders that require authentication
+const PROTECTED_FOLDERS = ['verification/', 'documents/'];
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,6 +46,34 @@ export async function GET(request: NextRequest) {
 
     // Sanitize key to prevent path traversal
     const sanitizedKey = decodeURIComponent(key).replace(/\.\./g, '');
+
+    // SECURITY CHECK: Block access to protected folders without proper auth
+    const isProtectedFolder = PROTECTED_FOLDERS.some(folder => 
+      sanitizedKey.startsWith(folder) || sanitizedKey.includes(`/${folder}`)
+    );
+
+    if (isProtectedFolder) {
+      const session = await getServerSession(authOptions);
+      
+      if (!session?.user?.id) {
+        return NextResponse.json(
+          { error: 'Authentication required for protected documents' },
+          { status: 401 }
+        );
+      }
+
+      // Check ownership: path should contain user's ID OR user is admin
+      const userId = session.user.id;
+      const isAdmin = session.user.isAdmin;
+      const isOwner = sanitizedKey.includes(`/${userId}/`) || sanitizedKey.includes(`/${userId}`);
+
+      if (!isOwner && !isAdmin) {
+        return NextResponse.json(
+          { error: 'Access denied to this document' },
+          { status: 403 }
+        );
+      }
+    }
 
     // Check cache
     const cached = urlCache.get(sanitizedKey);
