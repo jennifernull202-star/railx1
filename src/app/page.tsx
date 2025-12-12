@@ -170,10 +170,28 @@ export default async function HomePage() {
               </h1>
 
               {/* Subheadline */}
-              <p className="relative z-20 text-[17px] md:text-[19px] text-white/90 max-w-2xl mx-auto mb-12 leading-relaxed">
+              <p className="relative z-20 text-[17px] md:text-[19px] text-white/90 max-w-2xl mx-auto mb-6 leading-relaxed">
                 The premium marketplace for rail equipment, materials, services, and
                 verified contractors. Trusted by industry professionals nationwide.
               </p>
+
+              {/* New & Used Callout */}
+              <div className="relative z-20 inline-flex items-center gap-3 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-10 border border-white/20">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  <span className="text-[13px] font-medium text-white/95">New Equipment</span>
+                </span>
+                <span className="text-white/40">|</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-rail-orange rounded-full"></span>
+                  <span className="text-[13px] font-medium text-white/95">Pre-Owned</span>
+                </span>
+                <span className="text-white/40">|</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                  <span className="text-[13px] font-medium text-white/95">Surplus & Parts</span>
+                </span>
+              </div>
 
               {/* Search Module - Perfectly Centered */}
               <div className="relative z-20 max-w-3xl mx-auto px-4 md:px-0">
