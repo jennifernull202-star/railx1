@@ -12,6 +12,7 @@ import connectDB from '@/lib/db';
 import ISORequest from '@/models/ISORequest';
 import { Thread, Message } from '@/models/Message';
 import Notification from '@/models/Notification';
+import User from '@/models/User';
 import mongoose from 'mongoose';
 
 interface RouteParams {
@@ -57,6 +58,10 @@ export async function POST(
 
     await connectDB();
 
+    // Ensure User model is registered for populate
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _User = User;
+
     const isoRequest = await ISORequest.findById(id)
       .populate('userId', 'name email');
 
@@ -74,8 +79,13 @@ export async function POST(
       );
     }
 
+    // Get requester ID - handle both populated and unpopulated cases
+    const requesterId = typeof isoRequest.userId === 'object' && isoRequest.userId._id
+      ? isoRequest.userId._id.toString()
+      : isoRequest.userId.toString();
+
     // Can't respond to your own request
-    if (isoRequest.userId._id.toString() === session.user.id) {
+    if (requesterId === session.user.id) {
       return NextResponse.json(
         { error: 'Cannot respond to your own request' },
         { status: 400 }
@@ -85,13 +95,13 @@ export async function POST(
     // Create or find existing thread between these users
     const thread = await Thread.findOrCreateThread(
       session.user.id,
-      isoRequest.userId._id.toString()
+      requesterId
     );
 
     // Create the message with ISO reference
     const newMessage = await Message.create({
       senderId: session.user.id,
-      recipientId: isoRequest.userId._id,
+      recipientId: new mongoose.Types.ObjectId(requesterId),
       threadId: thread._id,
       content: `[Response to ISO Request: "${isoRequest.title}"]\n\n${message.trim()}`,
       isRead: false,
@@ -105,9 +115,8 @@ export async function POST(
     };
 
     // Update unread count for recipient
-    const recipientId = isoRequest.userId._id.toString();
-    const currentUnread = thread.unreadCount.get(recipientId) || 0;
-    thread.unreadCount.set(recipientId, currentUnread + 1);
+    const currentUnread = thread.unreadCount.get(requesterId) || 0;
+    thread.unreadCount.set(requesterId, currentUnread + 1);
 
     await thread.save();
 
@@ -116,7 +125,7 @@ export async function POST(
 
     // Create notification for the requester
     await Notification.create({
-      userId: isoRequest.userId._id,
+      userId: new mongoose.Types.ObjectId(requesterId),
       type: 'message',
       title: 'New Response to Your Request',
       message: `Someone responded to your ISO request: "${isoRequest.title}"`,
