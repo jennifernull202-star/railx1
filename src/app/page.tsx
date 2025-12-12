@@ -158,21 +158,21 @@ export default async function HomePage() {
                   <svg className="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-[13px] md:text-[14px] font-semibold text-white">1,200+ Listings</span>
+                  <span className="text-[13px] md:text-[14px] font-semibold text-white">Free to List</span>
                 </div>
                 <span className="hidden md:block w-px h-4 bg-white/30" />
                 <div className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
                   </svg>
-                  <span className="text-[13px] md:text-[14px] font-semibold text-white">850+ Verified Sellers</span>
+                  <span className="text-[13px] md:text-[14px] font-semibold text-white">Verified Sellers</span>
                 </div>
                 <span className="hidden md:block w-px h-4 bg-white/30" />
                 <div className="flex items-center gap-2">
                   <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                  <span className="text-[13px] md:text-[14px] font-semibold text-white">4.9★ Avg Rating</span>
+                  <span className="text-[13px] md:text-[14px] font-semibold text-white">Industry-Focused</span>
                 </div>
               </div>
 
@@ -234,47 +234,14 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Live Activity Ticker */}
-        <section className="py-3 bg-slate-50 border-b border-slate-100 overflow-hidden">
+        {/* Announcement Banner */}
+        <section className="py-3 bg-navy-900 border-b border-navy-800">
           <div className="max-w-[1280px] mx-auto px-5 md:px-8">
-            <div className="flex items-center gap-3 text-[13px]">
-              <span className="flex items-center gap-1.5 text-emerald-600 font-medium whitespace-nowrap">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                Live Activity
+            <div className="flex items-center justify-center gap-3 text-[13px]">
+              <span className="flex items-center gap-2 text-white font-medium">
+                <span className="px-2 py-0.5 bg-rail-orange text-white text-[11px] font-bold rounded">NEW</span>
+                Welcome to The Rail Exchange — The dedicated marketplace for rail industry equipment, materials, and services.
               </span>
-              <div className="flex-1 overflow-hidden">
-                <div className="flex items-center gap-6 animate-[marquee_40s_linear_infinite] hover:[animation-play-state:paused]">
-                  <span className="text-slate-600 whitespace-nowrap">
-                    <span className="text-navy-900 font-medium">GP38-2 Locomotive</span> listed in Houston, TX
-                    <span className="text-slate-400 ml-1">• 2 min ago</span>
-                  </span>
-                  <span className="text-slate-400">|</span>
-                  <span className="text-slate-600 whitespace-nowrap">
-                    <span className="text-navy-900 font-medium">Rail contractor</span> verified in Pennsylvania
-                    <span className="text-slate-400 ml-1">• 8 min ago</span>
-                  </span>
-                  <span className="text-slate-400">|</span>
-                  <span className="text-slate-600 whitespace-nowrap">
-                    <span className="text-navy-900 font-medium">50 Ton Tank Cars (x3)</span> inquiry received
-                    <span className="text-slate-400 ml-1">• 15 min ago</span>
-                  </span>
-                  <span className="text-slate-400">|</span>
-                  <span className="text-slate-600 whitespace-nowrap">
-                    <span className="text-navy-900 font-medium">Track Material Bundle</span> listed in Chicago, IL
-                    <span className="text-slate-400 ml-1">• 22 min ago</span>
-                  </span>
-                  <span className="text-slate-400">|</span>
-                  <span className="text-slate-600 whitespace-nowrap">
-                    <span className="text-navy-900 font-medium">Hi-Rail Truck</span> sold in Phoenix, AZ
-                    <span className="text-slate-400 ml-1">• 35 min ago</span>
-                  </span>
-                  <span className="text-slate-400">|</span>
-                  <span className="text-slate-600 whitespace-nowrap">
-                    <span className="text-navy-900 font-medium">SD40-2 Parts Package</span> listed in Kansas City
-                    <span className="text-slate-400 ml-1">• 48 min ago</span>
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -311,7 +278,7 @@ export default async function HomePage() {
                 </p>
                 <div className="text-center">
                   <span className="inline-flex items-center px-2.5 py-1 bg-slate-100 group-hover:bg-rail-orange/10 text-slate-600 group-hover:text-rail-orange text-[11px] font-medium rounded-full transition-colors duration-200">
-                    420+ listings
+                    Browse All
                   </span>
                 </div>
               </Link>
@@ -332,7 +299,7 @@ export default async function HomePage() {
                 </p>
                 <div className="text-center">
                   <span className="inline-flex items-center px-2.5 py-1 bg-slate-100 group-hover:bg-navy-900/10 text-slate-600 group-hover:text-navy-900 text-[11px] font-medium rounded-full transition-colors duration-200">
-                    280+ listings
+                    Browse All
                   </span>
                 </div>
               </Link>
@@ -353,7 +320,7 @@ export default async function HomePage() {
                 </p>
                 <div className="text-center">
                   <span className="inline-flex items-center px-2.5 py-1 bg-slate-100 group-hover:bg-amber-500/10 text-slate-600 group-hover:text-amber-700 text-[11px] font-medium rounded-full transition-colors duration-200">
-                    185+ listings
+                    Browse All
                   </span>
                 </div>
               </Link>
@@ -374,7 +341,7 @@ export default async function HomePage() {
                 </p>
                 <div className="text-center">
                   <span className="inline-flex items-center px-2.5 py-1 bg-emerald-100 group-hover:bg-emerald-200 text-emerald-700 text-[11px] font-medium rounded-full transition-colors duration-200">
-                    150+ verified
+                    View All
                   </span>
                 </div>
               </Link>
@@ -574,26 +541,42 @@ export default async function HomePage() {
                   
                   <div className="relative z-10">
                     <h3 className="text-[20px] md:text-[24px] font-bold text-white mb-2">Nationwide Coverage</h3>
-                    <p className="text-[14px] text-white/70">Verified contractors in 42 states</p>
+                    <p className="text-[14px] text-white/70">Find verified rail contractors across the USA</p>
                   </div>
                   
-                  {/* Stats Grid */}
+                  {/* Features Grid */}
                   <div className="relative z-10 grid grid-cols-2 gap-4 mt-6">
                     <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
-                      <p className="text-[28px] md:text-[32px] font-bold text-white">150+</p>
-                      <p className="text-[12px] text-white/70">Verified Contractors</p>
+                      <div className="w-10 h-10 mx-auto mb-2 bg-white/20 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-[12px] text-white/80 font-medium">Verified Profiles</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
-                      <p className="text-[28px] md:text-[32px] font-bold text-white">42</p>
-                      <p className="text-[12px] text-white/70">States Covered</p>
+                      <div className="w-10 h-10 mx-auto mb-2 bg-white/20 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-[12px] text-white/80 font-medium">Nationwide</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
-                      <p className="text-[28px] md:text-[32px] font-bold text-white">24h</p>
-                      <p className="text-[12px] text-white/70">Avg Response</p>
+                      <div className="w-10 h-10 mx-auto mb-2 bg-white/20 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </div>
+                      <p className="text-[12px] text-white/80 font-medium">Direct Contact</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
-                      <p className="text-[28px] md:text-[32px] font-bold text-emerald-400">100%</p>
-                      <p className="text-[12px] text-white/70">Insured</p>
+                      <div className="w-10 h-10 mx-auto mb-2 bg-white/20 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                      </div>
+                      <p className="text-[12px] text-white/80 font-medium">Insurance Verified</p>
                     </div>
                   </div>
                   
@@ -606,7 +589,7 @@ export default async function HomePage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span>Explore All Contractors</span>
+                    <span>Browse Contractor Directory</span>
                   </Link>
                 </div>
               </div>
@@ -715,86 +698,26 @@ export default async function HomePage() {
         {/* Section Separator */}
         <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
 
-        {/* Testimonials Section */}
+        {/* Testimonials Section - Coming Soon */}
         <section className="py-14 md:py-16 lg:py-20 bg-slate-50">
           <div className="max-w-[1280px] mx-auto px-5 md:px-8">
-            <div className="text-center mb-10 md:mb-12">
+            <div className="text-center">
               <h2 className="text-[24px] md:text-[32px] font-bold text-navy-900 tracking-tight mb-3">
-                Trusted by Rail Professionals Nationwide
+                What Our Users Say
               </h2>
-              <p className="text-[15px] text-slate-500 max-w-2xl mx-auto">
-                See what sellers and buyers say about The Rail Exchange
+              <p className="text-[15px] text-slate-500 max-w-2xl mx-auto mb-8">
+                Hear from rail professionals who buy and sell on The Rail Exchange
               </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-              {/* Testimonial 1 */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
+              <div className="max-w-md mx-auto bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+                <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
                 </div>
-                <p className="text-[14px] text-slate-600 leading-relaxed mb-5">
-                  &ldquo;Sold our surplus EMD 645 parts in under a week. The buyer was a shortline operator from Ohio who found us through search. No middlemen, no commissions.&rdquo;
+                <h3 className="text-[18px] font-semibold text-navy-900 mb-2">Testimonials Coming Soon</h3>
+                <p className="text-[14px] text-slate-500 leading-relaxed">
+                  We&apos;re collecting feedback from our early users. Check back soon to see what rail professionals are saying about their experience.
                 </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-navy-900/10 flex items-center justify-center">
-                    <span className="text-[14px] font-semibold text-navy-900">JM</span>
-                  </div>
-                  <div>
-                    <p className="text-[14px] font-semibold text-navy-900">James Mitchell</p>
-                    <p className="text-[12px] text-slate-500">Mitchell Rail Services, TX</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Testimonial 2 */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-[14px] text-slate-600 leading-relaxed mb-5">
-                  &ldquo;Found 3 tank cars that matched our exact AAR specs. The verified seller badge gave us confidence to make the deal. Equipment was exactly as described.&rdquo;
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-navy-900/10 flex items-center justify-center">
-                    <span className="text-[14px] font-semibold text-navy-900">RC</span>
-                  </div>
-                  <div>
-                    <p className="text-[14px] font-semibold text-navy-900">Rachel Chen</p>
-                    <p className="text-[12px] text-slate-500">Pacific Rail Logistics, WA</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Testimonial 3 */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                <p className="text-[14px] text-slate-600 leading-relaxed mb-5">
-                  &ldquo;As a contractor, my profile page brings in 2-3 project inquiries per month. The industry-specific focus means I&apos;m not competing with generic contractors.&rdquo;
-                </p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-navy-900/10 flex items-center justify-center">
-                    <span className="text-[14px] font-semibold text-navy-900">MD</span>
-                  </div>
-                  <div>
-                    <p className="text-[14px] font-semibold text-navy-900">Marcus Daniels</p>
-                    <p className="text-[12px] text-slate-500">Iron Horse Welding, PA</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -833,7 +756,7 @@ export default async function HomePage() {
                 <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
                   <span className="text-2xl">⭐</span>
                 </div>
-                <span className="text-[11px] font-medium text-slate-500">4.9 Rating</span>
+                <span className="text-[11px] font-medium text-slate-500">Quality Listings</span>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
@@ -936,14 +859,14 @@ export default async function HomePage() {
         <section className="py-14 md:py-16 bg-navy-900">
           <div className="max-w-[700px] mx-auto px-5 md:px-8 text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full mb-6">
-              <span className="text-[13px] font-medium text-white/90">📧 Free Industry Report</span>
+              <span className="text-[13px] font-medium text-white/90">📧 Stay Updated</span>
             </div>
             <h2 className="text-[24px] md:text-[32px] font-bold text-white tracking-tight mb-4">
-              Get the Rail Equipment Market Report
+              Get Rail Industry Updates
             </h2>
             <p className="text-[15px] text-white/70 mb-8 leading-relaxed max-w-lg mx-auto">
-              Monthly insights on pricing trends, inventory levels, and market demand. 
-              Join 2,400+ rail professionals who stay informed.
+              Be the first to know about new listings, market insights, and platform updates. 
+              Subscribe to our newsletter.
             </p>
             <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
               <input 
@@ -955,7 +878,7 @@ export default async function HomePage() {
                 type="submit"
                 className="h-12 px-6 bg-rail-orange text-white text-[15px] font-semibold rounded-xl hover:bg-[#e55f15] transition-colors whitespace-nowrap"
               >
-                Get Free Report
+                Subscribe
               </button>
             </form>
             <p className="text-[12px] text-white/50 mt-4">
@@ -971,11 +894,11 @@ export default async function HomePage() {
         <section className="py-14 md:py-16 lg:py-20 bg-white">
           <div className="max-w-[1280px] mx-auto px-5 md:px-8 text-center">
             <h2 className="text-[28px] md:text-[36px] font-bold text-navy-900 tracking-tight mb-5">
-              Join 850+ Verified Sellers on The Rail Exchange
+              Ready to Buy or Sell Rail Equipment?
             </h2>
             <p className="text-[16px] md:text-[17px] text-slate-500 mb-10 max-w-xl mx-auto leading-relaxed">
-              List your equipment for free. Connect with buyers nationwide.
-              Average response time under 24 hours.
+              List your equipment for free. Connect with buyers and sellers nationwide.
+              Join the dedicated marketplace for rail professionals.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
