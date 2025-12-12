@@ -23,15 +23,40 @@ const CATEGORIES = [
   { value: 'tools-equipment', label: 'Tools & Equipment' },
 ];
 
+const POPULAR_SEARCHES = [
+  'GP38-2',
+  'Tank Cars',
+  'Rail 136 lb',
+  'Hi-Rail Truck',
+  'EMD Parts',
+  'Switches',
+];
+
 export default function HeroSearch() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('');
   const [category, setCategory] = useState('');
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const handleLocationSelect = (result: LocationResult) => {
     setCoordinates({ lat: result.lat, lng: result.lng });
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setQuery(suggestion);
+    setShowSuggestions(false);
+    // Auto-submit search
+    const params = new URLSearchParams();
+    params.set('q', suggestion);
+    if (location) params.set('location', location);
+    if (category) params.set('category', category);
+    if (coordinates) {
+      params.set('lat', coordinates.lat.toString());
+      params.set('lng', coordinates.lng.toString());
+    }
+    router.push(`/search?${params.toString()}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -72,9 +97,30 @@ export default function HeroSearch() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               placeholder="Search equipment, materials, services..."
               className="w-full pl-12 pr-4 py-3.5 bg-slate-50/80 rounded-xl text-[15px] text-navy-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rail-orange/20 focus:bg-white transition-colors"
             />
+            
+            {/* Popular Search Suggestions */}
+            {showSuggestions && !query && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-slate-100 p-3 z-50">
+                <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-2 px-1">Popular Searches</p>
+                <div className="flex flex-wrap gap-2">
+                  {POPULAR_SEARCHES.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onMouseDown={() => handleSuggestionClick(suggestion)}
+                      className="px-3 py-1.5 bg-slate-100 hover:bg-rail-orange hover:text-white text-[13px] font-medium text-slate-600 rounded-full transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Location Input with Google Places Autocomplete */}

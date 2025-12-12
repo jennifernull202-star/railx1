@@ -802,6 +802,170 @@ export default async function HomePage() {
         {/* Section Separator */}
         <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
 
+        {/* Trust Badges Section */}
+        <section className="py-10 md:py-12 bg-white">
+          <div className="max-w-[1280px] mx-auto px-5 md:px-8">
+            <div className="text-center mb-8">
+              <p className="text-[13px] font-medium text-slate-400 uppercase tracking-wider">Trusted By Industry Leaders</p>
+            </div>
+            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500">
+              {/* Rail Industry Association Badges */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">🚂</span>
+                </div>
+                <span className="text-[11px] font-medium text-slate-500">AAR Compliant</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">🛡️</span>
+                </div>
+                <span className="text-[11px] font-medium text-slate-500">Verified Sellers</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">🔒</span>
+                </div>
+                <span className="text-[11px] font-medium text-slate-500">Secure Platform</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">⭐</span>
+                </div>
+                <span className="text-[11px] font-medium text-slate-500">4.9 Rating</span>
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">🇺🇸</span>
+                </div>
+                <span className="text-[11px] font-medium text-slate-500">USA Based</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section Separator */}
+        <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
+
+        {/* FAQ Section */}
+        <section className="py-14 md:py-16 lg:py-20 bg-slate-50">
+          <div className="max-w-[900px] mx-auto px-5 md:px-8">
+            <div className="text-center mb-10 md:mb-12">
+              <h2 className="text-[24px] md:text-[32px] font-bold text-navy-900 tracking-tight mb-3">
+                Frequently Asked Questions
+              </h2>
+              <p className="text-[15px] text-slate-500">
+                Everything you need to know about buying and selling on The Rail Exchange
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* FAQ Item 1 */}
+              <details className="group bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <summary className="flex items-center justify-between p-5 cursor-pointer list-none hover:bg-slate-50 transition-colors">
+                  <span className="text-[15px] font-semibold text-navy-900">How much does it cost to list equipment?</span>
+                  <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="px-5 pb-5 text-[14px] text-slate-600 leading-relaxed">
+                  Listing equipment on The Rail Exchange is completely free. You can create unlimited listings at no cost. Optional premium add-ons like Featured Placement ($25/30 days), Premium Placement ($50/30 days), and Elite Placement ($99/30 days) are available to boost visibility.
+                </div>
+              </details>
+
+              {/* FAQ Item 2 */}
+              <details className="group bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <summary className="flex items-center justify-between p-5 cursor-pointer list-none hover:bg-slate-50 transition-colors">
+                  <span className="text-[15px] font-semibold text-navy-900">How do I become a verified seller?</span>
+                  <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="px-5 pb-5 text-[14px] text-slate-600 leading-relaxed">
+                  Purchase the Verified Seller badge ($149/year) and our team will verify your business credentials, including your company registration, industry experience, and track record. Verified sellers see 3x more inquiries on average.
+                </div>
+              </details>
+
+              {/* FAQ Item 3 */}
+              <details className="group bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <summary className="flex items-center justify-between p-5 cursor-pointer list-none hover:bg-slate-50 transition-colors">
+                  <span className="text-[15px] font-semibold text-navy-900">What types of equipment can I list?</span>
+                  <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="px-5 pb-5 text-[14px] text-slate-600 leading-relaxed">
+                  We accept all rail-related equipment: locomotives, freight cars, passenger cars, tank cars, track materials (rail, ties, switches), MOW equipment (hi-rail trucks, tampers, rail grinders), signals, parts, and components. If it&apos;s used in the rail industry, it belongs here.
+                </div>
+              </details>
+
+              {/* FAQ Item 4 */}
+              <details className="group bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <summary className="flex items-center justify-between p-5 cursor-pointer list-none hover:bg-slate-50 transition-colors">
+                  <span className="text-[15px] font-semibold text-navy-900">How do payments work?</span>
+                  <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="px-5 pb-5 text-[14px] text-slate-600 leading-relaxed">
+                  The Rail Exchange is a listing and connection platform—we facilitate introductions between buyers and sellers. All transactions, negotiations, and payments happen directly between parties. We never take a commission on sales.
+                </div>
+              </details>
+
+              {/* FAQ Item 5 */}
+              <details className="group bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <summary className="flex items-center justify-between p-5 cursor-pointer list-none hover:bg-slate-50 transition-colors">
+                  <span className="text-[15px] font-semibold text-navy-900">Can I list contractor services?</span>
+                  <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="px-5 pb-5 text-[14px] text-slate-600 leading-relaxed">
+                  Yes! Create a free contractor profile to showcase your services—track installation, welding, inspection, signaling, and more. Verified contractors with complete profiles receive project inquiries directly through the platform.
+                </div>
+              </details>
+            </div>
+          </div>
+        </section>
+
+        {/* Section Separator */}
+        <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
+
+        {/* Newsletter Section */}
+        <section className="py-14 md:py-16 bg-navy-900">
+          <div className="max-w-[700px] mx-auto px-5 md:px-8 text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full mb-6">
+              <span className="text-[13px] font-medium text-white/90">📧 Free Industry Report</span>
+            </div>
+            <h2 className="text-[24px] md:text-[32px] font-bold text-white tracking-tight mb-4">
+              Get the Rail Equipment Market Report
+            </h2>
+            <p className="text-[15px] text-white/70 mb-8 leading-relaxed max-w-lg mx-auto">
+              Monthly insights on pricing trends, inventory levels, and market demand. 
+              Join 2,400+ rail professionals who stay informed.
+            </p>
+            <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+              <input 
+                type="email" 
+                placeholder="Enter your work email"
+                className="flex-1 h-12 px-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/50 text-[15px] focus:outline-none focus:ring-2 focus:ring-rail-orange focus:border-transparent"
+              />
+              <button 
+                type="submit"
+                className="h-12 px-6 bg-rail-orange text-white text-[15px] font-semibold rounded-xl hover:bg-[#e55f15] transition-colors whitespace-nowrap"
+              >
+                Get Free Report
+              </button>
+            </form>
+            <p className="text-[12px] text-white/50 mt-4">
+              No spam. Unsubscribe anytime. We respect your inbox.
+            </p>
+          </div>
+        </section>
+
+        {/* Section Separator */}
+        <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
+
         {/* CTA Section - Premium */}
         <section className="py-14 md:py-16 lg:py-20 bg-white">
           <div className="max-w-[1280px] mx-auto px-5 md:px-8 text-center">
