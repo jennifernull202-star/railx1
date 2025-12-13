@@ -14,18 +14,43 @@ import { Types } from 'mongoose';
 // GET /api/notifications - Get user's notifications
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const { searchParams } = new URL(request.url);
+    const countOnly = searchParams.get('countOnly') === 'true';
+    const unreadOnly = searchParams.get('unreadOnly') === 'true' || searchParams.get('unread') === 'true';
+
+    let session;
+    try {
+      session = await getServerSession(authOptions);
+    } catch (error) {
+      console.error('Session fetch error in notifications:', error);
+      // Return safe default for countOnly requests
+      if (countOnly) {
+        return NextResponse.json({ success: true, data: { count: 0, unreadCount: 0 } });
+      }
+      return NextResponse.json({ error: 'Session error' }, { status: 500 });
+    }
 
     if (!session?.user?.id) {
+      // Return safe default for countOnly requests (not logged in = 0 notifications)
+      if (countOnly) {
+        return NextResponse.json({ success: true, data: { count: 0, unreadCount: 0 } });
+      }
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectDB();
 
-    const { searchParams } = new URL(request.url);
+    // Handle countOnly requests efficiently
+    if (countOnly) {
+      const query: Record<string, unknown> = { userId: session.user.id };
+      if (unreadOnly) query.isRead = false;
+      const count = await Notification.countDocuments(query);
+      const unreadCount = unreadOnly ? count : await Notification.countDocuments({ userId: session.user.id, isRead: false });
+      return NextResponse.json({ success: true, data: { count, unreadCount } });
+    }
+
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
     const limit = Math.min(50, parseInt(searchParams.get('limit') || '20'));
-    const unreadOnly = searchParams.get('unread') === 'true';
     const type = searchParams.get('type');
 
     const query: Record<string, unknown> = { userId: session.user.id };

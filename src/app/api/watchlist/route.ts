@@ -15,15 +15,37 @@ import { Types } from 'mongoose';
 // GET /api/watchlist - Get user's watchlist
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const { searchParams } = new URL(request.url);
+    const countOnly = searchParams.get('countOnly') === 'true';
+
+    let session;
+    try {
+      session = await getServerSession(authOptions);
+    } catch (error) {
+      console.error('Session fetch error in watchlist:', error);
+      // Return safe default for countOnly requests
+      if (countOnly) {
+        return NextResponse.json({ success: true, data: { count: 0 } });
+      }
+      return NextResponse.json({ error: 'Session error' }, { status: 500 });
+    }
 
     if (!session?.user?.id) {
+      // Return safe default for countOnly requests (not logged in = 0 items)
+      if (countOnly) {
+        return NextResponse.json({ success: true, data: { count: 0 } });
+      }
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await connectDB();
 
-    const { searchParams } = new URL(request.url);
+    // Handle countOnly requests efficiently
+    if (countOnly) {
+      const count = await WatchlistItem.countDocuments({ userId: session.user.id });
+      return NextResponse.json({ success: true, data: { count } });
+    }
+
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
     const limit = Math.min(50, parseInt(searchParams.get('limit') || '20'));
     const skip = (page - 1) * limit;

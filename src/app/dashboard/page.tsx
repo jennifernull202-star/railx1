@@ -50,70 +50,91 @@ async function getDashboardData(userId: string): Promise<{
   subscriptionStatus: string | null;
   unreadInquiryCount: number;
 }> {
-  await connectDB();
+  try {
+    await connectDB();
 
-  const userObjectId = new Types.ObjectId(userId);
+    const userObjectId = new Types.ObjectId(userId);
 
-  // Get listing stats, user info, and unread inquiries
-  const Inquiry = (await import('@/models/Inquiry')).default;
-  
-  const [statsResult, recentListings, user, listingIds] = await Promise.all([
-    Listing.aggregate([
-      { $match: { sellerId: userObjectId } },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: 1 },
-          active: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
-          draft: { $sum: { $cond: [{ $eq: ['$status', 'draft'] }, 1, 0] } },
-          views: { $sum: '$viewCount' },
-          featured: { $sum: { $cond: ['$premiumAddOns.featured.active', 1, 0] } },
+    // Get listing stats, user info, and unread inquiries
+    const Inquiry = (await import('@/models/Inquiry')).default;
+    
+    const [statsResult, recentListings, user, listingIds] = await Promise.all([
+      Listing.aggregate([
+        { $match: { sellerId: userObjectId } },
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            active: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
+            draft: { $sum: { $cond: [{ $eq: ['$status', 'draft'] }, 1, 0] } },
+            views: { $sum: '$viewCount' },
+            featured: { $sum: { $cond: ['$premiumAddOns.featured.active', 1, 0] } },
+          },
         },
-      },
-    ]),
-    Listing.find({ sellerId: userObjectId })
-      .select('title slug status viewCount createdAt')
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .lean(),
-    User.findById(userId).select('sellerTier isContractor contractorTier sellerSubscriptionStatus subscriptionCurrentPeriodEnd').lean(),
-    Listing.find({ sellerId: userObjectId }).select('_id').lean(),
-  ]);
-  
-  // Count unread inquiries for user's listings
-  const unreadInquiryCount = await Inquiry.countDocuments({
-    listing: { $in: listingIds.map(l => l._id) },
-    status: 'new',
-  });
+      ]),
+      Listing.find({ sellerId: userObjectId })
+        .select('title slug status viewCount createdAt')
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean(),
+      User.findById(userId).select('sellerTier isContractor contractorTier sellerSubscriptionStatus subscriptionCurrentPeriodEnd').lean(),
+      Listing.find({ sellerId: userObjectId }).select('_id').lean(),
+    ]);
+    
+    // Count unread inquiries for user's listings
+    const unreadInquiryCount = await Inquiry.countDocuments({
+      listing: { $in: listingIds.map(l => l._id) },
+      status: 'new',
+    });
 
-  const stats = statsResult[0] || {
-    total: 0,
-    active: 0,
-    draft: 0,
-    views: 0,
-    featured: 0,
-  };
+    const stats = statsResult[0] || {
+      total: 0,
+      active: 0,
+      draft: 0,
+      views: 0,
+      featured: 0,
+    };
 
-  // Check if user is on a trial (using promo code or Stripe trial)
-  const isTrialing = user?.sellerSubscriptionStatus === 'trialing';
-  const trialEndsAt = isTrialing && user?.subscriptionCurrentPeriodEnd 
-    ? new Date(user.subscriptionCurrentPeriodEnd) 
-    : null;
+    // Check if user is on a trial (using promo code or Stripe trial)
+    const isTrialing = user?.sellerSubscriptionStatus === 'trialing';
+    const trialEndsAt = isTrialing && user?.subscriptionCurrentPeriodEnd 
+      ? new Date(user.subscriptionCurrentPeriodEnd) 
+      : null;
 
-  return {
-    stats,
-    recentListings: recentListings as unknown as RecentListing[],
-    hasSubscription: !!(user?.sellerTier && user.sellerTier !== 'buyer'),
-    isContractor: user?.isContractor || user?.contractorTier === 'verified' || false,
-    sellerTier: user?.sellerTier || null,
-    trialEndsAt,
-    subscriptionStatus: user?.sellerSubscriptionStatus || null,
-    unreadInquiryCount,
-  };
+    return {
+      stats,
+      recentListings: recentListings as unknown as RecentListing[],
+      hasSubscription: !!(user?.sellerTier && user.sellerTier !== 'buyer'),
+      isContractor: user?.isContractor || user?.contractorTier === 'verified' || false,
+      sellerTier: user?.sellerTier || null,
+      trialEndsAt,
+      subscriptionStatus: user?.sellerSubscriptionStatus || null,
+      unreadInquiryCount,
+    };
+  } catch (error) {
+    console.error('Dashboard data fetch error:', error);
+    // Return safe defaults on error
+    return {
+      stats: { total: 0, active: 0, draft: 0, views: 0, featured: 0 },
+      recentListings: [],
+      hasSubscription: false,
+      isContractor: false,
+      sellerTier: null,
+      trialEndsAt: null,
+      subscriptionStatus: null,
+      unreadInquiryCount: 0,
+    };
+  }
 }
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch (error) {
+    console.error('Session fetch error:', error);
+    return null;
+  }
 
   if (!session?.user?.id) {
     return null;
