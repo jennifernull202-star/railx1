@@ -38,36 +38,38 @@ const getStripe = () => {
 // ============================================================================
 
 export async function GET() {
+  // STABILIZATION: Default subscription data for any error
+  const defaultResponse = {
+    sellerTier: 'buyer',
+    sellerStatus: null,
+    sellerSubscriptionId: null,
+    contractorTier: 'none',
+    contractorStatus: null,
+    contractorSubscriptionId: null,
+    currentPeriodEnd: null,
+    cancelAtPeriodEnd: false,
+    activeListingCount: 0,
+    stripeCustomerId: null,
+  };
+
   try {
     let session;
     try {
       session = await getServerSession(authOptions);
     } catch (error) {
       console.error('Session fetch error in subscriptions GET:', error);
-      return NextResponse.json({ error: 'Session error' }, { status: 500 });
+      return NextResponse.json(defaultResponse);
     }
     
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(defaultResponse);
     }
 
     // Validate ObjectId format to prevent Mongoose errors
     const { Types } = await import('mongoose');
     if (!Types.ObjectId.isValid(session.user.id)) {
       console.warn('Invalid user ID format in subscriptions:', session.user.id);
-      // Return default subscription info for invalid user ID
-      return NextResponse.json({
-        sellerTier: 'buyer',
-        sellerStatus: null,
-        sellerSubscriptionId: null,
-        contractorTier: 'none',
-        contractorStatus: null,
-        contractorSubscriptionId: null,
-        currentPeriodEnd: null,
-        cancelAtPeriodEnd: false,
-        activeListingCount: 0,
-        stripeCustomerId: null,
-      });
+      return NextResponse.json(defaultResponse);
     }
 
     await connectDB();

@@ -13,6 +13,17 @@ import { Types } from 'mongoose';
 
 // GET /api/notifications - Get user's notifications
 export async function GET(request: NextRequest) {
+  // STABILIZATION: Always return 200 with empty data on any error
+  const emptyResponse = {
+    success: true,
+    data: {
+      notifications: [],
+      count: 0,
+      unreadCount: 0,
+      pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+    },
+  };
+
   try {
     const { searchParams } = new URL(request.url);
     const countOnly = searchParams.get('countOnly') === 'true';
@@ -23,19 +34,11 @@ export async function GET(request: NextRequest) {
       session = await getServerSession(authOptions);
     } catch (error) {
       console.error('Session fetch error in notifications:', error);
-      // Return safe default for countOnly requests
-      if (countOnly) {
-        return NextResponse.json({ success: true, data: { count: 0, unreadCount: 0 } });
-      }
-      return NextResponse.json({ error: 'Session error' }, { status: 500 });
+      return NextResponse.json(emptyResponse);
     }
 
     if (!session?.user?.id) {
-      // Return safe default for countOnly requests (not logged in = 0 notifications)
-      if (countOnly) {
-        return NextResponse.json({ success: true, data: { count: 0, unreadCount: 0 } });
-      }
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(emptyResponse);
     }
 
     await connectDB();

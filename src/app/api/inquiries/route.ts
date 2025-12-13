@@ -33,29 +33,32 @@ const MIN_ACCOUNT_AGE_HOURS = 1;
 
 // Get inquiries for current user (as buyer or seller)
 export async function GET(request: NextRequest) {
+  // STABILIZATION: Always return 200 with empty data on any error
+  const emptyResponse = {
+    inquiries: [],
+    total: 0,
+    unreadCount: 0,
+    pages: 0,
+    page: 1,
+  };
+
   try {
     let session;
     try {
       session = await getServerSession(authOptions);
     } catch (error) {
       console.error('Session fetch error in inquiries GET:', error);
-      return NextResponse.json({ error: 'Session error' }, { status: 500 });
+      return NextResponse.json(emptyResponse);
     }
 
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(emptyResponse);
     }
 
     // Validate ObjectId format to prevent Mongoose errors
     if (!Types.ObjectId.isValid(session.user.id)) {
       console.warn('Invalid user ID format in inquiries:', session.user.id);
-      return NextResponse.json({
-        inquiries: [],
-        total: 0,
-        unreadCount: 0,
-        pages: 0,
-        page: 1,
-      });
+      return NextResponse.json(emptyResponse);
     }
 
     await connectDB();

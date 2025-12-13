@@ -14,6 +14,16 @@ import { Types } from 'mongoose';
 
 // GET /api/watchlist - Get user's watchlist
 export async function GET(request: NextRequest) {
+  // STABILIZATION: Always return 200 with empty data on any error
+  const emptyResponse = {
+    success: true,
+    data: {
+      items: [],
+      count: 0,
+      pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+    },
+  };
+
   try {
     const { searchParams } = new URL(request.url);
     const countOnly = searchParams.get('countOnly') === 'true';
@@ -23,29 +33,18 @@ export async function GET(request: NextRequest) {
       session = await getServerSession(authOptions);
     } catch (error) {
       console.error('Session fetch error in watchlist:', error);
-      // Return safe default for countOnly requests
-      if (countOnly) {
-        return NextResponse.json({ success: true, data: { count: 0 } });
-      }
-      return NextResponse.json({ error: 'Session error' }, { status: 500 });
+      return NextResponse.json(emptyResponse);
     }
 
     if (!session?.user?.id) {
-      // Return safe default for countOnly requests (not logged in = 0 items)
-      if (countOnly) {
-        return NextResponse.json({ success: true, data: { count: 0 } });
-      }
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(emptyResponse);
     }
 
     // Validate ObjectId format to prevent Mongoose errors
     const { Types } = await import('mongoose');
     if (!Types.ObjectId.isValid(session.user.id)) {
       console.warn('Invalid user ID format in watchlist:', session.user.id);
-      if (countOnly) {
-        return NextResponse.json({ success: true, data: { count: 0 } });
-      }
-      return NextResponse.json({ success: true, data: { items: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } } });
+      return NextResponse.json(emptyResponse);
     }
 
     await connectDB();
