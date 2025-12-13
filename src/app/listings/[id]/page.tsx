@@ -243,45 +243,46 @@ function formatDate(dateString: string): string {
 }
 
 export default async function ListingDetailPage({ params }: PageProps) {
-  await connectDB();
+  try {
+    await connectDB();
 
-  const { id } = await params;
-  const isObjectId = mongoose.Types.ObjectId.isValid(id);
-  const listing = await Listing.findOne(
-    isObjectId ? { _id: id } : { slug: id }
-  )
-    .populate('sellerId', 'name email image paypalEmail paypalVerified isVerifiedSeller')
-    .lean() as ListingData | null;
+    const { id } = await params;
+    const isObjectId = mongoose.Types.ObjectId.isValid(id);
+    const listing = await Listing.findOne(
+      isObjectId ? { _id: id } : { slug: id }
+    )
+      .populate('sellerId', 'name email image paypalEmail paypalVerified isVerifiedSeller')
+      .lean() as ListingData | null;
 
-  if (!listing || listing.status !== 'active') {
-    notFound();
-  }
+    if (!listing || listing.status !== 'active') {
+      notFound();
+    }
 
-  // Increment view count (in real app, do this via API with rate limiting)
-  await Listing.updateOne({ _id: listing._id }, { $inc: { viewCount: 1 } });
+    // Increment view count (fire-and-forget, don't block render)
+    Listing.updateOne({ _id: listing._id }, { $inc: { viewCount: 1 } }).catch(() => {});
 
-  // Sort media by order and find primary
-  const sortedMedia = [...listing.media].sort((a, b) => a.order - b.order);
-  const primaryImage = sortedMedia.find(m => m.isPrimary) || sortedMedia[0];
-  const images = sortedMedia.filter(m => m.type === 'image');
+    // Sort media by order and find primary (with safe defaults)
+    const sortedMedia = listing.media?.length ? [...listing.media].sort((a, b) => a.order - b.order) : [];
+    const primaryImage = sortedMedia.find(m => m.isPrimary) || sortedMedia[0];
+    const images = sortedMedia.filter(m => m.type === 'image');
 
-  // Get single highest badge
-  const badge = getHighestBadge({
-    elite: listing.premiumAddOns.elite?.active,
-    premium: listing.premiumAddOns.premium?.active,
-    featured: listing.premiumAddOns.featured?.active,
-    verified: listing.sellerId?.isVerifiedSeller,
-  });
+    // Get single highest badge (with safe defaults)
+    const badge = getHighestBadge({
+      elite: listing.premiumAddOns?.elite?.active,
+      premium: listing.premiumAddOns?.premium?.active,
+      featured: listing.premiumAddOns?.featured?.active,
+      verified: listing.sellerId?.isVerifiedSeller,
+    });
 
-  // Check if there are specs to show
-  const hasSpecs = listing.specifications?.length > 0 || listing.equipment;
-  const hasCompliance = listing.equipment && (
-    listing.equipment.fraCompliant !== undefined ||
-    listing.equipment.dotCompliant !== undefined ||
-    listing.equipment.hazmatCertified !== undefined
-  );
-  const hasPriceHistory = listing.priceHistory && listing.priceHistory.length > 1;
-  const hasShipping = listing.shippingOptions;
+    // Check if there are specs to show (with safe defaults)
+    const hasSpecs = (listing.specifications?.length ?? 0) > 0 || listing.equipment;
+    const hasCompliance = listing.equipment && (
+      listing.equipment.fraCompliant !== undefined ||
+      listing.equipment.dotCompliant !== undefined ||
+      listing.equipment.hazmatCertified !== undefined
+    );
+    const hasPriceHistory = listing.priceHistory && listing.priceHistory.length > 1;
+    const hasShipping = listing.shippingOptions;
 
   return (
     <>
@@ -654,4 +655,8 @@ export default async function ListingDetailPage({ params }: PageProps) {
       </div>
     </>
   );
+  } catch (error) {
+    console.error('Listing detail page error:', error);
+    notFound();
+  }
 }

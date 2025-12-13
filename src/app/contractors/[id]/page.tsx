@@ -50,17 +50,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ContractorProfilePage({ params }: PageProps) {
-  await connectDB();
+  try {
+    await connectDB();
 
-  const { id } = await params;
-  const contractor = await ContractorProfile.findById(id).populate('userId', 'name image');
+    const { id } = await params;
+    const contractor = await ContractorProfile.findById(id).populate('userId', 'name image');
 
-  if (!contractor || !contractor.isActive) {
-    notFound();
-  }
+    if (!contractor || !contractor.isActive) {
+      notFound();
+    }
 
-  // Check if contractor has new contractor types
-  const hasContractorTypes = contractor.contractorTypes && contractor.contractorTypes.length > 0;
+    // Check if contractor has new contractor types
+    const hasContractorTypes = contractor.contractorTypes && contractor.contractorTypes.length > 0;
   
   // Get type labels for display (use new types if available, fallback to legacy)
   const typeLabels = hasContractorTypes
@@ -321,4 +322,8 @@ export default async function ContractorProfilePage({ params }: PageProps) {
       />
     </>
   );
+  } catch (error) {
+    console.error('Contractor profile page error:', error);
+    notFound();
+  }
 }
