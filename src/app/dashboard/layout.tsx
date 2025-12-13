@@ -66,7 +66,23 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
   ]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [adminRouted, setAdminRouted] = useState(false);
 
+  // ADMIN ROUTE ACTIVATION: Client-side redirect for admins
+  // Runs once, does not block render, does not depend on loading state
+  useEffect(() => {
+    // Explicit boolean check - no implicit truthy
+    const isAdmin: boolean = session?.user?.isAdmin === true;
+    
+    // Only route admins who haven't been routed yet
+    // Prevents infinite loops and double navigation
+    if (isAdmin && !adminRouted && !pathname?.startsWith('/admin')) {
+      setAdminRouted(true);
+      router.replace('/admin');
+    }
+  }, [session?.user?.isAdmin, adminRouted, pathname, router]);
+
+  // Handle unauthenticated users
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/login");
