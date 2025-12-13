@@ -67,7 +67,12 @@ async function getInquiries(userId: string): Promise<{
 }
 
 export default async function InquiriesPage() {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    return null; // STABILIZATION: Never throw in Server Components
+  }
 
   if (!session?.user?.id) {
     return null;

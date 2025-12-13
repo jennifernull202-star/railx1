@@ -150,7 +150,12 @@ function getCategoryLabel(value: string): string {
 }
 
 export default async function AnalyticsPage() {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    return null; // STABILIZATION: Never throw in Server Components
+  }
 
   if (!session?.user?.id) {
     return null;
