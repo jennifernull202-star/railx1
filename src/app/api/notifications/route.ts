@@ -40,6 +40,23 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
+    // Validate ObjectId format to prevent Mongoose errors
+    const { Types } = await import('mongoose');
+    if (!Types.ObjectId.isValid(session.user.id)) {
+      console.warn('Invalid user ID format:', session.user.id);
+      if (countOnly) {
+        return NextResponse.json({ success: true, data: { count: 0, unreadCount: 0 } });
+      }
+      return NextResponse.json({
+        success: true,
+        data: {
+          notifications: [],
+          unreadCount: 0,
+          pagination: { page: 1, limit: 20, total: 0, totalPages: 0 },
+        },
+      });
+    }
+
     // Handle countOnly requests efficiently
     if (countOnly) {
       const query: Record<string, unknown> = { userId: session.user.id };

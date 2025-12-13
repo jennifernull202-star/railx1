@@ -51,6 +51,25 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Validate ObjectId format to prevent Mongoose errors
+    const { Types } = await import('mongoose');
+    if (!Types.ObjectId.isValid(session.user.id)) {
+      console.warn('Invalid user ID format in subscriptions:', session.user.id);
+      // Return default subscription info for invalid user ID
+      return NextResponse.json({
+        sellerTier: 'buyer',
+        sellerStatus: null,
+        sellerSubscriptionId: null,
+        contractorTier: 'none',
+        contractorStatus: null,
+        contractorSubscriptionId: null,
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: false,
+        activeListingCount: 0,
+        stripeCustomerId: null,
+      });
+    }
+
     await connectDB();
     const user = await User.findById(session.user.id);
     

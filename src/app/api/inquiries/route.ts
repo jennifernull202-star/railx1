@@ -46,6 +46,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Validate ObjectId format to prevent Mongoose errors
+    if (!Types.ObjectId.isValid(session.user.id)) {
+      console.warn('Invalid user ID format in inquiries:', session.user.id);
+      return NextResponse.json({
+        inquiries: [],
+        total: 0,
+        unreadCount: 0,
+        pages: 0,
+        page: 1,
+      });
+    }
+
     await connectDB();
 
     const { searchParams } = new URL(request.url);

@@ -38,6 +38,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Validate ObjectId format to prevent Mongoose errors
+    const { Types } = await import('mongoose');
+    if (!Types.ObjectId.isValid(session.user.id)) {
+      console.warn('Invalid user ID format in watchlist:', session.user.id);
+      if (countOnly) {
+        return NextResponse.json({ success: true, data: { count: 0 } });
+      }
+      return NextResponse.json({ success: true, data: { items: [], pagination: { page: 1, limit: 20, total: 0, totalPages: 0 } } });
+    }
+
     await connectDB();
 
     // Handle countOnly requests efficiently

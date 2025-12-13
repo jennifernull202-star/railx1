@@ -53,9 +53,10 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         // TEMPORARY DEBUG: Bypass all checks to isolate auth plumbing
+        // Using a valid ObjectId format to prevent API crashes
         console.log('[AUTH DEBUG] TEMPORARY BYPASS - returning hardcoded admin');
         return {
-          id: "debug-admin-123",
+          id: "000000000000000000000001", // Valid 24-char hex ObjectId format
           email: credentials?.email ?? "debug@test.com",
           name: "Debug Admin",
           role: "admin",
