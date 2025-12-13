@@ -65,7 +65,11 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
       
       const response = await fetch('/api/subscriptions');
       if (!response.ok) {
-        throw new Error('Failed to fetch subscription');
+        // Don't throw - just set error state and use defaults
+        console.warn('Subscription API returned non-ok status:', response.status);
+        setError('Subscription unavailable');
+        setSubscription(null);
+        return;
       }
       
       const data = await response.json();
