@@ -119,7 +119,7 @@ const Header: React.FC<HeaderProps> = ({
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/notifications" className="text-center text-sm text-rail-orange">
+              <Link href="/dashboard/inquiries" className="text-center text-sm text-rail-orange">
                 View all notifications
               </Link>
             </DropdownMenuItem>

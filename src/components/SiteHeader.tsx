@@ -80,11 +80,13 @@ export default function SiteHeader({
       ]);
       if (watchlistRes.ok) {
         const data = await watchlistRes.json();
-        setWatchlistCount(data.count || 0);
+        // Handle both { count } and { data: { count } } formats
+        setWatchlistCount(data?.data?.count ?? data?.count ?? 0);
       }
       if (notifRes.ok) {
         const data = await notifRes.json();
-        setNotificationCount(data.count || 0);
+        // Handle both { count } and { data: { count } } formats
+        setNotificationCount(data?.data?.count ?? data?.data?.unreadCount ?? data?.count ?? 0);
       }
     } catch {
       // Silently fail - counts are nice-to-have
@@ -173,7 +175,7 @@ export default function SiteHeader({
               <>
                 {/* BUYER AUDIT: Watchlist Icon with Count */}
                 <Link
-                  href="/dashboard/watchlist"
+                  href="/dashboard/saved"
                   className="relative hidden sm:flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-rail-orange transition-colors"
                   title="My Watchlist"
                 >
@@ -187,7 +189,7 @@ export default function SiteHeader({
                 
                 {/* BUYER AUDIT: Notification Bell with Count */}
                 <Link
-                  href="/dashboard/notifications"
+                  href="/dashboard/inquiries"
                   className="relative hidden sm:flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-rail-orange transition-colors"
                   title="Notifications"
                 >
