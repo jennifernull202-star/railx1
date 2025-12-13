@@ -3,6 +3,8 @@
  * 
  * Cart-based checkout flow for sellers to upgrade their subscription
  * and add optional add-ons to their listings.
+ * 
+ * UX Item #4: Sticky cart visibility on desktop (sidebar) and mobile (bottom bar).
  */
 
 'use client';
@@ -35,6 +37,7 @@ import {
   Package,
   Gift,
   Shield,
+  ChevronUp,
 } from 'lucide-react';
 import PromoCodeInput, { PromoDiscount } from '@/components/PromoCodeInput';
 
@@ -80,9 +83,20 @@ function UpgradePageContent() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<PromoDiscount | null>(null);
   const [promoCode, setPromoCode] = useState<string>('');
+  // UX Item #4: Mobile cart expand state
+  const [mobileCartExpanded, setMobileCartExpanded] = useState(false);
+  const [stickyShownLogged, setStickyShownLogged] = useState(false);
   
   // Get promo code from URL (e.g., /dashboard/upgrade?promo=RAILXFREE)
   const initialPromoCode = searchParams.get('promo') || '';
+
+  // UX Item #4: Log sticky cart shown event once
+  useEffect(() => {
+    if (!stickyShownLogged) {
+      console.log('[EVENT] upgrade_cart_sticky_shown');
+      setStickyShownLogged(true);
+    }
+  }, [stickyShownLogged]);
 
   // Fetch user's listings for add-ons
   useEffect(() => {
@@ -193,12 +207,24 @@ function UpgradePageContent() {
     ]);
   }
 
+  // UX Item #4: Add addon from sticky cart (with event logging)
+  function addAddonToCartFromSticky(addonType: string, listingId: string, listingTitle: string) {
+    console.log('[EVENT] upgrade_cart_addon_added_from_sticky');
+    addAddonToCart(addonType, listingId, listingTitle);
+  }
+
   // Remove item from cart
   function removeFromCart(itemId: string) {
     if (itemId.startsWith('sub-')) {
       setSelectedPlan(null);
     }
     setCart(cart.filter(item => item.id !== itemId));
+  }
+
+  // UX Item #4: Remove item from sticky cart (with event logging)
+  function removeFromCartFromSticky(itemId: string) {
+    console.log('[EVENT] upgrade_cart_addon_removed_from_sticky');
+    removeFromCart(itemId);
   }
 
   // Calculate totals with promo discount
@@ -225,6 +251,9 @@ function UpgradePageContent() {
   // Checkout handler
   async function handleCheckout() {
     if (cart.length === 0) return;
+    
+    // UX Item #4: Log CTA click from sticky cart
+    console.log('[EVENT] upgrade_cart_cta_clicked');
     
     setIsCheckingOut(true);
     
@@ -587,8 +616,8 @@ function UpgradePageContent() {
             </div>
           </div>
 
-          {/* Cart Sidebar */}
-          <div className="lg:col-span-1">
+          {/* Cart Sidebar - Desktop: sticky right panel, hidden on mobile */}
+          <div className="lg:col-span-1 hidden lg:block">
             <div className="sticky top-8 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
               <div className="p-6 border-b border-slate-100">
                 <div className="flex items-center gap-3">
@@ -638,7 +667,7 @@ function UpgradePageContent() {
                             {formatPrice(item.price)}
                           </p>
                           <button
-                            onClick={() => removeFromCart(item.id)}
+                            onClick={() => removeFromCartFromSticky(item.id)}
                             className="text-xs text-red-500 hover:text-red-600"
                           >
                             Remove
@@ -743,6 +772,109 @@ function UpgradePageContent() {
           </div>
         </div>
       </div>
+
+      {/* UX Item #4: Mobile Sticky Cart Bar - Fixed at bottom on mobile */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-50 safe-area-bottom">
+        {cart.length === 0 ? (
+          // Empty cart state - minimal bar
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-slate-500">
+              <ShoppingCart className="w-5 h-5" />
+              <span className="text-sm">Your cart is empty</span>
+            </div>
+            <span className="text-xs text-slate-400">Select a plan above</span>
+          </div>
+        ) : (
+          <>
+            {/* Expandable cart details */}
+            {mobileCartExpanded && (
+              <div className="max-h-60 overflow-y-auto border-b border-slate-100 bg-slate-50 px-4 py-3">
+                <div className="space-y-3">
+                  {cart.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {item.type === 'subscription' ? (
+                          <Package className="w-4 h-4 text-rail-orange flex-shrink-0" />
+                        ) : (
+                          <Star className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-navy-900 truncate">{item.name}</p>
+                          {item.type === 'addon' && item.listingTitle && (
+                            <p className="text-xs text-slate-500 truncate">for: {item.listingTitle}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span className="text-sm font-semibold text-navy-900">{formatPrice(item.price)}</span>
+                        <button
+                          onClick={() => removeFromCartFromSticky(item.id)}
+                          className="text-xs text-red-500 hover:text-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Promo display in mobile */}
+                {promoDiscount > 0 && appliedPromo && (
+                  <div className="mt-3 pt-3 border-t border-slate-200 flex justify-between text-sm">
+                    <span className="text-green-600 flex items-center gap-1">
+                      <Gift className="w-3 h-3" />
+                      {appliedPromo.code}
+                    </span>
+                    <span className="font-medium text-green-600">-{formatPrice(promoDiscount)}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Main sticky bar */}
+            <div className="px-4 py-3 flex items-center gap-3">
+              {/* Expand/collapse button with cart summary */}
+              <button
+                onClick={() => setMobileCartExpanded(!mobileCartExpanded)}
+                className="flex items-center gap-2 flex-1"
+              >
+                <div className="relative">
+                  <ShoppingCart className="w-5 h-5 text-navy-900" />
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rail-orange text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {cart.length}
+                  </span>
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-navy-900">{formatPrice(cartTotal)}</p>
+                  {promoDiscount > 0 && (
+                    <p className="text-[10px] text-green-600">Includes promo discount</p>
+                  )}
+                </div>
+                <ChevronUp className={`w-4 h-4 text-slate-400 transition-transform ${mobileCartExpanded ? '' : 'rotate-180'}`} />
+              </button>
+              
+              {/* Checkout CTA */}
+              <button
+                onClick={handleCheckout}
+                disabled={isCheckingOut}
+                className="px-6 py-2.5 bg-rail-orange text-white rounded-xl font-semibold hover:bg-[#e55f15] transition-all flex items-center gap-2 disabled:opacity-50 text-sm"
+              >
+                {isCheckingOut ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    Checkout
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+      
+      {/* Spacer for mobile sticky bar */}
+      <div className="lg:hidden h-20" />
     </div>
   );
 }

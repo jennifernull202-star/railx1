@@ -443,9 +443,9 @@ export function EquipmentFilterPanel({
         isOpen={openSections.has('seller')} 
         onToggle={() => toggleSection('seller')}
       >
-        {/* Verified Seller Only */}
+        {/* S-5.1: ID Verified Seller Only */}
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Verified Sellers Only</Label>
+          <Label className="text-sm font-medium" title="Identity Verified means business documents were submitted and reviewed.">ID Verified Sellers Only</Label>
           <Switch
             checked={filters.verifiedSellerOnly || false}
             onCheckedChange={(checked) => updateFilter('verifiedSellerOnly', checked)}

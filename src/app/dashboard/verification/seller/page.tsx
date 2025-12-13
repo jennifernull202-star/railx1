@@ -73,20 +73,21 @@ const DOCUMENT_TYPES = [
   { id: 'insurance_certificate', label: 'Insurance Certificate', required: false, description: 'Business liability insurance (optional)' },
 ];
 
+// S-5.4: Removed exaggerated claims - using neutral language
 const VERIFICATION_TIERS = {
   standard: {
     id: 'standard',
     name: 'Standard Verification',
     price: 29,
     features: [
-      'AI-assisted identity review',
       'AI-assisted document review',
-      'AI-assisted authenticity check',
-      'Verified Seller badge',
-      '24-hour approval SLA',
+      'Business document submission',
+      'Admin review process',
+      'Identity Verified badge',
+      '24-hour processing time',
       'Valid for 1 year',
     ],
-    slaText: '24-hour approval',
+    slaText: '24-hour processing',
     icon: Shield,
     color: 'blue',
     popular: false,
@@ -96,14 +97,15 @@ const VERIFICATION_TIERS = {
     name: 'Priority Verification',
     price: 49,
     features: [
-      'Expedited AI-assisted review',
-      'AI-assisted identity, document, and authenticity checks',
-      'Priority Verified Seller badge',
+      'Expedited AI-assisted document review',
+      'Business document submission',
+      'Priority admin review',
+      'Identity Verified badge',
       '3-day ranking boost for first listing',
       'Priority review queue',
       'Valid for 1 year',
     ],
-    slaText: 'Instant approval',
+    slaText: 'Same-day processing',
     icon: Zap,
     color: 'amber',
     popular: true,

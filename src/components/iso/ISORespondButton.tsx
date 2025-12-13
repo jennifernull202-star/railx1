@@ -7,10 +7,38 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+
+/**
+ * PERFORMANCE OPTIMIZATION:
+ * Check session via API instead of requiring SessionProvider.
+ */
+function useOptionalSession() {
+  const [session, setSession] = useState<{ user?: { id?: string } } | null>(null);
+  const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
+
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.user) {
+          setSession(data);
+          setStatus('authenticated');
+        } else {
+          setSession(null);
+          setStatus('unauthenticated');
+        }
+      })
+      .catch(() => {
+        setSession(null);
+        setStatus('unauthenticated');
+      });
+  }, []);
+
+  return { data: session, status };
+}
 
 interface ISORespondButtonProps {
   requestId: string;
@@ -25,7 +53,7 @@ export default function ISORespondButton({
   allowMessaging,
   ownerId,
 }: ISORespondButtonProps) {
-  const { data: session, status } = useSession();
+  const { data: session, status } = useOptionalSession();
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const [message, setMessage] = useState('');

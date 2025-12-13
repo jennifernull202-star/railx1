@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import AuthProvider from "@/components/providers/AuthProvider";
 import { GoogleMapsProvider } from "@/components/providers/GoogleMapsProvider";
 import AIChatWidget from "@/components/AIChatWidget";
 import { Toaster } from "sonner";
@@ -49,23 +48,21 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className="font-sans antialiased bg-surface-primary text-text-primary min-h-screen">
-        <AuthProvider>
-          <GoogleMapsProvider>
-            {/* Main Application */}
-            <div className="flex flex-col min-h-screen">
-              {children}
-            </div>
-            {/* AI Chat Widget - Available Site-Wide */}
-            <AIChatWidget />
-            {/* Global Toast Notifications */}
-            <Toaster 
-              position="top-right" 
-              richColors 
-              closeButton
-              duration={5000}
-            />
-          </GoogleMapsProvider>
-        </AuthProvider>
+        <GoogleMapsProvider>
+          {/* Main Application */}
+          <div className="flex flex-col min-h-screen">
+            {children}
+          </div>
+          {/* AI Chat Widget - Available Site-Wide */}
+          <AIChatWidget />
+          {/* Global Toast Notifications */}
+          <Toaster 
+            position="top-right" 
+            richColors 
+            closeButton
+            duration={5000}
+          />
+        </GoogleMapsProvider>
       </body>
     </html>
   );

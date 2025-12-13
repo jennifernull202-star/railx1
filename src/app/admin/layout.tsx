@@ -12,6 +12,7 @@ import React, { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import ClientAuthProvider from "@/components/providers/ClientAuthProvider";
 import {
   Home,
   Users,
@@ -51,7 +52,8 @@ interface NavItem {
   badge?: string;
 }
 
-export default function AdminLayout({
+// Inner component that uses session
+function AdminLayoutInner({
   children,
 }: {
   children: React.ReactNode;
@@ -362,5 +364,18 @@ export default function AdminLayout({
         <div className="p-6 lg:p-8">{children}</div>
       </main>
     </div>
+  );
+}
+
+// Exported wrapper that provides auth context
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <ClientAuthProvider>
+      <AdminLayoutInner>{children}</AdminLayoutInner>
+    </ClientAuthProvider>
   );
 }

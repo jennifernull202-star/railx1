@@ -40,6 +40,11 @@ async function getAdminStats() {
     pendingReports,
     spamSuspendedUsers,
     serialReporters,
+    // S-14.3: 7-day counts for Trust & Safety Signals panel
+    listingsReported7d,
+    inquiriesMarkedSpam7d,
+    contractorsFlagged,
+    sellersFlagged,
   ] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
@@ -60,6 +65,11 @@ async function getAdminStats() {
     ListingReport.countDocuments({ status: 'pending' }),
     User.countDocuments({ spamSuspendedUntil: { $gt: now } }),
     User.countDocuments({ isSerialReporterFlagged: true }),
+    // S-14.3: 7-day counts
+    ListingReport.countDocuments({ createdAt: { $gte: sevenDaysAgo } }),
+    Inquiry.countDocuments({ status: 'spam', updatedAt: { $gte: sevenDaysAgo } }),
+    ContractorProfile.countDocuments({ isFlagged: true }),
+    User.countDocuments({ isFlagged: true }),
   ]);
 
   return {
@@ -91,6 +101,13 @@ async function getAdminStats() {
       spamSuspendedUsers,
       serialReporters,
       totalIssues: flaggedListings + pendingReports + spamSuspendedUsers + serialReporters,
+    },
+    // S-14.3: Trust & Safety Signals (7-day counts)
+    trustSafety: {
+      listingsReported7d,
+      inquiriesMarkedSpam7d,
+      contractorsFlagged,
+      sellersFlagged,
     },
   };
 }
@@ -214,6 +231,38 @@ export default async function AdminDashboardPage() {
           <p className="text-xl font-bold text-navy-900">${(stats.revenue.totalAddOns / 100).toLocaleString()}</p>
           <p className="text-xs text-text-tertiary">{stats.revenue.recentAddOns} this month</p>
         </Link>
+      </div>
+
+      {/* S-14.3: Trust & Safety Signals Panel (always visible, read-only counts) */}
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold text-navy-900 mb-4 flex items-center gap-2">
+          <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          Trust &amp; Safety Signals
+        </h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl border border-surface-border p-4">
+            <p className="text-body-sm text-text-secondary mb-1">Listings reported</p>
+            <p className="text-xl font-bold text-navy-900">{stats.trustSafety.listingsReported7d}</p>
+            <p className="text-xs text-text-tertiary">last 7 days</p>
+          </div>
+          <div className="bg-white rounded-xl border border-surface-border p-4">
+            <p className="text-body-sm text-text-secondary mb-1">Inquiries marked spam</p>
+            <p className="text-xl font-bold text-navy-900">{stats.trustSafety.inquiriesMarkedSpam7d}</p>
+            <p className="text-xs text-text-tertiary">last 7 days</p>
+          </div>
+          <div className="bg-white rounded-xl border border-surface-border p-4">
+            <p className="text-body-sm text-text-secondary mb-1">Contractors flagged</p>
+            <p className="text-xl font-bold text-navy-900">{stats.trustSafety.contractorsFlagged}</p>
+            <p className="text-xs text-text-tertiary">if applicable</p>
+          </div>
+          <div className="bg-white rounded-xl border border-surface-border p-4">
+            <p className="text-body-sm text-text-secondary mb-1">Sellers flagged</p>
+            <p className="text-xl font-bold text-navy-900">{stats.trustSafety.sellersFlagged}</p>
+            <p className="text-xs text-text-tertiary">if applicable</p>
+          </div>
+        </div>
       </div>
 
       {/* S-1.8: Abuse Monitoring Section */}

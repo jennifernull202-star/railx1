@@ -255,6 +255,15 @@ function SearchPageContent() {
   const searchParams = useSearchParams();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
+
+  // PERFORMANCE: Check session via API instead of requiring SessionProvider
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setSessionStatus(data?.user ? 'authenticated' : 'unauthenticated'))
+      .catch(() => setSessionStatus('unauthenticated'));
+  }, []);
 
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [searchType, setSearchType] = useState(searchParams.get('type') || 'all');
@@ -267,6 +276,8 @@ function SearchPageContent() {
   const [results, setResults] = useState<SearchResults | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  
+  const isGuest = sessionStatus === 'unauthenticated';
 
   // Perform search
   const performSearch = useCallback(async (resetPage = true) => {
@@ -395,6 +406,21 @@ function SearchPageContent() {
             <p className="text-sm text-text-secondary">
               {totalResults} results{query && <> for &quot;{query}&quot;</>}
             </p>
+          )}
+
+          {/* S-12.5: Guest Mode Signal Banner */}
+          {isGuest && (
+            <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <p className="text-sm text-blue-800">
+                Browsing as guest — create a free account to contact sellers or contractors.
+              </p>
+              <Link 
+                href="/how-it-works#faq"
+                className="text-xs text-blue-600 hover:text-blue-800 underline whitespace-nowrap"
+              >
+                Why an account is required
+              </Link>
+            </div>
           )}
 
           {/* Active Filter Chips */}
@@ -604,9 +630,15 @@ function SearchPageContent() {
             {/* Empty State */}
             {!isLoading && results && totalResults === 0 && (
               <div className="text-center py-12">
-                <p className="text-text-secondary mb-4">No results found.</p>
+                <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-navy-900 mb-2">No matching listings found.</h3>
+                <p className="text-text-secondary mb-4">Try adjusting filters or browsing related categories.</p>
                 <Link href="/marketplace" className="text-rail-orange font-medium hover:underline">
-                  Browse categories →
+                  Browse all categories →
                 </Link>
               </div>
             )}
@@ -619,6 +651,13 @@ function SearchPageContent() {
               >
                 Load more
               </button>
+            )}
+            
+            {/* S-11.5: Search Results Visibility Clarification */}
+            {!isLoading && results && totalResults > 0 && (
+              <p className="text-xs text-text-tertiary text-center mt-6">
+                Results may include promoted placements. Listing order does not indicate quality or availability.
+              </p>
             )}
           </div>
         </div>

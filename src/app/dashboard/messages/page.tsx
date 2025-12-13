@@ -62,6 +62,35 @@ export default function InboxPage() {
   const [role, setRole] = useState<'seller' | 'buyer'>('seller');
   const [statusFilter, setStatusFilter] = useState('all');
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // UX Item #9: localStorage key for role preference persistence
+  const ROLE_PREFERENCE_KEY = 'railx-messages-role-preference';
+  
+  // UX Item #9: Restore role preference from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedRole = localStorage.getItem(ROLE_PREFERENCE_KEY);
+      if (savedRole === 'buyer' || savedRole === 'seller') {
+        setRole(savedRole);
+        console.log('[EVENT] messages_role_preference_restored');
+      }
+    } catch (e) {
+      // localStorage not available, use default
+    }
+  }, []);
+  
+  // UX Item #9: Handle role change with persistence and logging
+  const handleRoleChange = (newRole: 'seller' | 'buyer') => {
+    if (newRole !== role) {
+      setRole(newRole);
+      try {
+        localStorage.setItem(ROLE_PREFERENCE_KEY, newRole);
+      } catch (e) {
+        // localStorage not available
+      }
+      console.log('[EVENT] messages_role_toggle_changed');
+    }
+  };
 
   const fetchInquiries = useCallback(async () => {
     setIsLoading(true);
@@ -138,12 +167,16 @@ export default function InboxPage() {
               ? `${unreadCount} unread message${unreadCount !== 1 ? 's' : ''}`
               : 'All caught up!'}
           </p>
+          {/* S-11.3: Seller Dashboard Responsibility Signal */}
+          <p className="text-xs text-text-tertiary mt-1">
+            Buyers expect timely responses. Repeated non-response may reduce buyer trust.
+          </p>
         </div>
 
-        {/* Role Toggle */}
+        {/* Role Toggle - UX Item #9: Uses handleRoleChange for persistence */}
         <div className="flex items-center bg-surface-secondary rounded-lg p-1">
           <button
-            onClick={() => setRole('seller')}
+            onClick={() => handleRoleChange('seller')}
             className={`px-4 py-2 rounded-md text-body-sm font-medium transition-colors ${
               role === 'seller'
                 ? 'bg-white text-navy-900 shadow-sm'
@@ -153,7 +186,7 @@ export default function InboxPage() {
             Received
           </button>
           <button
-            onClick={() => setRole('buyer')}
+            onClick={() => handleRoleChange('buyer')}
             className={`px-4 py-2 rounded-md text-body-sm font-medium transition-colors ${
               role === 'buyer'
                 ? 'bg-white text-navy-900 shadow-sm'
@@ -166,7 +199,7 @@ export default function InboxPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-4">
         {['all', 'new', 'read', 'replied', 'closed'].map((status) => (
           <button
             key={status}
@@ -181,6 +214,13 @@ export default function InboxPage() {
           </button>
         ))}
       </div>
+      
+      {/* S-14.2: Spam helper copy for sellers */}
+      {role === 'seller' && (
+        <p className="text-xs text-text-tertiary mb-4">
+          Spam reports help us monitor platform abuse.
+        </p>
+      )}
 
       {/* Inbox List */}
       <div className="bg-white rounded-2xl border border-surface-border overflow-hidden">
@@ -286,9 +326,16 @@ export default function InboxPage() {
                           <span className="text-caption text-text-tertiary whitespace-nowrap">
                             {formatDate(inquiry.lastMessageAt)}
                           </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[inquiry.status]}`}>
-                            {inquiry.status}
-                          </span>
+                          {/* S-14.2: Enhanced spam visibility for sellers */}
+                          {inquiry.status === 'spam' && role === 'seller' ? (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-status-error/10 text-status-error">
+                              Marked as spam
+                            </span>
+                          ) : (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[inquiry.status]}`}>
+                              {inquiry.status}
+                            </span>
+                          )}
                         </div>
                       </div>
 

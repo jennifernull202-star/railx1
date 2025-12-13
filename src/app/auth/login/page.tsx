@@ -7,6 +7,8 @@
  * - Show/hide password toggle ✓
  * - OMIT: Marketing content, alarmist error styling
  * 
+ * S-15: Rate-limit feedback and CAPTCHA after repeated failures
+ * 
  * Simplified login with inline error text and show/hide password.
  */
 
@@ -17,6 +19,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { useState, FormEvent, Suspense } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { useRateLimitFeedback, getRateLimitMessage } from '@/lib/hooks/useRateLimitFeedback';
+import { useCaptchaThreshold, InvisibleCaptcha, CAPTCHA_REASONS } from '@/components/InvisibleCaptcha';
 
 function LoginForm() {
   const router = useRouter();
@@ -29,10 +33,23 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // S-15.1: Rate limit feedback with countdown
+  const { isRateLimited, message: rateLimitMessage, checkAndHandleRateLimit, clearRateLimit } = useRateLimitFeedback();
+  
+  // S-15.3: CAPTCHA after repeated failures (threshold = 3)
+  const { showChallenge, incrementAttempts, resetAttempts } = useCaptchaThreshold('login', 3);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+    
+    // S-15.1: Don't allow submit if rate limited
+    if (isRateLimited) {
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
@@ -40,13 +57,19 @@ function LoginForm() {
         email,
         password,
         redirect: false,
+        // S-15.3: Include CAPTCHA token if present
+        ...(captchaToken && { captchaToken }),
       });
 
       if (result?.error) {
+        // S-15.3: Track failed attempts for CAPTCHA threshold
+        incrementAttempts();
+        
         // Improved error copy
         const errorMessages: Record<string, string> = {
           CredentialsSignin: 'Email or password is incorrect. Please try again.',
           SessionRequired: 'Please sign in to continue.',
+          RateLimited: getRateLimitMessage(60), // S-15.1: Rate limit message
           Default: 'Something went wrong. Please try again.',
         };
         setError(errorMessages[result.error] || errorMessages.Default);
@@ -54,6 +77,10 @@ function LoginForm() {
         return;
       }
 
+      // S-15.3: Reset attempts on successful login
+      resetAttempts();
+      clearRateLimit();
+      
       router.push(callbackUrl);
       router.refresh();
     } catch {
@@ -64,6 +91,8 @@ function LoginForm() {
 
   // Display URL error on mount with improved copy
   const getDisplayError = () => {
+    // S-15.1: Rate limit error takes priority
+    if (isRateLimited) return rateLimitMessage;
     if (error) return error;
     if (!urlError) return '';
     const urlErrorMessages: Record<string, string> = {
@@ -143,6 +172,16 @@ function LoginForm() {
             </div>
           </div>
 
+          {/* S-15.3: CAPTCHA after repeated failures */}
+          {showChallenge && (
+            <InvisibleCaptcha
+              action="login"
+              onVerify={setCaptchaToken}
+              showChallenge={showChallenge}
+              challengeReason={CAPTCHA_REASONS.REPEATED_LOGIN_FAILURES}
+            />
+          )}
+
           {/* Inline Error Text */}
           {displayError && (
             <p className="text-sm text-status-error">{displayError}</p>
@@ -151,10 +190,10 @@ function LoginForm() {
           {/* Submit Button */}
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || isRateLimited || (showChallenge && !captchaToken)}
             className="w-full py-3 bg-rail-orange text-white font-medium rounded-lg hover:bg-[#e55f15] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isLoading ? 'Signing in...' : 'Sign in'}
+            {isLoading ? 'Signing in...' : isRateLimited ? 'Please wait...' : 'Sign in'}
           </button>
         </form>
 

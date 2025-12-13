@@ -69,6 +69,10 @@ export default function ContractorOnboardingPage() {
 
   // #3.2 fix: localStorage key for draft auto-save
   const DRAFT_STORAGE_KEY = 'railx-contractor-onboard-draft';
+  
+  // UX Item #5: Track last saved timestamp for draft restore message
+  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
+  const [draftMessageShown, setDraftMessageShown] = useState(false);
 
   // #3.2 fix: Restore draft from localStorage on mount
   useEffect(() => {
@@ -80,12 +84,24 @@ export default function ContractorOnboardingPage() {
         if (parsed.portfolioImages) setPortfolioImages(parsed.portfolioImages);
         if (parsed.equipmentImages) setEquipmentImages(parsed.equipmentImages);
         if (parsed.currentStep) setCurrentStep(parsed.currentStep);
+        if (parsed.savedAt) setDraftSavedAt(parsed.savedAt);
         setDraftRestored(true);
+        
+        // UX Item #5: Log draft restored event
+        console.log('[EVENT] contractor_onboard_draft_restored');
       }
     } catch (e) {
       console.error('Failed to restore contractor draft:', e);
     }
   }, []);
+  
+  // UX Item #5: Log when draft restore message is shown (once per session)
+  useEffect(() => {
+    if (draftRestored && !draftMessageShown) {
+      console.log('[EVENT] contractor_onboard_draft_restore_message_shown');
+      setDraftMessageShown(true);
+    }
+  }, [draftRestored, draftMessageShown]);
 
   // #3.2 fix: Auto-save draft to localStorage on changes
   const saveDraft = useCallback(() => {
@@ -313,12 +329,19 @@ export default function ContractorOnboardingPage() {
             </p>
           </div>
 
-          {/* #3.2 fix: Draft Restored Banner */}
+          {/* #3.2 fix + UX Item #5: Draft Restored Banner with timestamp */}
           {draftRestored && (
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <AlertCircle className="w-5 h-5 text-blue-600" />
-                <span className="text-blue-800">Your previous progress has been restored.</span>
+                <div>
+                  <span className="text-blue-800 font-medium">Welcome back — your progress was saved.</span>
+                  {draftSavedAt && (
+                    <p className="text-xs text-blue-600 mt-0.5">
+                      Last saved: {new Date(draftSavedAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
               </div>
               <button
                 onClick={discardDraft}

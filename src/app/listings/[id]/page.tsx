@@ -321,14 +321,14 @@ export default async function ListingDetailPage({ params }: PageProps) {
                 </div>
               )}
 
-              {/* Single Highest Badge - S-3.6: Added tooltip for trust clarity */}
+              {/* S-5.1: Single Highest Badge with Sponsored/Identity Verified labels */}
               {badge && (
                 <div 
                   className={`absolute top-4 left-4 px-3 py-1.5 rounded-lg font-semibold text-sm flex items-center shadow-lg cursor-help ${
                     badge === 'ELITE' ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white' :
                     badge === 'PREMIUM' ? 'bg-purple-600 text-white' :
                     badge === 'FEATURED' ? 'bg-rail-orange text-white' :
-                    'bg-green-600 text-white'
+                    'bg-blue-600 text-white'
                   }`}
                   title={BADGE_STYLES[badge]?.title || 'Badge reflects account status.'}
                 >
@@ -336,7 +336,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
                   {badge === 'PREMIUM' && <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>}
                   {badge === 'FEATURED' && <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>}
                   {badge === 'VERIFIED' && <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
-                  {badge}
+                  {BADGE_STYLES[badge]?.label || badge}
                 </div>
               )}
 
@@ -430,18 +430,18 @@ export default async function ListingDetailPage({ params }: PageProps) {
                 <p className="font-medium text-navy-900">{listing.sellerId.name}</p>
                 {listing.sellerId.isVerifiedSeller && (
                   <div>
-                    <span className="inline-flex items-center gap-1 text-xs text-green-700">
+                    <span className="inline-flex items-center gap-1 text-xs text-blue-700">
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                      Verified Seller
+                      Identity Verified
                     </span>
-                    {/* BATCH E-4: Verification Disclosure (visible, not tooltip only) */}
-                    <p className="text-[10px] text-text-tertiary mt-0.5 leading-tight">
-                      Verification reflects document submission and review. The Rail Exchange does not verify ownership, authority to sell, transaction validity, or item condition.
-                    </p>
                   </div>
                 )}
               </div>
             </div>
+            {/* S-5.3: Inline trust disclosure */}
+            <p className="text-[10px] text-text-tertiary mt-3 leading-tight">
+              Badges reflect placement or document review only. The Rail Exchange does not verify ownership, condition, or transaction outcomes.
+            </p>
           </div>
 
           {/* 3. DESCRIPTION */}
@@ -623,6 +623,14 @@ export default async function ListingDetailPage({ params }: PageProps) {
                 Contact Seller
               </a>
             </div>
+            {/* S-11.1: Seller Response Expectation */}
+            <p className="text-[10px] text-text-tertiary mt-2 text-center">
+              Sellers respond directly and at their discretion. Response times may vary based on availability.
+            </p>
+            {/* S-6.3: Buyer Expectation Disclosure */}
+            <p className="text-[10px] text-text-tertiary mt-1 text-center">
+              Buyers are responsible for independent inspection and due diligence.
+            </p>
           </div>
           {/* Desktop: Inline contact form */}
           <div className="hidden md:block">
@@ -633,6 +641,14 @@ export default async function ListingDetailPage({ params }: PageProps) {
               sellerLocation={`${listing.location.city}, ${listing.location.state}`}
               isVerifiedSeller={listing.sellerId.isVerifiedSeller}
             />
+            {/* S-11.1: Seller Response Expectation */}
+            <p className="text-[10px] text-text-tertiary mt-2 text-center">
+              Sellers respond directly and at their discretion. Response times may vary based on availability.
+            </p>
+            {/* S-6.3: Buyer Expectation Disclosure */}
+            <p className="text-[10px] text-text-tertiary mt-1 text-center">
+              Buyers are responsible for independent inspection and due diligence.
+            </p>
           </div>
         </div>
       </div>

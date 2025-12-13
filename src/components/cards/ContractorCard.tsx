@@ -160,7 +160,7 @@ const ContractorCard: React.FC<ContractorCardProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 text-xs text-text-secondary">
                 {yearsInBusiness && (
-                  <span>{yearsInBusiness}+ years</span>
+                  <span>{yearsInBusiness}+ years <span className="text-text-tertiary">(Self-reported)</span></span>
                 )}
                 {rating !== undefined && reviewCount !== undefined && reviewCount > 0 && (
                   <span className="flex items-center gap-1">
@@ -184,13 +184,19 @@ const ContractorCard: React.FC<ContractorCardProps> = ({
                   </Button>
                 </Link>
                 {onContact && (
-                  <Button
-                    size="sm"
-                    className="h-8 text-xs bg-rail-orange hover:bg-rail-orange-dark"
-                    onClick={() => onContact(id)}
-                  >
-                    Contact
-                  </Button>
+                  <div className="group relative">
+                    <Button
+                      size="sm"
+                      className="h-8 text-xs bg-rail-orange hover:bg-rail-orange-dark"
+                      onClick={() => onContact(id)}
+                    >
+                      Contact
+                    </Button>
+                    {/* S-7.7: Search result CTA softening */}
+                    <span className="absolute -bottom-5 left-0 text-[9px] text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      Use only for genuine inquiries
+                    </span>
+                  </div>
                 )}
               </div>
             </div>

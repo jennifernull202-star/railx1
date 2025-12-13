@@ -99,10 +99,10 @@ export function NoSearchResults({ query }: { query?: string }) {
   return (
     <EmptyState
       icon="search"
-      title="No Results Found"
-      description={query ? `We couldn't find any results for "${query}". Try adjusting your search or filters.` : 'Try adjusting your search criteria or browse our categories.'}
-      actionLabel="Browse All Listings"
-      actionHref="/listings"
+      title="No matching listings found."
+      description="Try adjusting filters or browsing related categories."
+      actionLabel="Browse all categories"
+      actionHref="/marketplace"
     />
   );
 }

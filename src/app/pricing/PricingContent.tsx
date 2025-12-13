@@ -13,8 +13,7 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -32,10 +31,23 @@ import SiteHeader from '@/components/SiteHeader';
 import PricingCheckoutButton from '@/components/PricingCheckoutButton';
 import { Check, Crown, Star, TrendingUp } from 'lucide-react';
 
+// API-based session hook for public pages (no SessionProvider required)
+function useOptionalSession() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setIsLoggedIn(!!data?.user))
+      .catch(() => setIsLoggedIn(false));
+  }, []);
+  
+  return isLoggedIn;
+}
+
 export default function PricingContent() {
-  const { data: session } = useSession();
+  const isLoggedIn = useOptionalSession();
   const searchParams = useSearchParams();
-  const isLoggedIn = !!session?.user;
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [activeTab, setActiveTab] = useState<'seller' | 'contractor' | 'addons'>('seller');
   

@@ -12,6 +12,7 @@ import { getImageUrl } from '@/lib/utils';
 import connectDB from '@/lib/db';
 import WatchlistItem from '@/models/WatchlistItem';
 import SavedSearch from '@/models/SavedSearch';
+import WatchlistEmptyState from '@/components/dashboard/WatchlistEmptyState';
 import { Types } from 'mongoose';
 
 export const metadata: Metadata = {
@@ -101,15 +102,7 @@ export default async function SavedPage() {
         </h2>
         
         {listings.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
-            <svg className="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-            <p className="text-slate-500 mb-4">No saved listings yet</p>
-            <Link href="/listings" className="text-rail-orange font-medium hover:underline">
-              Browse listings to save your favorites
-            </Link>
-          </div>
+          <WatchlistEmptyState />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {listings.map((item) => {

@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -71,6 +71,23 @@ export default function CreateISOPage() {
     urgency: 'medium',
     contactPreference: 'email',
   });
+  
+  // UX Item #10: Track if preview event has been logged
+  const [previewEventLogged, setPreviewEventLogged] = useState(false);
+  const isAuthenticated = sessionStatus !== 'loading' && !!session;
+  
+  // UX Item #10: Log preview shown event for unauthenticated users
+  useEffect(() => {
+    if (sessionStatus !== 'loading' && !session && !previewEventLogged) {
+      console.log('[EVENT] iso_create_preview_shown_unauth');
+      setPreviewEventLogged(true);
+    }
+  }, [sessionStatus, session, previewEventLogged]);
+  
+  // UX Item #10: Handle sign-in click from preview
+  const handleSignInFromPreview = () => {
+    console.log('[EVENT] iso_create_signin_clicked_from_preview');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,23 +136,145 @@ export default function CreateISOPage() {
     }
   };
 
-  // Show login prompt if not authenticated
+  // UX Item #10: Show form preview with overlay for unauthenticated users
+  // This allows users to see what information is required before signing in
   if (sessionStatus !== 'loading' && !session) {
     return (
       <div className="min-h-screen bg-slate-50 py-12">
         <div className="max-w-2xl mx-auto px-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
-            <LogIn className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-navy-900 mb-2">Sign In Required</h1>
-            <p className="text-slate-600 mb-6">
-              Please sign in to create an ISO (In Search Of) request.
+          {/* Back Link */}
+          <Link
+            href="/iso"
+            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to ISO Requests
+          </Link>
+
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-2xl mb-4">
+              <Search className="w-8 h-8 text-blue-600" />
+            </div>
+            <h1 className="text-3xl font-bold text-navy-900 mb-2">Create ISO Request</h1>
+            <p className="text-slate-600">
+              Describe what you&apos;re looking for and let sellers come to you.
             </p>
-            <Link
-              href="/auth/login?callbackUrl=/iso/create"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-            >
-              Sign In to Continue
-            </Link>
+          </div>
+
+          {/* Form Preview with Overlay */}
+          <div className="relative">
+            {/* Sign-in Overlay */}
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] z-10 rounded-xl flex flex-col items-center justify-center p-8">
+              <LogIn className="w-12 h-12 text-blue-600 mb-4" />
+              <h2 className="text-xl font-bold text-navy-900 mb-2 text-center">Sign in to submit your request</h2>
+              <p className="text-slate-600 text-sm text-center mb-6 max-w-sm">
+                Preview the form below to see what information is needed.
+              </p>
+              <Link
+                href="/auth/login?callbackUrl=/iso/create"
+                onClick={handleSignInFromPreview}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                <LogIn className="w-4 h-4" />
+                Sign In to Continue
+              </Link>
+            </div>
+            
+            {/* Disabled Form Preview */}
+            <div className="bg-white rounded-xl border border-slate-200 p-6 pointer-events-none select-none opacity-60">
+              {/* Title */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-navy-900 mb-1.5">
+                  What are you looking for? <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  className="w-full px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 cursor-not-allowed"
+                  placeholder="e.g., GP38-2 Locomotive, 50lb Rail, Track Maintenance Contractor"
+                />
+              </div>
+
+              {/* Category */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-navy-900 mb-1.5">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  disabled
+                  className="w-full px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 cursor-not-allowed"
+                >
+                  <option>Select a category...</option>
+                </select>
+              </div>
+
+              {/* Description */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-navy-900 mb-1.5">
+                  <FileText className="w-4 h-4 inline mr-1" />
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  disabled
+                  rows={5}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 cursor-not-allowed resize-none"
+                  placeholder="Describe what you need in detail. Include specifications, quantity, condition requirements, etc."
+                />
+              </div>
+
+              {/* Region */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-navy-900 mb-1.5">
+                  <MapPin className="w-4 h-4 inline mr-1" />
+                  Preferred Region
+                </label>
+                <select
+                  disabled
+                  className="w-full px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 cursor-not-allowed"
+                >
+                  <option>Any location</option>
+                </select>
+              </div>
+
+              {/* Budget */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-navy-900 mb-1.5">
+                  <DollarSign className="w-4 h-4 inline mr-1" />
+                  Budget Range
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  className="w-full px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 cursor-not-allowed"
+                  placeholder="e.g., $10,000 - $50,000 or Negotiable"
+                />
+              </div>
+
+              {/* Urgency */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-navy-900 mb-1.5">
+                  <Calendar className="w-4 h-4 inline mr-1" />
+                  Urgency
+                </label>
+                <select
+                  disabled
+                  className="w-full px-4 py-3 border border-slate-200 rounded-lg bg-slate-50 cursor-not-allowed"
+                >
+                  <option>Medium - Within 1-3 months</option>
+                </select>
+              </div>
+
+              {/* Submit Button (disabled) */}
+              <button
+                type="button"
+                disabled
+                className="w-full py-3 bg-slate-300 text-slate-500 rounded-lg cursor-not-allowed font-semibold flex items-center justify-center gap-2"
+              >
+                <Search className="w-5 h-5" />
+                Post ISO Request
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -31,7 +31,7 @@ import {
 
 export const metadata: Metadata = {
   title: 'How It Works | The Rail Exchange',
-  description: 'Learn how to buy, sell, and connect on The Rail Exchange™ - the premier rail industry marketplace.',
+  description: 'Learn how to buy, sell, and connect on The Rail Exchange™ — the dedicated marketplace for rail professionals.',
 };
 
 export default function HowItWorksPage() {
@@ -216,9 +216,9 @@ export default function HowItWorksPage() {
                   icon: Star,
                 },
                 {
-                  title: 'AI Enhancement',
+                  title: 'Listing Enhancement',
                   price: 'Add-on',
-                  desc: 'AI optimizes your title, description, and tags for better search visibility',
+                  desc: 'Automated optimization improves your title, description, and tags for better search visibility',
                   icon: Sparkles,
                 },
                 {
@@ -394,7 +394,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* BATCH E-5: Governance FAQ Section */}
-      <section className="py-16 bg-slate-50 border-t border-slate-200">
+      <section className="py-16 bg-slate-50 border-t border-slate-200" id="faq">
         <div className="container-rail">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-2xl font-bold text-navy-900 mb-8 text-center">
@@ -402,7 +402,7 @@ export default function HowItWorksPage() {
             </h2>
             
             {/* FAQ: Fraud/Misrepresentation Protections */}
-            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 mb-6">
               <h3 className="font-semibold text-navy-900 mb-4">
                 What protections does The Rail Exchange provide against fraud or misrepresentation?
               </h3>
@@ -415,6 +415,21 @@ export default function HowItWorksPage() {
                 </p>
                 <p>
                   The platform does not provide escrow, payment guarantees, or transaction insurance.
+                </p>
+              </div>
+            </div>
+
+            {/* S-12.8: FAQ - Account requirement explanation */}
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+              <h3 className="font-semibold text-navy-900 mb-4">
+                Why do I need an account to contact sellers or contractors?
+              </h3>
+              <div className="text-slate-600 space-y-3">
+                <p>
+                  To protect users from spam, fraud, and misuse, all messages are sent through verified accounts. Creating an account is free and required only for direct contact.
+                </p>
+                <p>
+                  Browsing listings and contractor profiles is always available without signing in.
                 </p>
               </div>
             </div>

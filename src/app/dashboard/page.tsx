@@ -16,6 +16,7 @@ import { Types } from 'mongoose';
 import WelcomeMessage from '@/components/dashboard/WelcomeMessage';
 import SessionRefresher from '@/components/dashboard/SessionRefresher';
 import TrialBanner from '@/components/dashboard/TrialBanner';
+import FirstTimeSellerBanner from '@/components/dashboard/FirstTimeSellerBanner';
 
 export const metadata: Metadata = {
   title: 'Dashboard | The Rail Exchange',
@@ -136,6 +137,11 @@ export default async function DashboardPage() {
       {/* S-4.7: Trial Countdown Banner - dismissible, once per session */}
       {subscriptionStatus === 'trialing' && daysRemaining !== null && (
         <TrialBanner daysRemaining={daysRemaining} userId={session.user.id} />
+      )}
+
+      {/* UX Item #2: First-Time Seller Welcome Banner - shows once only */}
+      {stats.total === 0 && !hasSubscription && (
+        <FirstTimeSellerBanner userName={session.user.name?.split(' ')[0] || 'there'} />
       )}
 
       {/* Welcome Message for New Users */}

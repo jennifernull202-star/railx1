@@ -477,23 +477,23 @@ export function MarketplaceSearchFilters({
       {/* SECTION: Trust & Price Filters */}
       <div className="border-t border-surface-border pt-4">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {/* Verified Seller Only */}
+          {/* S-5.1: Identity Verified Seller Only */}
           <div className="flex items-end">
             <label 
               className="flex items-center gap-2 cursor-pointer"
-              title="Verification reflects document review only and does not guarantee transaction outcomes."
+              title="Identity Verified means business documents were submitted and reviewed. This does not guarantee transaction outcomes."
             >
               <input
                 type="checkbox"
                 checked={localFilters.verifiedSellerOnly || false}
                 onChange={(e) => updateFilter('verifiedSellerOnly', e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <span className="text-sm text-navy-900 flex items-center gap-1">
-                <svg className="w-3.5 h-3.5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-3.5 h-3.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                Verified Sellers Only
+                ID Verified Sellers Only
               </span>
             </label>
           </div>

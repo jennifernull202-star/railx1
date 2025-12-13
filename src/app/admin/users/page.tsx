@@ -37,6 +37,10 @@ interface UserData {
   createdAt: string;
   subscriptionTier?: string;
   listingsCount?: number;
+  // S-14.4: Flag visibility fields
+  isFlagged?: boolean;
+  spamSuspendedUntil?: string;
+  isSerialReporterFlagged?: boolean;
 }
 
 interface UsersResponse {
@@ -226,6 +230,7 @@ export default function AdminUsersPage() {
                     <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">User</th>
                     <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Role</th>
                     <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Status</th>
+                    <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Flags</th>
                     <th className="text-left px-6 py-4 text-sm font-medium text-gray-600">Joined</th>
                     <th className="text-right px-6 py-4 text-sm font-medium text-gray-600">Actions</th>
                   </tr>
@@ -234,6 +239,7 @@ export default function AdminUsersPage() {
                   {users.map((user) => {
                     const roleInfo = getRoleBadge(user.role);
                     const RoleIcon = roleInfo.icon;
+                    const hasFlags = user.isFlagged || user.isSerialReporterFlagged || (user.spamSuspendedUntil && new Date(user.spamSuspendedUntil) > new Date());
                     return (
                       <tr key={user._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4">
@@ -258,6 +264,16 @@ export default function AdminUsersPage() {
                             {user.isActive ? <CheckCircle className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}
                             {user.isActive ? 'Active' : 'Inactive'}
                           </span>
+                        </td>
+                        {/* S-14.4: Admin-only flag visibility */}
+                        <td className="px-6 py-4">
+                          {hasFlags ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded">
+                              Flagged
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 text-xs">—</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
                           {formatDate(user.createdAt)}

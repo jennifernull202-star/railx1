@@ -21,6 +21,8 @@ interface ContractorProfile {
   };
   website?: string;
   insuranceVerified?: boolean;
+  // S-14.4: Flag visibility fields
+  isFlagged?: boolean;
 }
 
 export default function AdminContractorsPage() {
@@ -193,6 +195,9 @@ export default function AdminContractorsPage() {
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Flags
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Joined
               </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -203,7 +208,7 @@ export default function AdminContractorsPage() {
           <tbody className="bg-white divide-y divide-gray-200">
             {contractors.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                   No contractors found
                 </td>
               </tr>
@@ -256,6 +261,16 @@ export default function AdminContractorsPage() {
                         <span className="text-xs text-green-600">✓ Insurance Verified</span>
                       )}
                     </div>
+                  </td>
+                  {/* S-14.4: Admin-only flag visibility */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {contractor.isFlagged ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded">
+                        Flagged
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">—</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(contractor.createdAt).toLocaleDateString()}

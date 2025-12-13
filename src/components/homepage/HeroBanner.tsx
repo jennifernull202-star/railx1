@@ -27,7 +27,7 @@ const HERO_SLIDES: HeroSlide[] = [
   },
   {
     headline: 'Locomotives For Sale',
-    subheadline: 'Browse 200+ units from trusted sellers nationwide.',
+    subheadline: 'Browse 200+ units from sellers nationwide.',
     cta: 'Shop Locomotives',
     ctaLink: '/marketplace/category/locomotives',
   },
@@ -38,8 +38,8 @@ const HERO_SLIDES: HeroSlide[] = [
     ctaLink: '/marketplace/category/railcars',
   },
   {
-    headline: 'Verified Rail Contractors',
-    subheadline: 'FRA-qualified. Background checked. Ready to work.',
+    headline: 'Rail Contractors Directory',
+    subheadline: 'Find contractors with reviewed credentials.',
     cta: 'Find Contractors',
     ctaLink: '/contractors',
   },

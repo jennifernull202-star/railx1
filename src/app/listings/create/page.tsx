@@ -3,6 +3,9 @@
  * 
  * Multi-step form for creating equipment listings.
  * Premium UI with validation and S3 uploads.
+ * 
+ * UX Item #1: Verification gate moved to publish action (not form entry).
+ * Users can complete full form as draft, verification required only at publish.
  */
 
 'use client';
@@ -28,6 +31,7 @@ import LocationAutocomplete, { LocationResult } from '@/components/search/Locati
 import BulkPhotoUpload, { UploadedImage } from '@/components/forms/BulkPhotoUpload';
 import { useUnsavedChanges } from '@/lib/hooks/useUnsavedChanges';
 import PublishUpsellModal from '@/components/PublishUpsellModal';
+import VerificationRequiredModal from '@/components/VerificationRequiredModal';
 
 const CATEGORY_LABELS: Record<string, { label: string; description: string }> = {
   'locomotives': { label: 'Locomotives', description: 'Diesel, electric, and switcher locomotives' },
@@ -124,6 +128,8 @@ export default function CreateListingPage() {
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus | null>(null);
   const [checkingVerification, setCheckingVerification] = useState(true);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
+  // UX Item #1: Verification gate modal at publish time
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
   
   const [formData, setFormData] = useState<ListingFormData>({
     title: '',
@@ -372,10 +378,13 @@ export default function CreateListingPage() {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  // S-4.4: Direct publish - no blocking upsell modal
-  // Upsells are shown AFTER successful publish on the listing page
+  // UX Item #1: Verification gate moved to publish action
+  // S-4.4: Direct publish - verification checked at API, modal shown if blocked
   const handlePublishClick = async () => {
     if (!validateStep(currentStep)) return;
+    
+    // Attempt to publish - API will return VERIFICATION_REQUIRED if not verified
+    // This allows drafts to be saved even without verification
     await handleSubmit(false);
   };
 
@@ -526,6 +535,28 @@ export default function CreateListingPage() {
       const data = await res.json();
 
       if (!data.success) {
+        // UX Item #1: Handle verification required at publish time
+        if (data.code === 'VERIFICATION_REQUIRED' || data.code === 'VERIFICATION_EXPIRED') {
+          // Log event on client side as well for tracking
+          console.log(`[EVENT] listing_publish_blocked_verification | client`);
+          
+          // Auto-save as draft since verification is required
+          if (!asDraft) {
+            // Save as draft silently
+            const draftData = buildListingData(true);
+            await fetch('/api/listings', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(draftData),
+            });
+          }
+          
+          // Show verification modal
+          setShowVerificationModal(true);
+          setIsSubmitting(false);
+          return;
+        }
+        
         throw new Error(data.error || 'Failed to create listing');
       }
 
@@ -1286,6 +1317,10 @@ export default function CreateListingPage() {
                     >
                       {isSubmitting ? 'Publishing...' : 'Publish Listing'}
                     </button>
+                    {/* S-10.3: Listing Form Misrepresentation Warning */}
+                    <p className="text-xs text-text-tertiary text-center mt-3 col-span-2">
+                      Listings must accurately represent available equipment. Misrepresentation or repeated non-responsive listings may result in removal.
+                    </p>
                   </>
                 ) : (
                   <button type="button" onClick={nextStep} className="btn-primary">
@@ -1305,6 +1340,17 @@ export default function CreateListingPage() {
         onPublishWithAddons={handlePublishWithAddons}
         onPublishWithoutAddons={handlePublishWithoutAddons}
         listingTitle={formData.title || 'Your Listing'}
+      />
+
+      {/* UX Item #1: Verification Required Modal - shown at publish time */}
+      <VerificationRequiredModal
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        isExpired={verificationStatus?.status === 'expired'}
+        onVerifyClick={() => {
+          // Log event: verification_checkout_clicked_from_publish
+          console.log('[EVENT] verification_checkout_clicked_from_publish');
+        }}
       />
     </>
   );

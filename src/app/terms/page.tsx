@@ -88,7 +88,7 @@ export default function TermsPage() {
       </p>
 
       {/* Section 6: Transactions */}
-      <h2 className="text-2xl font-semibold text-slate-900 mt-10 mb-4">
+      <h2 id="buyer-responsibility" className="text-2xl font-semibold text-slate-900 mt-10 mb-4">
         6. Transactions
       </h2>
       <p className="text-slate-600 mb-8">
@@ -122,7 +122,7 @@ export default function TermsPage() {
       </ul>
 
       {/* Section 9: Marketplace Governance & Enforcement (BATCH E-5) */}
-      <h2 className="text-2xl font-semibold text-slate-900 mt-10 mb-4">
+      <h2 id="reporting" className="text-2xl font-semibold text-slate-900 mt-10 mb-4">
         9. Marketplace Governance &amp; Enforcement
       </h2>
       <p className="text-slate-600 mb-4">

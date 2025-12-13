@@ -22,6 +22,7 @@ import { SERVICE_CATEGORIES } from '@/lib/constants';
 import { CONTRACTOR_TYPE_CONFIG, type ContractorType } from '@/config/contractor-types';
 import ContractorTypeDisplay from '@/components/contractor/ContractorTypeDisplay';
 import PhoneDisplay from '@/components/contractor/PhoneDisplay';
+import ContractorContactCTA from '@/components/contractor/ContractorContactCTA';
 import { CONTRACTOR_DISPLAY_LIMITS, BADGE_TOOLTIP } from '@/lib/abuse-prevention';
 
 interface PageProps {
@@ -127,17 +128,17 @@ export default async function ContractorProfilePage({ params }: PageProps) {
                   {contractor.businessName}
                 </h1>
                 
-                {/* X Years • Verified • Region */}
+                {/* X Years • ID Verified • Region */}
                 <p className="text-sm text-text-secondary mt-1">
                   <span className="group relative inline">
-                    {contractor.yearsInBusiness} years
+                    {contractor.yearsInBusiness} years <span className="text-text-tertiary">(Self-reported)</span>
                     {/* BATCH E-3: Years in Business Tooltip */}
                     <span className="invisible group-hover:visible absolute bottom-full left-0 mb-1 px-2 py-1 bg-navy-900 text-white text-xs rounded whitespace-nowrap z-10">
                       Self-reported by contractor
                     </span>
                   </span>
                   {contractor.verificationStatus === 'verified' && (
-                    <span className="text-green-600"> • Verified</span>
+                    <span className="text-blue-600"> • ID Verified</span>
                   )}
                   {primaryRegion && <span> • {primaryRegion}</span>}
                 </p>
@@ -288,29 +289,36 @@ export default async function ContractorProfilePage({ params }: PageProps) {
               </div>
             </div>
           )}
+
+          {/* S-6.2: Report Contractor Link */}
+          <div className="text-center mb-6">
+            <Link
+              href={`/contact?category=contractor&subject=${encodeURIComponent(`Report: ${contractor.businessName}`)}`}
+              className="text-sm text-text-tertiary hover:text-text-secondary underline"
+            >
+              Report this contractor
+            </Link>
+            {/* S-10.2: Report Contractor Clarity */}
+            <p className="text-xs text-text-tertiary mt-1">
+              Reports are for fraud, misrepresentation, or policy violations — not disputes or pricing disagreements.
+            </p>
+          </div>
+
+          {/* S-10.4: Contractor Claim Limitation Notice */}
+          <p className="text-xs text-text-tertiary text-center mb-6">
+            Business details are provided by the contractor. Verification confirms submitted documents, not service quality or outcomes.
+          </p>
         </div>
       </main>
 
-      {/* S-4.8: STICKY CONTACT CTA - Enhanced with reply clarity */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-surface-border p-4 z-40">
-        <div className="container-rail">
-          <div className="flex flex-col gap-2">
-            <a
-              href={`mailto:${contractor.businessEmail}?subject=Service Inquiry via The Rail Exchange`}
-              className="btn-primary w-full py-3 flex items-center justify-center"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              Contact {contractor.businessName}
-            </a>
-            {/* S-4.8: Clear confirmation of where replies go */}
-            <p className="text-xs text-center text-text-tertiary">
-              📧 Replies will arrive in your email inbox
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* S-4.8: STICKY CONTACT CTA - S-12.4: Enhanced with guest clarity */}
+      <ContractorContactCTA
+        businessName={contractor.businessName}
+        businessEmail={contractor.businessEmail}
+        yearsInBusiness={contractor.yearsInBusiness}
+        regionsCount={contractor.regionsServed?.length || 0}
+        isVerified={contractor.verificationStatus === 'verified'}
+      />
     </>
   );
 }

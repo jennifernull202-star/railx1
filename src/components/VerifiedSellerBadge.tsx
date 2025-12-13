@@ -32,10 +32,11 @@ interface VerifiedSellerBadgeProps {
   className?: string;
 }
 
-const BADGE_TOOLTIP = `Verification reflects document submission and review.
-The Rail Exchange does not verify ownership, authority to sell, transaction validity, or item condition.`;
+const BADGE_TOOLTIP = `What verification means:
+This indicates that business documents were submitted and reviewed.
+Verification does not guarantee ownership, item condition, service quality, or transaction outcomes.`;
 
-const FULL_DISCLAIMER = `Verification reflects document submission and review. The Rail Exchange does not verify ownership, authority to sell, transaction validity, or item condition. All transactions, inspections, payments, and due diligence occur directly between buyers and sellers.`;
+const FULL_DISCLAIMER = `Verification reflects document submission and review only. The Rail Exchange does not guarantee transactions, payments, item condition, or outcomes. All transactions, inspections, payments, and due diligence occur directly between buyers and sellers.`;
 
 export function VerifiedSellerBadge({
   size = 'sm',
@@ -115,7 +116,7 @@ export function VerifiedSellerBadgeWithLabel({
       <div className="inline-flex items-center gap-1.5">
         <VerifiedSellerBadge size={size} showTooltip={!showDisclaimer} />
         <span className={`font-medium text-blue-600 ${textSize[size]}`}>
-          Verified Seller
+          Identity Verified
         </span>
       </div>
       {showDisclaimer && (
@@ -137,7 +138,7 @@ export function VerifiedSellerBadgeCompact({ className = '' }: { className?: str
       title={BADGE_TOOLTIP}
     >
       <Shield className="w-3 h-3 fill-blue-600" />
-      <span>Verified</span>
+      <span>ID Verified</span>
     </div>
   );
 }
@@ -153,8 +154,8 @@ export function VerifiedSellerBlock({ className = '' }: { className?: string }) 
           <Shield className="w-6 h-6 text-white" />
         </div>
         <div>
-          <p className="font-semibold text-blue-900">Verified Seller</p>
-          <p className="text-xs text-blue-600">Documentation reviewed</p>
+          <p className="font-semibold text-blue-900">Identity Verified</p>
+          <p className="text-xs text-blue-600">Business documents reviewed</p>
         </div>
       </div>
       <p className="text-xs text-slate-500 leading-relaxed">

@@ -15,13 +15,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState, FormEvent } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, FormEvent, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // S-12.7: Support callback URL for post-signup redirect
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -131,7 +134,11 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push('/dashboard');
+      // S-12.7: Redirect to callbackUrl with success message
+      const redirectUrl = callbackUrl.includes('?') 
+        ? `${callbackUrl}&registered=true` 
+        : `${callbackUrl}?registered=true`;
+      router.push(redirectUrl);
       router.refresh();
     } catch {
       setErrors({ general: 'An unexpected error occurred. Please try again.' });
@@ -151,7 +158,11 @@ export default function RegisterPage() {
 
         {/* Heading */}
         <h1 className="text-2xl font-bold text-navy-900 mb-2">Create your account</h1>
-        <p className="text-text-secondary text-sm mb-8">Free to browse. Upgrade anytime.</p>
+        {/* S-12.6: Buyer-first copy adjustment */}
+        <p className="text-text-secondary text-sm mb-2">
+          Create an account to contact sellers and contractors — browsing is always free.
+        </p>
+        <p className="text-text-tertiary text-xs mb-8">Free to browse. Upgrade anytime.</p>
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -323,5 +334,27 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+// Wrapper with Suspense for useSearchParams
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-white p-6">
+        <div className="w-full max-w-md animate-pulse">
+          <div className="h-8 bg-slate-200 rounded w-1/2 mb-10" />
+          <div className="h-6 bg-slate-200 rounded w-3/4 mb-4" />
+          <div className="space-y-4">
+            <div className="h-12 bg-slate-200 rounded" />
+            <div className="h-12 bg-slate-200 rounded" />
+            <div className="h-12 bg-slate-200 rounded" />
+            <div className="h-12 bg-slate-200 rounded" />
+          </div>
+        </div>
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }

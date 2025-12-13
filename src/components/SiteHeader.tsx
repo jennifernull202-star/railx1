@@ -3,8 +3,33 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { Menu, X, ArrowLeft, Search, Heart, Bell } from 'lucide-react';
+
+/**
+ * PERFORMANCE OPTIMIZATION:
+ * useOptionalSession - Safely use session without requiring SessionProvider.
+ * Returns null if no provider is present, avoiding client hydration cost on public pages.
+ */
+function useOptionalSession() {
+  const [session, setSession] = useState<{ user?: { name?: string; email?: string } } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check session via API instead of requiring SessionProvider
+    fetch('/api/auth/session')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        setSession(data?.user ? data : null);
+        setLoading(false);
+      })
+      .catch(() => {
+        setSession(null);
+        setLoading(false);
+      });
+  }, []);
+
+  return { data: session, status: loading ? 'loading' : session ? 'authenticated' : 'unauthenticated' };
+}
 
 interface SiteHeaderProps {
   variant?: 'default' | 'transparent';
@@ -29,7 +54,7 @@ export default function SiteHeader({
   ctaHref = '/listings/create',
   showSearch = true,
 }: SiteHeaderProps) {
-  const { data: session } = useSession();
+  const { data: session } = useOptionalSession();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

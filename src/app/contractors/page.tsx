@@ -153,30 +153,39 @@ function ContractorCard({ contractor }: { contractor: Contractor }) {
     ? contractor.contractorTypes!.length 
     : contractor.services.length;
 
-  // Visibility tier badge styling
+  // S-5.1: Visibility tier badge styling - 'Sponsored' for paid, 'ID Verified' for verification
   const getTierBadge = () => {
     switch (contractor.visibilityTier) {
       case 'priority':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-xs font-semibold rounded-full shadow-md">
+          <span 
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-xs font-semibold rounded-full shadow-md"
+            title="This placement reflects paid visibility options, not contractor quality or endorsement."
+          >
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
-            Priority
+            Sponsored
           </span>
         );
       case 'featured':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-rail-orange to-orange-500 text-white text-xs font-semibold rounded-full">
+          <span 
+            className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-rail-orange to-orange-500 text-white text-xs font-semibold rounded-full"
+            title="This placement reflects paid visibility options, not contractor quality or endorsement."
+          >
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zm7-10a1 1 0 01.707.293l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L13.586 6l-2.293-2.293A1 1 0 0112 2z" clipRule="evenodd" />
             </svg>
-            Featured
+            Sponsored
           </span>
         );
       default:
         return (
-          <span className="badge-verified text-xs">
+          <span 
+            className="badge-verified text-xs"
+            title="Verified indicates business documents were submitted and reviewed. It does not guarantee work quality, licensing, or project outcomes."
+          >
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
@@ -184,7 +193,7 @@ function ContractorCard({ contractor }: { contractor: Contractor }) {
                 clipRule="evenodd"
               />
             </svg>
-            Verified
+            ID Verified
           </span>
         );
     }
@@ -224,7 +233,7 @@ function ContractorCard({ contractor }: { contractor: Contractor }) {
           {contractor.businessName}
         </h3>
         <p className="text-body-sm text-text-secondary mt-1">
-          {contractor.address.city}, {contractor.address.state} • {contractor.yearsInBusiness} yrs
+          {contractor.address.city}, {contractor.address.state} • {contractor.yearsInBusiness} yrs <span className="text-text-tertiary">(Self-reported)</span>
         </p>
 
         <p className="text-body-sm text-text-secondary mt-3 line-clamp-2">
@@ -546,6 +555,14 @@ export default async function ContractorsPage({
         <div className="container-rail text-center">
           <p className="text-body-sm text-white/60">
             © {new Date().getFullYear()} The Rail Exchange™. All rights reserved.
+          </p>
+          {/* S-8.7: Global platform disclosure */}
+          <p className="mt-2 text-[11px] text-white/40">
+            The Rail Exchange is a listing and introduction platform. Transactions occur directly between parties.
+          </p>
+          {/* S-11.8: Platform Role Reinforcement */}
+          <p className="mt-1 text-[11px] text-white/40">
+            The Rail Exchange facilitates introductions. All negotiations, responses, and transactions occur directly between parties.
           </p>
         </div>
       </footer>

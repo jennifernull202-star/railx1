@@ -8,6 +8,7 @@ import AIChatWidget from "@/components/AIChatWidget";
 import AddOnIndicator from "@/components/dashboard/AddOnIndicator";
 import VerificationRenewalBanner from "@/components/dashboard/VerificationRenewalBanner";
 import { SubscriptionProvider, useSubscription } from "@/components/providers/SubscriptionProvider";
+import ClientAuthProvider from "@/components/providers/ClientAuthProvider";
 import {
   Home,
   Package,
@@ -480,11 +481,13 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
   );
 }
 
-// Exported wrapper that provides subscription context
+// Exported wrapper that provides auth and subscription context
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <SubscriptionProvider>
-      <DashboardLayoutInner>{children}</DashboardLayoutInner>
-    </SubscriptionProvider>
+    <ClientAuthProvider>
+      <SubscriptionProvider>
+        <DashboardLayoutInner>{children}</DashboardLayoutInner>
+      </SubscriptionProvider>
+    </ClientAuthProvider>
   );
 }

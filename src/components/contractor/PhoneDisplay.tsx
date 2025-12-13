@@ -8,9 +8,26 @@
 
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+
+/**
+ * PERFORMANCE OPTIMIZATION:
+ * Check session status via API instead of requiring SessionProvider.
+ */
+function useSessionStatus() {
+  const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
+  
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setStatus(data?.user ? 'authenticated' : 'unauthenticated'))
+      .catch(() => setStatus('unauthenticated'));
+  }, []);
+  
+  return status;
+}
 
 interface PhoneDisplayProps {
   phone: string;
@@ -18,7 +35,7 @@ interface PhoneDisplayProps {
 }
 
 export default function PhoneDisplay({ phone, className = '' }: PhoneDisplayProps) {
-  const { status } = useSession();
+  const status = useSessionStatus();
   const pathname = usePathname();
   const callbackUrl = encodeURIComponent(pathname);
 

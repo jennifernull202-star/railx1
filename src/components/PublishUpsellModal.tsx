@@ -55,8 +55,8 @@ const UPSELL_ADDONS: AddOnOption[] = [
     features: [
       'Maximum visibility boost',
       'Elite badge + homepage rotation',
-      'Top of all search results',
-      'Premium seller support',
+      'Featured placement in search results',
+      'Priority seller support',
     ],
   },
   {
@@ -95,7 +95,7 @@ const UPSELL_ADDONS: AddOnOption[] = [
     description: ADD_ON_METADATA[ADD_ON_TYPES.AI_ENHANCEMENT].shortDescription,
     icon: '🤖',
     features: [
-      'AI-optimized title & description',
+      'Optimized title & description',
       'SEO improvements',
       'Better buyer match',
     ],

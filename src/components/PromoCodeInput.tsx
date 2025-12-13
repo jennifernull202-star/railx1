@@ -105,6 +105,11 @@ export default function PromoCodeInput({
           message: data.message || getSuccessMessage(data),
         };
         
+        // UX Item #8: Log promo code applied manually (not from URL pre-fill)
+        if (promoCode !== initialCode) {
+          console.log('[EVENT] promo_code_applied_manually');
+        }
+        
         setAppliedPromo(discount);
         setError(null);
         onPromoApplied(discount.code, discount);
@@ -140,6 +145,8 @@ export default function PromoCodeInput({
   }
 
   function handleRemovePromo() {
+    // UX Item #8: Log promo code removed
+    console.log('[EVENT] promo_code_removed');
     setAppliedPromo(null);
     setCode('');
     setError(null);
@@ -193,7 +200,13 @@ export default function PromoCodeInput({
           {/* Toggle Button (when input is hidden) */}
           {!showInput ? (
             <button
-              onClick={() => setShowInput(true)}
+              onClick={() => {
+                // UX Item #8: Log promo code link clicked
+                console.log('[EVENT] promo_code_link_clicked');
+                setShowInput(true);
+                // UX Item #8: Log promo code input expanded
+                console.log('[EVENT] promo_code_input_expanded');
+              }}
               disabled={disabled}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-rail-orange/50 rounded-xl text-rail-orange hover:bg-rail-orange/5 hover:border-rail-orange transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >

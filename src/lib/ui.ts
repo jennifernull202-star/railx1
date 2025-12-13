@@ -34,33 +34,33 @@ export function getHighestBadge(badges: {
   return null
 }
 
-// S-2.1 & S-2.2: Badge styles with proper trust signal tooltips
+// S-5.1: Badge styles with 'Sponsored' for paid, 'Identity Verified' for verification
 export const BADGE_STYLES: Record<BadgeTier, { bg: string; text: string; label: string; title: string; isPaid: boolean }> = {
   ELITE: { 
     bg: 'bg-gradient-to-r from-amber-500 to-orange-600', 
     text: 'text-white', 
-    label: 'Elite', 
+    label: 'Sponsored', 
     title: ELITE_BADGE_TOOLTIP,
     isPaid: true,
   },
   PREMIUM: { 
     bg: 'bg-purple-600', 
     text: 'text-white', 
-    label: 'Premium', 
+    label: 'Sponsored', 
     title: PREMIUM_BADGE_TOOLTIP,
     isPaid: true,
   },
   FEATURED: { 
     bg: 'bg-rail-orange', 
     text: 'text-white', 
-    label: 'Featured', 
+    label: 'Sponsored', 
     title: FEATURED_BADGE_TOOLTIP,
     isPaid: true,
   },
   VERIFIED: { 
-    bg: 'bg-green-600', 
+    bg: 'bg-blue-600', 
     text: 'text-white', 
-    label: 'Verified', 
+    label: 'ID Verified', 
     title: VERIFIED_SELLER_TOOLTIP,
     isPaid: false,
   },

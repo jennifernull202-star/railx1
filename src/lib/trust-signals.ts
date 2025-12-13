@@ -12,34 +12,48 @@
 
 // ============================================
 // S-2.1: VERIFIED BADGE DISCLAIMERS
+// S-10.5: Verification Badge Scope Clarity
+// S-13.1: Standardized Verified Badge Tooltip
 // ============================================
 
+// S-13.1: Standardized tooltip for all verified badge locations
+export const VERIFIED_BADGE_TOOLTIP_TITLE = 'What verification means';
+
 export const VERIFIED_SELLER_TOOLTIP = 
-  'Verified means business documents were submitted and reviewed. It does not guarantee ownership, condition, or transaction outcome.';
+  'This indicates that business documents were submitted and reviewed. Verification does not guarantee ownership, item condition, service quality, or transaction outcomes.';
 
 export const VERIFIED_CONTRACTOR_TOOLTIP = 
-  'Verified means business documents were submitted and reviewed. It does not guarantee work quality, licensing, or project outcome.';
+  'This indicates that business documents were submitted and reviewed. Verification does not guarantee ownership, item condition, service quality, or transaction outcomes.';
 
 // Short version for compact UI
 export const VERIFIED_BADGE_SHORT = 
   'Documents reviewed. Not a transaction guarantee.';
 
+// S-13.5: Canonical verification disclaimer for all verification-related pages
+export const VERIFICATION_DISCLAIMER_CANONICAL = 
+  'Verification reflects document submission and review only. The Rail Exchange does not guarantee transactions, payments, item condition, or outcomes.';
+
 // ============================================
 // S-2.2: PAID VISIBILITY BADGE TOOLTIPS
+// S-11.6: Badge Hover Performance Disclaimer
+// S-13.3: Paid Placement Honest Framing
 // ============================================
 
+// S-13.3: Inline label for paid badges
+export const PAID_PLACEMENT_LABEL = 'Paid placement';
+
 export const ELITE_BADGE_TOOLTIP = 
-  'This is a paid visibility placement. It does not indicate seller quality or reliability.';
+  'This listing is promoted for visibility. Paid placement does not indicate seller quality, endorsement, or transaction guarantee.';
 
 export const PREMIUM_BADGE_TOOLTIP = 
-  'This is a paid visibility placement. It does not indicate seller quality or reliability.';
+  'This listing is promoted for visibility. Paid placement does not indicate seller quality, endorsement, or transaction guarantee.';
 
 export const FEATURED_BADGE_TOOLTIP = 
-  'This is a paid visibility placement. It does not indicate seller quality or reliability.';
+  'This listing is promoted for visibility. Paid placement does not indicate seller quality, endorsement, or transaction guarantee.';
 
 // Generic for any paid placement
 export const PAID_PLACEMENT_TOOLTIP = 
-  'This is a paid visibility placement. It does not indicate seller quality or reliability.';
+  'This listing is promoted for visibility. Paid placement does not indicate seller quality, endorsement, or transaction guarantee.';
 
 // ============================================
 // S-2.3: CONTRACTOR CLAIMS DISCLAIMER
@@ -71,20 +85,20 @@ export const CONDITION_WITH_DOCS_DISCLAIMER =
 
 // Use these instead of "AI-Verified" or "AI Fraud Check"
 export const AI_DOCUMENT_REVIEW_LABEL = 
-  'AI-assisted document review';
+  'Document review assisted by automated analysis and human review.';
 
 export const AI_ENHANCED_LABEL = 
-  'AI-assisted listing enhancement';
+  'Listing enhanced with automated optimization';
 
 export const AI_ANALYSIS_DISCLAIMER = 
-  'AI assistance is used for document processing and does not verify authenticity.';
+  'Automated analysis assists with document processing. It does not verify authenticity or guarantee accuracy.';
 
 // ============================================
-// S-2.6: TRUST SECTION COPY
+// S-5.5: TRUST SECTION COPY - Neutral platform statement
 // ============================================
 
 export const PLATFORM_TRUST_STATEMENT = 
-  'Built for rail professionals. Transactions occur directly between parties.';
+  'The Rail Exchange is a listing platform connecting buyers and sellers. Transactions occur directly between parties.';
 
 export const PLATFORM_ROLE_STATEMENT = 
   'The Rail Exchange connects buyers and sellers. We do not participate in or guarantee transactions.';
@@ -106,29 +120,30 @@ export const TRANSACTION_DISCLAIMER =
 // BADGE STYLE CONFIGURATION (S-2.1, S-2.2)
 // ============================================
 
+// S-5.1: Badge labels updated to clarify paid vs identity status
 export const TRUST_BADGE_CONFIG = {
   elite: {
-    label: 'Elite',
+    label: 'Sponsored',
     tooltip: ELITE_BADGE_TOOLTIP,
     isPaid: true,
   },
   premium: {
-    label: 'Premium',
+    label: 'Sponsored',
     tooltip: PREMIUM_BADGE_TOOLTIP,
     isPaid: true,
   },
   featured: {
-    label: 'Featured',
+    label: 'Sponsored',
     tooltip: FEATURED_BADGE_TOOLTIP,
     isPaid: true,
   },
   verified: {
-    label: 'Verified',
+    label: 'Identity Verified',
     tooltip: VERIFIED_SELLER_TOOLTIP,
     isPaid: false,
   },
   verifiedContractor: {
-    label: 'Verified',
+    label: 'Identity Verified',
     tooltip: VERIFIED_CONTRACTOR_TOOLTIP,
     isPaid: false,
   },

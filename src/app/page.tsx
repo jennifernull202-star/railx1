@@ -465,16 +465,16 @@ export default async function HomePage() {
                   <svg className="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  <span className="text-[12px] font-semibold text-emerald-700">Verified Professionals</span>
+                  <span className="text-[12px] font-semibold text-emerald-700">Document-Reviewed Contractors</span>
                 </div>
 
                 <h2 className="text-[32px] md:text-[40px] font-bold text-navy-900 leading-[1.15] tracking-tight mb-6">
-                  Find Trusted Rail Contractors
+                  Find Rail Contractors
                 </h2>
                 
                 <p className="text-[16px] md:text-[17px] text-slate-500 leading-relaxed mb-10">
-                  Connect with verified contractors across the nation. Search by service type,
-                  region, and specialization to find the perfect partner for your rail project.
+                  Connect with contractors who have submitted business documentation for review. 
+                  Search by service type, region, and specialization to find partners for your rail project.
                 </p>
                 
                 <div className="flex flex-wrap gap-4">
@@ -635,6 +635,32 @@ export default async function HomePage() {
                   Yes! Create a free contractor profile to showcase your services—track installation, welding, inspection, signaling, and more. Verified contractors with complete profiles receive project inquiries directly through the platform.
                 </div>
               </details>
+
+              {/* S-12.8: FAQ Item 6 - Account requirement explanation */}
+              <details className="group bg-white rounded-xl border border-slate-200 overflow-hidden" id="faq">
+                <summary className="flex items-center justify-between p-5 cursor-pointer list-none hover:bg-slate-50 transition-colors">
+                  <span className="text-[15px] font-semibold text-navy-900">Why do I need an account to contact sellers or contractors?</span>
+                  <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="px-5 pb-5 text-[14px] text-slate-600 leading-relaxed">
+                  To protect users from spam, fraud, and misuse, all messages are sent through verified accounts. Creating an account is free and required only for direct contact — browsing is always available without signing in.
+                </div>
+              </details>
+
+              {/* S-13.7: FAQ Item 7 - Trust clarification */}
+              <details className="group bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <summary className="flex items-center justify-between p-5 cursor-pointer list-none hover:bg-slate-50 transition-colors">
+                  <span className="text-[15px] font-semibold text-navy-900">Does verification mean a seller or contractor is guaranteed?</span>
+                  <svg className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </summary>
+                <div className="px-5 pb-5 text-[14px] text-slate-600 leading-relaxed">
+                  No. Verification confirms that documents were submitted and reviewed. Buyers and sellers are responsible for conducting their own due diligence before any transaction.
+                </div>
+              </details>
             </div>
           </div>
         </section>
@@ -728,6 +754,15 @@ export default async function HomePage() {
                 <li><Link href="/terms" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">Terms of Service</Link></li>
               </ul>
             </div>
+
+            {/* S-6.6: Marketplace Safety Links */}
+            <div className="flex flex-col gap-2 text-center md:text-left">
+              <h4 className="text-[13px] font-semibold text-white/90 uppercase tracking-wider mb-2">Marketplace Safety</h4>
+              <ul className="space-y-3 md:space-y-2">
+                <li><Link href="/terms#reporting" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">How reporting works</Link></li>
+                <li><Link href="/terms#buyer-responsibility" className="text-[14px] md:text-[13px] text-white/70 hover:text-white transition-colors leading-relaxed">Buyer responsibility & due diligence</Link></li>
+              </ul>
+            </div>
           </div>
 
           {/* Copyright */}
@@ -738,6 +773,14 @@ export default async function HomePage() {
             {/* BATCH E-5: No Endorsement Disclosure */}
             <p className="mt-3 text-[11px] text-white/40">
               Presence on The Rail Exchange does not constitute endorsement, recommendation, or certification by the platform.
+            </p>
+            {/* S-8.7: Global platform disclosure */}
+            <p className="mt-2 text-[11px] text-white/40">
+              The Rail Exchange is a listing and introduction platform. Transactions occur directly between parties.
+            </p>
+            {/* S-11.8: Platform Role Reinforcement */}
+            <p className="mt-1 text-[11px] text-white/40">
+              The Rail Exchange facilitates introductions. All negotiations, responses, and transactions occur directly between parties.
             </p>
           </div>
         </div>

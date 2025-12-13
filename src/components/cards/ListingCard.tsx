@@ -188,8 +188,8 @@ const ListingCard: React.FC<ListingCardProps> = ({
             );
           })()}
           {premiumAddOns?.aiEnhanced && (
-            <Badge variant="outline" className="bg-white/90 text-navy-900 border-navy-900/20 text-xs cursor-help" title="AI-assisted listing enhancement">
-              ✨ AI Assisted
+            <Badge variant="outline" className="bg-white/90 text-navy-900 border-navy-900/20 text-xs cursor-help" title="Listing enhanced with automated optimization">
+              ✨ Enhanced
             </Badge>
           )}
         </div>

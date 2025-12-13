@@ -13,8 +13,24 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+
+/**
+ * PERFORMANCE OPTIMIZATION:
+ * Check session status via API instead of requiring SessionProvider.
+ */
+function useSessionStatus() {
+  const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
+  
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setStatus(data?.user ? 'authenticated' : 'unauthenticated'))
+      .catch(() => setStatus('unauthenticated'));
+  }, []);
+  
+  return status;
+}
 
 interface ReportListingButtonProps {
   listingId: string;
@@ -22,38 +38,26 @@ interface ReportListingButtonProps {
   className?: string;
 }
 
-// Report reasons (must match server-side REPORT_REASONS)
+// S-14.1: Simplified report reasons (4 options for UI clarity)
 const REPORT_REASONS = [
-  'fake_listing',
-  'misleading_price',
-  'wrong_category',
-  'stolen_images',
-  'spam',
   'scam',
+  'misleading_price',
   'sold_item',
-  'counterfeit',
-  'safety_concern',
   'other',
 ] as const;
 
 type ReportReason = typeof REPORT_REASONS[number];
 
-// Reason labels for UI
+// Reason labels for UI - S-14.1: Neutral, non-accusatory labels
 const REASON_LABELS: Record<ReportReason, string> = {
-  fake_listing: 'Fake or non-existent listing',
-  misleading_price: 'Misleading or incorrect price',
-  wrong_category: 'Wrong category',
-  stolen_images: 'Stolen or misrepresented images',
-  spam: 'Spam or duplicate listing',
-  scam: 'Potential scam or fraud',
-  sold_item: 'Item already sold',
-  counterfeit: 'Counterfeit or misrepresented equipment',
-  safety_concern: 'Safety or compliance concern',
-  other: 'Other issue',
+  scam: 'Suspected scam',
+  misleading_price: 'Misleading information',
+  sold_item: 'Item not actually available',
+  other: 'Other',
 };
 
 export function ReportListingButton({ listingId, listingTitle, className = '' }: ReportListingButtonProps) {
-  const { status } = useSession();
+  const status = useSessionStatus();
   const [isOpen, setIsOpen] = useState(false);
   const [reason, setReason] = useState<ReportReason | ''>('');
   const [description, setDescription] = useState('');
@@ -149,8 +153,9 @@ export function ReportListingButton({ listingId, listingTitle, className = '' }:
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
       {/* BATCH E-5: Visible Reporting Transparency Disclosure */}
+      {/* S-10.1: Report Listing Consequence Signaling */}
       <p className="text-[10px] text-text-tertiary mt-1">
-        Reports are reviewed for policy compliance. Reporting does not guarantee removal or action.
+        Reports are reviewed by our team. False or abusive reports may result in account restrictions.
       </p>
     </button>
 
@@ -197,9 +202,10 @@ export function ReportListingButton({ listingId, listingTitle, className = '' }:
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <p className="text-navy-900 font-medium">Report Submitted</p>
+                  {/* S-14.1: Neutral confirmation message */}
+                  <p className="text-navy-900 font-medium">Thank you</p>
                   <p className="text-sm text-text-secondary mt-1">
-                    Our team will review it shortly.
+                    This report has been submitted for review.
                   </p>
                 </div>
               ) : (
@@ -248,10 +254,10 @@ export function ReportListingButton({ listingId, listingTitle, className = '' }:
                     </div>
                   )}
 
-                  {/* BATCH E-5: Reporting Transparency Disclaimer */}
+                  {/* S-6.1: Reporting Transparency Disclaimer */}
                   <p className="text-xs text-text-tertiary mb-4">
-                    Reports are reviewed for policy compliance. Reporting does not guarantee removal or action. 
-                    False or malicious reports may result in account restrictions.
+                    Reports are reviewed by our team.
+                    False or abusive reports may result in account restrictions.
                   </p>
 
                   {/* Actions */}

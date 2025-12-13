@@ -327,17 +327,13 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </div>
-      <h3 className="heading-md mb-2">No listings found</h3>
-      <p className="text-body-md text-text-secondary max-w-md">
-        {hasFilters
-          ? 'Try adjusting your filters or search terms to find more listings.'
-          : 'Be the first to list your equipment on The Rail Exchange.'}
+      <h3 className="heading-md mb-2">No matching listings found.</h3>
+      <p className="text-body-md text-text-secondary max-w-md mb-4">
+        Try adjusting filters or browsing related categories.
       </p>
-      {!hasFilters && (
-        <Link href="/listings/create" className="btn-primary mt-6">
-          Create Listing
-        </Link>
-      )}
+      <Link href="/marketplace" className="text-rail-orange font-medium hover:underline">
+        Browse all categories →
+      </Link>
     </div>
   );
 }
@@ -470,7 +466,7 @@ export default async function ListingsPage({
                 Rail Equipment Marketplace
               </h1>
               <p className="text-heading-sm text-white/80">
-                Browse locomotives, rolling stock, track materials, and more from trusted sellers.
+                Browse locomotives, rolling stock, track materials, and more from sellers across the rail industry.
               </p>
             </div>
           </div>

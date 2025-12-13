@@ -279,23 +279,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Parse body early to check requested status
+    const body = await request.json();
+    const requestedStatus = body.status || 'active';
+    
     // Use unified verification helper
     const verificationResult = getVerificationResult(user);
     
-    // Check if user can publish listings
-    if (!canPublishListings(user)) {
+    // UX ITEM #1: Verification is only required when PUBLISHING (status=active)
+    // Drafts can be created without verification to allow completing the full form
+    if (requestedStatus !== 'draft' && !canPublishListings(user)) {
+      // Log event: listing_publish_blocked_verification
+      console.log(`[EVENT] listing_publish_blocked_verification | userId: ${session.user.id} | status: ${verificationResult.status}`);
+      
       // Check specific status for appropriate error message
       if (verificationResult.isExpired) {
         return NextResponse.json(
           { 
             success: false, 
-            error: 'Your verification has expired. Please renew to continue creating listings.',
+            error: 'Your verification has expired. Please renew to publish listings.',
             code: 'VERIFICATION_EXPIRED',
             data: {
               verificationStatus: 'expired',
               verificationType: verificationResult.type,
               renewalRequired: true,
               renewalUrl: '/dashboard/verification/seller',
+              draftAllowed: true,
             }
           },
           { status: 403 }
@@ -305,13 +314,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Seller verification is required to create listings. Please complete verification to continue.',
+          error: 'Seller verification is required to publish listings. Your draft has been saved.',
           code: 'VERIFICATION_REQUIRED',
           data: {
             verificationStatus: verificationResult.status,
             verificationType: verificationResult.type,
             verificationRequired: true,
             verificationUrl: '/dashboard/verification/seller',
+            draftAllowed: true,
           }
         },
         { status: 403 }
@@ -384,7 +394,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    // body already parsed above for status check
 
     // Validate required fields
     const requiredFields = ['title', 'description', 'category', 'condition', 'location'];

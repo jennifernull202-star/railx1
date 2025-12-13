@@ -62,6 +62,10 @@ interface ListingDetail {
   inquiryCount?: number;
   condition?: string;
   specifications?: Record<string, string>;
+  // S-14.4: Report visibility fields
+  reportCount?: number;
+  isFlagged?: boolean;
+  flagReason?: string;
 }
 
 const STATUS_CONFIG = {
@@ -344,6 +348,33 @@ export default function AdminListingDetailPage() {
               )}
             </div>
           </div>
+
+          {/* S-14.4: Reports Section - Admin-only visibility */}
+          {((listing.reportCount && listing.reportCount > 0) || listing.isFlagged) && (
+            <div className="bg-amber-50 rounded-xl border border-amber-200 p-6 space-y-3">
+              <h2 className="text-lg font-semibold text-amber-800 flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Has reports
+              </h2>
+              <div className="space-y-2 text-sm">
+                {listing.reportCount && listing.reportCount > 0 && (
+                  <p className="text-amber-700">
+                    <span className="font-medium">{listing.reportCount}</span> report{listing.reportCount !== 1 ? 's' : ''} received
+                  </p>
+                )}
+                {listing.isFlagged && (
+                  <p className="text-amber-700">
+                    Listing flagged for review
+                  </p>
+                )}
+                {listing.flagReason && (
+                  <p className="text-amber-600 text-xs">
+                    Reason: {listing.flagReason}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Listing Info */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">

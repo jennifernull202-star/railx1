@@ -29,6 +29,9 @@ interface Listing {
   };
   createdAt: string;
   viewCount: number;
+  // S-14.4: Report visibility fields
+  reportCount?: number;
+  isFlagged?: boolean;
 }
 
 const STATUS_COLORS = {
@@ -215,6 +218,7 @@ function AdminListingsContent() {
                     <th className="text-left px-6 py-4 text-body-sm font-semibold text-text-secondary">Price</th>
                     <th className="text-left px-6 py-4 text-body-sm font-semibold text-text-secondary">Seller</th>
                     <th className="text-left px-6 py-4 text-body-sm font-semibold text-text-secondary">Status</th>
+                    <th className="text-left px-6 py-4 text-body-sm font-semibold text-text-secondary">Flags</th>
                     <th className="text-left px-6 py-4 text-body-sm font-semibold text-text-secondary">Views</th>
                     <th className="text-right px-6 py-4 text-body-sm font-semibold text-text-secondary">Actions</th>
                   </tr>
@@ -250,6 +254,22 @@ function AdminListingsContent() {
                         <span className={`px-3 py-1 text-xs font-semibold rounded-full capitalize ${STATUS_COLORS[listing.status]}`}>
                           {listing.status}
                         </span>
+                      </td>
+                      {/* S-14.4: Admin-only flag visibility indicator */}
+                      <td className="px-6 py-4">
+                        {(listing.reportCount && listing.reportCount > 0) || listing.isFlagged ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-amber-100 text-amber-700 rounded">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            Has reports
+                            {listing.reportCount && listing.reportCount > 0 && (
+                              <span className="ml-1">({listing.reportCount})</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-text-tertiary text-xs">—</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-body-md text-text-secondary">
                         {listing.viewCount.toLocaleString()}

@@ -57,6 +57,9 @@ export default function MyListingsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // UX Item #6: Track empty state shown event (once per session)
+  const [emptyStateLogged, setEmptyStateLogged] = useState(false);
 
   const fetchListings = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -92,6 +95,14 @@ export default function MyListingsPage() {
       fetchListings();
     }
   }, [sessionStatus, fetchListings]);
+  
+  // UX Item #6: Log empty state shown event once when no listings
+  useEffect(() => {
+    if (!isLoading && listings.length === 0 && statusFilter === 'all' && !emptyStateLogged) {
+      console.log('[EVENT] seller_empty_listings_state_shown');
+      setEmptyStateLogged(true);
+    }
+  }, [isLoading, listings.length, statusFilter, emptyStateLogged]);
 
   const toggleSelect = (id: string) => {
     setSelectedListings(prev => {
@@ -167,6 +178,15 @@ export default function MyListingsPage() {
     pending: 'bg-status-warning/10 text-status-warning',
     sold: 'bg-navy-100 text-navy-600',
     expired: 'bg-status-error/10 text-status-error',
+  };
+
+  // S-10.8: Listing Status Visibility Clarity
+  const statusDescriptions: Record<string, string> = {
+    active: 'Visible to buyers and accepting inquiries',
+    draft: 'Not published — only visible to you',
+    pending: 'Under review by our team',
+    sold: 'Marked as sold — no longer accepting inquiries',
+    expired: 'Unavailable due to policy or seller action',
   };
 
   const getCategoryLabel = (value: string) => {
@@ -256,12 +276,22 @@ export default function MyListingsPage() {
             <h3 className="heading-md mb-2">
               {statusFilter === 'all' ? 'No listings yet' : `No ${statusFilter} listings`}
             </h3>
+            {/* UX Item #6: Enhanced copy clarifying draft vs. publish requirements */}
             <p className="text-body-md text-text-secondary mb-6">
               {statusFilter === 'all'
-                ? 'Create your first listing to start selling.'
+                ? 'Create your first listing. Drafts are free — verification is only required to publish.'
                 : 'Try changing the filter or create a new listing.'}
             </p>
-            <Link href="/listings/create" className="btn-primary">
+            <Link 
+              href="/listings/create" 
+              className="btn-primary"
+              onClick={() => {
+                // UX Item #6: Log create listing click from empty state
+                if (statusFilter === 'all') {
+                  console.log('[EVENT] seller_empty_listings_create_clicked');
+                }
+              }}
+            >
               Create Listing
             </Link>
           </div>
@@ -372,9 +402,12 @@ export default function MyListingsPage() {
                     </div>
                   </div>
 
-                  {/* Status */}
+                  {/* Status - S-10.8: Listing Status Visibility Clarity */}
                   <div className="lg:col-span-2">
-                    <span className={`inline-flex px-3 py-1 rounded-full text-caption font-medium ${statusColors[listing.status]}`}>
+                    <span 
+                      className={`inline-flex px-3 py-1 rounded-full text-caption font-medium cursor-help ${statusColors[listing.status]}`}
+                      title={statusDescriptions[listing.status]}
+                    >
                       {listing.status.charAt(0).toUpperCase() + listing.status.slice(1)}
                     </span>
                   </div>

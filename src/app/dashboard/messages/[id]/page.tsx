@@ -12,6 +12,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/utils';
+import { useRateLimitFeedback } from '@/lib/hooks/useRateLimitFeedback';
 
 interface InquiryUser {
   _id: string;
@@ -60,6 +61,13 @@ export default function ConversationPage() {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // S-15.1: Rate limit feedback
+  const {
+    isRateLimited,
+    message: rateLimitMessage,
+    checkAndHandleRateLimit,
+  } = useRateLimitFeedback();
 
   const fetchInquiry = useCallback(async () => {
     try {
@@ -98,6 +106,12 @@ export default function ConversationPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: newMessage.trim() }),
       });
+
+      // S-15.1: Handle rate limiting with countdown feedback
+      if (res.status === 429) {
+        checkAndHandleRateLimit(res);
+        return;
+      }
 
       if (!res.ok) throw new Error('Failed to send message');
 
@@ -190,6 +204,13 @@ export default function ConversationPage() {
 
   const otherParty = getOtherParty();
   const isSeller = inquiry.seller._id === session?.user?.id;
+  
+  // S-11.7: Check if buyer is viewing a thread with no seller response
+  const isBuyer = !isSeller;
+  const hasSellerResponded = inquiry.messages.some(
+    (msg) => msg.sender._id === inquiry.seller._id
+  );
+  const showNoResponseHint = isBuyer && !hasSellerResponded && inquiry.messages.length > 0;
 
   return (
     <div className="max-w-4xl mx-auto flex flex-col h-[calc(100vh-180px)]">
@@ -328,14 +349,30 @@ export default function ConversationPage() {
           );
         })}
         <div ref={messagesEndRef} />
+        
+        {/* S-11.7: No-Response Edge State (Buyer View) */}
+        {showNoResponseHint && (
+          <div className="text-center py-4 border-t border-surface-border mt-4">
+            <p className="text-xs text-text-tertiary">
+              Some sellers may not respond to every inquiry.<br />
+              Consider contacting additional sellers.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Message Input */}
-      {inquiry.status !== 'closed' ? (
+      {inquiry.status !== 'closed' && inquiry.status !== 'spam' ? (
         <form
           onSubmit={handleSendMessage}
           className="flex-shrink-0 bg-white rounded-b-2xl border border-t-0 border-surface-border p-4"
         >
+          {/* S-15.1: Rate limit feedback */}
+          {isRateLimited && (
+            <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+              {rateLimitMessage}
+            </div>
+          )}
           <div className="flex gap-3">
             <textarea
               value={newMessage}
@@ -349,10 +386,11 @@ export default function ConversationPage() {
               placeholder="Type your message..."
               rows={2}
               className="flex-1 input-field resize-none"
+              disabled={isRateLimited}
             />
             <button
               type="submit"
-              disabled={!newMessage.trim() || isSending}
+              disabled={!newMessage.trim() || isSending || isRateLimited}
               className="btn-primary px-6 self-end disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSending ? (
@@ -370,8 +408,9 @@ export default function ConversationPage() {
         </form>
       ) : (
         <div className="flex-shrink-0 bg-surface-secondary rounded-b-2xl border border-t-0 border-surface-border p-4 text-center">
+          {/* S-6.5: Abuse Feedback Loop - neutral status, no accusation */}
           <p className="text-body-sm text-text-secondary">
-            This conversation has been closed.
+            This conversation is no longer active.
           </p>
         </div>
       )}

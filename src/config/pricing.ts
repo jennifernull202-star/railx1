@@ -150,6 +150,7 @@ export interface SellerVerificationTierConfig {
   popular?: boolean; // Show as recommended
 }
 
+// S-5.4 & S-5.6: Updated verification language - clear what verification means
 export const SELLER_VERIFICATION_CONFIG: Record<SellerVerificationTier, SellerVerificationTierConfig> = {
   [SELLER_VERIFICATION_TIERS.STANDARD]: {
     id: SELLER_VERIFICATION_TIERS.STANDARD,
@@ -157,11 +158,11 @@ export const SELLER_VERIFICATION_CONFIG: Record<SellerVerificationTier, SellerVe
     description: 'Required verification to create listings',
     price: 2900, // $29.00
     features: [
-      'Identity document review',
-      'AI-assisted document review',
-      'Human admin review',
-      'Verified Seller badge',
-      '24-hour approval SLA',
+      'Business document submission',
+      'Document review',
+      'Admin review process',
+      'Identity Verified badge',
+      '24-hour processing time',
       'Valid for 1 year',
     ],
     stripePriceId: process.env.STRIPE_PRICE_SELLER_VERIFIED || '',
@@ -171,14 +172,14 @@ export const SELLER_VERIFICATION_CONFIG: Record<SellerVerificationTier, SellerVe
   [SELLER_VERIFICATION_TIERS.PRIORITY]: {
     id: SELLER_VERIFICATION_TIERS.PRIORITY,
     name: 'Priority Verification',
-    description: 'Fast-track verification with premium benefits',
+    description: 'Fast-track verification with visibility benefits',
     price: 4900, // $49.00
     features: [
       'Priority document review',
-      'Identity document review',
-      'AI-assisted document review',
-      'Human admin review',
-      'Priority Verified Seller badge',
+      'Business document submission',
+      'Document review',
+      'Admin review process',
+      'Identity Verified badge',
       '3-day ranking boost for first listing',
       'Priority review queue',
       'Valid for 1 year',
@@ -514,18 +515,17 @@ export const ADD_ON_METADATA: Record<AddOnType, AddOnMetadata> = {
     icon: '🤖',
     category: 'enhancement',
   },
+  // S-5.4: Removed exaggerated claims from verified badge
   [ADD_ON_TYPES.VERIFIED_BADGE]: {
     name: 'Verified Asset Badge',
-    shortDescription: 'Trust signal for buyers',
-    description: 'Add a verified asset badge to your listing to build buyer confidence. Shows that your equipment has been seller-verified for authenticity.',
+    shortDescription: 'Seller attestation badge',
+    description: 'Add a seller-attested badge to your listing. Shows that the seller has confirmed equipment details. This is self-reported and not independently verified.',
     features: [
-      'Verified Asset badge on listing',
-      'Trust indicator for buyers',
+      'Seller-attested badge on listing',
       'Highlighted in search results',
-      'Increased buyer confidence',
-      'Professional credibility boost',
+      'Shows seller commitment',
     ],
-    badge: 'Verified Asset',
+    badge: 'Seller Attested',
     badgeColor: 'bg-green-600',
     icon: '✓',
     category: 'enhancement',
