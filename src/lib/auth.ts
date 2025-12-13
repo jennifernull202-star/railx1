@@ -128,6 +128,26 @@ export const authOptions: NextAuthOptions = {
     maxAge: 24 * 60 * 60, // 24 hours (enterprise security requirement)
   },
 
+  // CRITICAL: Cookie configuration for production HTTPS
+  // Ensures cookies work correctly on www.therailexchange.com
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' 
+        ? '__Secure-next-auth.session-token'
+        : 'next-auth.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        // Domain allows cookie to work on both www and non-www
+        domain: process.env.NODE_ENV === 'production' 
+          ? '.therailexchange.com'
+          : undefined,
+      },
+    },
+  },
+
   jwt: {
     maxAge: 24 * 60 * 60, // 24 hours (enterprise security requirement)
   },
@@ -206,16 +226,23 @@ export const authOptions: NextAuthOptions = {
         return { ...session, user: undefined, expires: new Date(0).toISOString() };
       }
 
-      if (token && session.user) {
-        session.user.id = token.id;
-        session.user.email = token.email;
-        session.user.name = token.name;
+      // FIX: Ensure session.user object exists before populating
+      // This is critical for JWT strategy with credentials provider
+      if (token) {
+        // Initialize session.user if it doesn't exist
+        if (!session.user) {
+          session.user = {} as typeof session.user;
+        }
+        
+        session.user.id = token.id as string;
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
         session.user.role = token.role; // Legacy - kept for backwards compat
-        session.user.image = token.image;
+        session.user.image = token.image as string | undefined;
         // Capability flags
-        session.user.isSeller = token.isSeller ?? true;
-        session.user.isContractor = token.isContractor ?? false;
-        session.user.isAdmin = token.isAdmin ?? false;
+        session.user.isSeller = (token.isSeller as boolean) ?? true;
+        session.user.isContractor = (token.isContractor as boolean) ?? false;
+        session.user.isAdmin = (token.isAdmin as boolean) ?? false;
         session.user.subscriptionTier = token.subscriptionTier;
         session.user.isVerifiedContractor = token.isVerifiedContractor;
         session.user.contractorTier = token.contractorTier;
