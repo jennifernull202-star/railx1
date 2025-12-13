@@ -680,7 +680,7 @@ export default async function HomePage() {
                 href="/listings/create" 
                 className="inline-flex items-center justify-center h-14 px-8 bg-rail-orange text-white text-[16px] font-semibold rounded-xl shadow-sm hover:bg-[#e55f15] hover:shadow-md transition-all duration-200"
               >
-                List Your Equipment Free
+                List Your Equipment
               </Link>
               <Link 
                 href="/listings" 

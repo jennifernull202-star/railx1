@@ -46,7 +46,17 @@ interface Contractor {
 }
 
 async function getContractors(searchParams: SearchParams) {
-  await connectDB();
+  try {
+    await connectDB();
+  } catch (dbError) {
+    console.error('Database connection error in contractors:', dbError);
+    return {
+      contractors: [] as Contractor[],
+      total: 0,
+      pages: 1,
+      currentPage: 1,
+    };
+  }
 
   const { service, region, contractorType, search, page = '1' } = searchParams;
   const limit = 12;
@@ -113,26 +123,36 @@ async function getContractors(searchParams: SearchParams) {
     });
   }
 
-  const [contractors, total] = await Promise.all([
-    ContractorProfile.find(query)
-      .select('businessName businessDescription logo services contractorTypes subServices regionsServed yearsInBusiness verificationStatus visibilityTier address.city address.state')
-      .sort({ 
-        // Priority tier first, then Featured, then Verified
-        visibilityTier: -1, 
-        yearsInBusiness: -1 
-      })
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    ContractorProfile.countDocuments(query),
-  ]);
+  try {
+    const [contractors, total] = await Promise.all([
+      ContractorProfile.find(query)
+        .select('businessName businessDescription logo services contractorTypes subServices regionsServed yearsInBusiness verificationStatus visibilityTier address.city address.state')
+        .sort({ 
+          // Priority tier first, then Featured, then Verified
+          visibilityTier: -1, 
+          yearsInBusiness: -1 
+        })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      ContractorProfile.countDocuments(query),
+    ]);
 
-  return {
-    contractors: contractors as unknown as Contractor[],
-    total,
-    pages: Math.ceil(total / limit),
-    currentPage: parseInt(page),
-  };
+    return {
+      contractors: contractors as unknown as Contractor[],
+      total,
+      pages: Math.ceil(total / limit),
+      currentPage: parseInt(page),
+    };
+  } catch (queryError) {
+    console.error('Contractors query error:', queryError);
+    return {
+      contractors: [] as Contractor[],
+      total: 0,
+      pages: 1,
+      currentPage: parseInt(page),
+    };
+  }
 }
 
 function ContractorCard({ contractor }: { contractor: Contractor }) {

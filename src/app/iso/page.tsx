@@ -46,20 +46,25 @@ interface ISORequestDoc {
 }
 
 async function getISORequests(category?: string): Promise<ISORequestDoc[]> {
-  await connectDB();
-  
-  const query: Record<string, unknown> = { status: 'active' };
-  if (category && category !== 'all') {
-    query.category = category;
+  try {
+    await connectDB();
+    
+    const query: Record<string, unknown> = { status: 'active' };
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+    
+    const requests = await ISORequest.find(query)
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .populate('userId', 'name image')
+      .lean();
+    
+    return JSON.parse(JSON.stringify(requests));
+  } catch (error) {
+    console.error('ISO requests fetch error:', error);
+    return [];
   }
-  
-  const requests = await ISORequest.find(query)
-    .sort({ createdAt: -1 })
-    .limit(50)
-    .populate('userId', 'name image')
-    .lean();
-  
-  return JSON.parse(JSON.stringify(requests));
 }
 
 function formatBudget(budget?: { min?: number; max?: number; currency?: string; type?: string }) {

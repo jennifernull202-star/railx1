@@ -188,23 +188,33 @@ async function getListings(searchParams: SearchParams) {
       sort = { ...sort, createdAt: -1 };
   }
 
-  const [listings, total] = await Promise.all([
-    Listing.find(query)
-      .select('title slug category condition primaryImageUrl price location quantity equipment viewCount premiumAddOns createdAt sellerId')
-      .populate('sellerId', 'isVerifiedSeller')
-      .sort(sort)
-      .skip(skip)
-      .limit(limit)
-      .lean(),
-    Listing.countDocuments(query),
-  ]);
+  try {
+    const [listings, total] = await Promise.all([
+      Listing.find(query)
+        .select('title slug category condition primaryImageUrl price location quantity equipment viewCount premiumAddOns createdAt sellerId')
+        .populate('sellerId', 'isVerifiedSeller')
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Listing.countDocuments(query),
+    ]);
 
-  return {
-    listings: listings as unknown as ListingItem[],
-    total,
-    pages: Math.ceil(total / limit),
-    currentPage: parseInt(page),
-  };
+    return {
+      listings: listings as unknown as ListingItem[],
+      total,
+      pages: Math.ceil(total / limit),
+      currentPage: parseInt(page),
+    };
+  } catch (queryError) {
+    console.error('Listings query error:', queryError);
+    return {
+      listings: [] as ListingItem[],
+      total: 0,
+      pages: 1,
+      currentPage: parseInt(page),
+    };
+  }
 }
 
 function formatPrice(price: ListingItem['price']): string {

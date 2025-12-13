@@ -196,17 +196,38 @@ export async function GET(request: NextRequest) {
       sortObj.createdAt = -1;
     }
 
-    // Execute query
-    const [listings, total] = await Promise.all([
-      Listing.find(query)
-        .select('-description') // Exclude large fields for list view
-        .populate('sellerId', 'name image')
-        .sort(sortObj)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      Listing.countDocuments(query),
-    ]);
+    // Execute query with additional error handling
+    let listings = [];
+    let total = 0;
+    
+    try {
+      [listings, total] = await Promise.all([
+        Listing.find(query)
+          .select('-description') // Exclude large fields for list view
+          .populate('sellerId', 'name image')
+          .sort(sortObj)
+          .skip(skip)
+          .limit(limit)
+          .lean(),
+        Listing.countDocuments(query),
+      ]);
+    } catch (queryError) {
+      console.error('Listings query error:', queryError);
+      // Return empty results instead of throwing 500
+      return NextResponse.json({
+        success: true,
+        data: {
+          listings: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0,
+            hasMore: false,
+          },
+        },
+      });
+    }
 
     // Calculate pagination info
     const totalPages = Math.ceil(total / limit);
@@ -227,10 +248,20 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('List listings error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch listings' },
-      { status: 500 }
-    );
+    // NEVER return 500 - always return empty results
+    return NextResponse.json({
+      success: true,
+      data: {
+        listings: [],
+        pagination: {
+          page: 1,
+          limit: 24,
+          total: 0,
+          totalPages: 0,
+          hasMore: false,
+        },
+      },
+    });
   }
 }
 
