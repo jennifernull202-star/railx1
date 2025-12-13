@@ -49,7 +49,7 @@ export async function GET() {
         isContractor: user.isContractor,
         sellerTier: user.sellerTier,
         contractorTier: user.contractorTier,
-        verifiedSeller: user.verifiedSeller,
+        verifiedSeller: user.isVerifiedSeller,
         company: user.company,
         phone: user.phone,
         createdAt: user.createdAt,
