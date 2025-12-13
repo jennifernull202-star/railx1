@@ -57,7 +57,7 @@ export const authOptions: NextAuthOptions = {
         
         if (!credentials?.email || !credentials?.password) {
           console.log('[AUTH DEBUG] Missing email or password');
-          throw new Error('Please provide both email and password');
+          return null; // Must return null, not throw
         }
 
         try {
@@ -71,15 +71,15 @@ export const authOptions: NextAuthOptions = {
           if (!user) {
             // SECURITY: Log failed attempt - account not found
             await logFailedAttempt(credentials.email, 'account_not_found');
-            console.log('[AUTH DEBUG] Throwing: No account found');
-            throw new Error('No account found with this email');
+            console.log('[AUTH DEBUG] Returning null: No account found');
+            return null; // Standard NextAuth pattern - return null on failure
           }
 
           if (!user.isActive) {
             // SECURITY: Log failed attempt - account inactive
             await logFailedAttempt(credentials.email, 'account_inactive', user._id.toString());
-            console.log('[AUTH DEBUG] Throwing: Account inactive');
-            throw new Error('Your account has been deactivated');
+            console.log('[AUTH DEBUG] Returning null: Account inactive');
+            return null; // Standard NextAuth pattern - return null on failure
           }
 
           // Verify password
@@ -89,8 +89,8 @@ export const authOptions: NextAuthOptions = {
           if (!isPasswordValid) {
             // SECURITY: Log failed attempt - invalid credentials
             await logFailedAttempt(credentials.email, 'invalid_credentials', user._id.toString());
-            console.log('[AUTH DEBUG] Throwing: Invalid password');
-            throw new Error('Invalid password');
+            console.log('[AUTH DEBUG] Returning null: Invalid password');
+            return null; // Standard NextAuth pattern - return null on failure
           }
 
           // Update last login
@@ -117,7 +117,7 @@ export const authOptions: NextAuthOptions = {
           return returnUser;
         } catch (error) {
           console.error('[AUTH DEBUG] Auth error caught:', error);
-          throw error;
+          return null; // On any error, return null instead of throwing
         }
       },
     }),
@@ -126,26 +126,6 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
     maxAge: 24 * 60 * 60, // 24 hours (enterprise security requirement)
-  },
-
-  // CRITICAL: Cookie configuration for production HTTPS
-  // Ensures cookies work correctly on www.therailexchange.com
-  cookies: {
-    sessionToken: {
-      name: process.env.NODE_ENV === 'production' 
-        ? '__Secure-next-auth.session-token'
-        : 'next-auth.session-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        // Domain allows cookie to work on both www and non-www
-        domain: process.env.NODE_ENV === 'production' 
-          ? '.therailexchange.com'
-          : undefined,
-      },
-    },
   },
 
   jwt: {
