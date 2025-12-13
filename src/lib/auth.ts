@@ -52,34 +52,44 @@ export const authOptions: NextAuthOptions = {
         },
       },
       async authorize(credentials) {
+        // SEV-1 DEBUG: Entry point logging
+        console.log('[AUTH DEBUG] authorize() called with email:', credentials?.email);
+        
         if (!credentials?.email || !credentials?.password) {
+          console.log('[AUTH DEBUG] Missing email or password');
           throw new Error('Please provide both email and password');
         }
 
         try {
           await connectDB();
+          console.log('[AUTH DEBUG] DB connected');
 
           // Find user with password field included
           const user = await User.findByEmail(credentials.email);
+          console.log('[AUTH DEBUG] User lookup result:', user ? `Found user ${user._id} role=${user.role} isAdmin=${user.isAdmin}` : 'NOT FOUND');
 
           if (!user) {
             // SECURITY: Log failed attempt - account not found
             await logFailedAttempt(credentials.email, 'account_not_found');
+            console.log('[AUTH DEBUG] Throwing: No account found');
             throw new Error('No account found with this email');
           }
 
           if (!user.isActive) {
             // SECURITY: Log failed attempt - account inactive
             await logFailedAttempt(credentials.email, 'account_inactive', user._id.toString());
+            console.log('[AUTH DEBUG] Throwing: Account inactive');
             throw new Error('Your account has been deactivated');
           }
 
           // Verify password
           const isPasswordValid = await user.comparePassword(credentials.password);
+          console.log('[AUTH DEBUG] Password valid:', isPasswordValid);
 
           if (!isPasswordValid) {
             // SECURITY: Log failed attempt - invalid credentials
             await logFailedAttempt(credentials.email, 'invalid_credentials', user._id.toString());
+            console.log('[AUTH DEBUG] Throwing: Invalid password');
             throw new Error('Invalid password');
           }
 
@@ -88,7 +98,7 @@ export const authOptions: NextAuthOptions = {
           await user.save();
 
           // Return user data for session
-          return {
+          const returnUser = {
             id: user._id.toString(),
             email: user.email,
             name: user.name,
@@ -103,8 +113,10 @@ export const authOptions: NextAuthOptions = {
             isVerifiedContractor: user.contractorTier === 'verified',
             contractorTier: user.contractorTier,
           };
+          console.log('[AUTH DEBUG] Returning user object:', JSON.stringify({ id: returnUser.id, email: returnUser.email, role: returnUser.role, isAdmin: returnUser.isAdmin }));
+          return returnUser;
         } catch (error) {
-          console.error('Auth error:', error);
+          console.error('[AUTH DEBUG] Auth error caught:', error);
           throw error;
         }
       },
@@ -128,6 +140,9 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async jwt({ token, user, trigger, session }) {
+      // SEV-1 DEBUG: JWT callback logging
+      console.log('[AUTH DEBUG] jwt() callback - trigger:', trigger, 'hasUser:', !!user);
+      
       // Initial sign in
       if (user) {
         token.id = user.id;
@@ -144,6 +159,7 @@ export const authOptions: NextAuthOptions = {
         token.contractorTier = user.contractorTier;
         // SECURITY: Track last activity for idle timeout (4 hours)
         token.lastActivity = Date.now();
+        console.log('[AUTH DEBUG] jwt() - token populated from user:', JSON.stringify({ id: token.id, role: token.role, isAdmin: token.isAdmin }));
       }
 
       // SECURITY: Idle timeout check (4 hours = 14400000ms)
@@ -179,10 +195,14 @@ export const authOptions: NextAuthOptions = {
     },
 
     async session({ session, token }) {
+      // SEV-1 DEBUG: Session callback logging
+      console.log('[AUTH DEBUG] session() callback - token.id:', token.id, 'token.isAdmin:', token.isAdmin, 'token.expired:', token.expired);
+      
       // SECURITY: Check for idle timeout expiration
       if (token.expired) {
         // Return an empty session to force re-authentication
         // The client-side will detect this and redirect to login
+        console.log('[AUTH DEBUG] session() - token expired, returning empty session');
         return { ...session, user: undefined, expires: new Date(0).toISOString() };
       }
 
@@ -199,6 +219,7 @@ export const authOptions: NextAuthOptions = {
         session.user.subscriptionTier = token.subscriptionTier;
         session.user.isVerifiedContractor = token.isVerifiedContractor;
         session.user.contractorTier = token.contractorTier;
+        console.log('[AUTH DEBUG] session() - session.user populated:', JSON.stringify({ id: session.user.id, role: session.user.role, isAdmin: session.user.isAdmin }));
       }
       return session;
     },
