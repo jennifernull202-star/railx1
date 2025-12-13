@@ -52,58 +52,39 @@ export const authOptions: NextAuthOptions = {
         },
       },
       async authorize(credentials) {
-        // TEMPORARY DEBUG: Bypass all checks to isolate auth plumbing
-        // Using a valid ObjectId format to prevent API crashes
-        console.log('[AUTH DEBUG] TEMPORARY BYPASS - returning hardcoded admin');
-        return {
-          id: "000000000000000000000001", // Valid 24-char hex ObjectId format
-          email: credentials?.email ?? "debug@test.com",
-          name: "Debug Admin",
-          role: "admin",
-          isAdmin: true,
-          isSeller: true,
-          isContractor: false,
-        };
-        
-        /* ORIGINAL CODE - TEMPORARILY DISABLED
-        // SEV-1 DEBUG: Entry point logging
-        console.log('[AUTH DEBUG] authorize() called with email:', credentials?.email);
+        // Auth restored after stabilization - real admin detection
+        console.log('[AUTH] authorize() called with email:', credentials?.email);
         
         if (!credentials?.email || !credentials?.password) {
-          console.log('[AUTH DEBUG] Missing email or password');
+          console.log('[AUTH] Missing email or password');
           return null; // Must return null, not throw
         }
 
         try {
           await connectDB();
-          console.log('[AUTH DEBUG] DB connected');
 
           // Find user with password field included
           const user = await User.findByEmail(credentials.email);
-          console.log('[AUTH DEBUG] User lookup result:', user ? `Found user ${user._id} role=${user.role} isAdmin=${user.isAdmin}` : 'NOT FOUND');
+          console.log('[AUTH] User lookup result:', user ? `Found user ${user._id} isAdmin=${user.isAdmin}` : 'NOT FOUND');
 
           if (!user) {
             // SECURITY: Log failed attempt - account not found
             await logFailedAttempt(credentials.email, 'account_not_found');
-            console.log('[AUTH DEBUG] Returning null: No account found');
             return null; // Standard NextAuth pattern - return null on failure
           }
 
           if (!user.isActive) {
             // SECURITY: Log failed attempt - account inactive
             await logFailedAttempt(credentials.email, 'account_inactive', user._id.toString());
-            console.log('[AUTH DEBUG] Returning null: Account inactive');
             return null; // Standard NextAuth pattern - return null on failure
           }
 
           // Verify password
           const isPasswordValid = await user.comparePassword(credentials.password);
-          console.log('[AUTH DEBUG] Password valid:', isPasswordValid);
 
           if (!isPasswordValid) {
             // SECURITY: Log failed attempt - invalid credentials
             await logFailedAttempt(credentials.email, 'invalid_credentials', user._id.toString());
-            console.log('[AUTH DEBUG] Returning null: Invalid password');
             return null; // Standard NextAuth pattern - return null on failure
           }
 
@@ -112,6 +93,9 @@ export const authOptions: NextAuthOptions = {
           await user.save();
 
           // Return user data for session
+          // Admin detection: explicit isAdmin field OR legacy role === 'admin'
+          const isAdmin: boolean = user.isAdmin === true || user.role === 'admin';
+          
           const returnUser = {
             id: user._id.toString(),
             email: user.email,
@@ -121,19 +105,18 @@ export const authOptions: NextAuthOptions = {
             // Capability flags
             isSeller: user.isSeller ?? true, // Default true for all users
             isContractor: user.isContractor ?? false,
-            isAdmin: user.isAdmin ?? (user.role === 'admin'), // Fallback for migration
+            isAdmin: isAdmin, // Explicit boolean, no inference
             // Subscription info
             subscriptionTier: user.sellerTier !== 'buyer' ? user.sellerTier : undefined,
             isVerifiedContractor: user.contractorTier === 'verified',
             contractorTier: user.contractorTier,
           };
-          console.log('[AUTH DEBUG] Returning user object:', JSON.stringify({ id: returnUser.id, email: returnUser.email, role: returnUser.role, isAdmin: returnUser.isAdmin }));
+          console.log('[AUTH] Returning user:', { id: returnUser.id, email: returnUser.email, isAdmin: returnUser.isAdmin });
           return returnUser;
         } catch (error) {
-          console.error('[AUTH DEBUG] Auth error caught:', error);
+          console.error('[AUTH] Auth error caught:', error);
           return null; // On any error, return null instead of throwing
         }
-        */
       },
     }),
   ],
