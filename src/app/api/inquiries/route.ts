@@ -34,7 +34,13 @@ const MIN_ACCOUNT_AGE_HOURS = 1;
 // Get inquiries for current user (as buyer or seller)
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    let session;
+    try {
+      session = await getServerSession(authOptions);
+    } catch (error) {
+      console.error('Session fetch error in inquiries GET:', error);
+      return NextResponse.json({ error: 'Session error' }, { status: 500 });
+    }
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

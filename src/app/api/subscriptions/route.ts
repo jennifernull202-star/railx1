@@ -39,7 +39,14 @@ const getStripe = () => {
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
+    let session;
+    try {
+      session = await getServerSession(authOptions);
+    } catch (error) {
+      console.error('Session fetch error in subscriptions GET:', error);
+      return NextResponse.json({ error: 'Session error' }, { status: 500 });
+    }
+    
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
