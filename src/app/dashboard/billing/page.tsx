@@ -20,17 +20,27 @@ export const metadata: Metadata = {
 };
 
 export default async function BillingPage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user?.id) {
-    redirect('/auth/login?callbackUrl=/dashboard/billing');
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    return null; // STABILIZATION: Never throw in Server Components
   }
 
-  await connectDB();
-  const user = await User.findById(session.user.id);
+  if (!session?.user?.id) {
+    return null; // STABILIZATION: No redirect - layout handles auth
+  }
+
+  let user;
+  try {
+    await connectDB();
+    user = await User.findById(session.user.id);
+  } catch {
+    return null;
+  }
 
   if (!user) {
-    redirect('/auth/login');
+    return null; // STABILIZATION: No redirect
   }
 
   const hasStripeCustomer = !!user.stripeCustomerId;

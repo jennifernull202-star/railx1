@@ -12,10 +12,15 @@ import AddOnPurchase from '@/models/AddOnPurchase';
 import { ADD_ON_METADATA } from '@/config/pricing';
 
 export default async function AdminAddOnsPage() {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    return null; // STABILIZATION: Never throw
+  }
 
   if (!session?.user || !session.user.isAdmin) {
-    redirect('/');
+    return null; // STABILIZATION: No redirect from RSC
   }
 
   await connectDB();

@@ -49,10 +49,15 @@ async function getProfile(userId: string): Promise<ContractorProfileData | null>
 }
 
 export default async function ContractorServicesPage() {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    return null; // STABILIZATION: Never throw in Server Components
+  }
 
   if (!session?.user?.id) {
-    redirect('/auth/login');
+    return null; // STABILIZATION: No redirect - layout handles auth
   }
 
   const profile = await getProfile(session.user.id);

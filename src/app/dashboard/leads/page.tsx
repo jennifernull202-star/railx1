@@ -64,10 +64,15 @@ async function getLeads(userId: string): Promise<{
 }
 
 export default async function LeadsPage() {
-  const session = await getServerSession(authOptions);
+  let session;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    return null; // STABILIZATION: Never throw in Server Components
+  }
 
   if (!session?.user?.id) {
-    redirect('/auth/login');
+    return null; // STABILIZATION: No redirect - layout handles auth
   }
 
   // No contractor gating - all users can access this page

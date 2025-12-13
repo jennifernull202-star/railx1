@@ -26,17 +26,58 @@ import {
 import { ADD_ON_METADATA, getAllAddOnsInfo } from '@/config/addons';
 
 export async function GET() {
+  // STABILIZATION: Default response for any auth failure
+  const defaultResponse = {
+    userId: null,
+    email: null,
+    name: null,
+    role: 'user',
+    subscription: {
+      tier: 'buyer',
+      tierName: 'Buyer',
+      status: null,
+      isTrialing: false,
+      isActive: false,
+      isPastDue: false,
+      isCanceled: false,
+      currentPeriodEnd: null,
+      daysRemaining: null,
+      cancelAtPeriodEnd: false,
+      stripeSubscriptionId: null,
+    },
+    limits: {
+      maxListings: 0,
+      currentListings: 0,
+      canCreateListing: false,
+      features: [],
+    },
+    addons: {
+      purchased: [],
+      available: [],
+    },
+    usedPromoCodes: [],
+    createdAt: null,
+    updatedAt: null,
+  };
+
   try {
-    const session = await getServerSession(authOptions);
+    let session;
+    try {
+      session = await getServerSession(authOptions);
+    } catch (error) {
+      console.error('Session error in dashboard status:', error);
+      return NextResponse.json(defaultResponse);
+    }
+    
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(defaultResponse);
     }
 
     await connectDB();
     const user = await User.findById(session.user.id).lean();
     
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json(defaultResponse);
     }
 
     // Get active listings count
@@ -147,9 +188,16 @@ export async function GET() {
     return NextResponse.json(dashboardStatus);
   } catch (error) {
     console.error('Dashboard status error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch dashboard status' },
-      { status: 500 }
-    );
+    // STABILIZATION: Return default response instead of 500
+    return NextResponse.json({
+      userId: null,
+      email: null,
+      name: null,
+      role: 'user',
+      subscription: { tier: 'buyer', status: null, isActive: false },
+      limits: { maxListings: 0, currentListings: 0, canCreateListing: false, features: [] },
+      addons: { purchased: [], available: [] },
+      usedPromoCodes: [],
+    });
   }
 }
