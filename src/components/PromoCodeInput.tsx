@@ -7,13 +7,18 @@
  * - Shows clear success/error feedback
  * - Applies discounts to checkout
  * 
+ * GLOBAL UI ENFORCEMENT:
+ * - Skeleton loaders (no spinners)
+ * - Inline, non-alarmist error feedback
+ * 
  * CRITICAL: This component must be rendered for Seller Pro checkout flows.
  */
 
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Tag, Check, X, Loader2, Gift, Sparkles } from 'lucide-react';
+import { Tag, Check, X, Gift, Sparkles } from 'lucide-react';
+import { getErrorMessage } from '@/lib/ui';
 
 interface PromoCodeInputProps {
   /** Callback when a valid promo code is applied */
@@ -81,6 +86,10 @@ export default function PromoCodeInput({
       const data = await response.json();
 
       if (!response.ok) {
+        // Use standardized error messages for common API errors
+        if (response.status === 429) {
+          throw new Error(getErrorMessage('rate_limited'));
+        }
         throw new Error(data.error || 'Invalid promo code');
       }
 
@@ -229,8 +238,9 @@ export default function PromoCodeInput({
                 >
                   {isValidating ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="hidden sm:inline">Validating...</span>
+                      {/* Skeleton pulse loader instead of spinner */}
+                      <span className="w-4 h-4 bg-current opacity-30 rounded-full animate-pulse" />
+                      <span className="hidden sm:inline">Checking...</span>
                     </>
                   ) : (
                     'Apply'

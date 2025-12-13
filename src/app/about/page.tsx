@@ -15,7 +15,7 @@ export default function AboutPage() {
       <p className="text-slate-600 leading-relaxed mb-8">
         The Rail Exchange™ is the industry&apos;s first modern digital marketplace
         built exclusively for the rail sector. We connect buyers, sellers, and
-        contractors in one trusted platform designed to streamline equipment
+        contractors in one industry-focused platform designed to streamline equipment
         sales, material sourcing, service procurement, and professional
         partnerships across North America.
       </p>
@@ -69,13 +69,22 @@ export default function AboutPage() {
       <h2 className="text-2xl font-semibold text-slate-900 mt-10 mb-4">
         Our Commitment
       </h2>
-      <p className="text-slate-600 leading-relaxed">
-        We are committed to building a trusted, transparent ecosystem that
+      <p className="text-slate-600 leading-relaxed mb-8">
+        We are committed to building a professional marketplace that
         supports professionals at every scale — from local contractors to major
         rail operators. Our goal is to deliver intuitive tools that reduce
-        friction, enhance safety, and increase opportunity across the rail
-        industry.
+        friction and increase opportunity across the rail industry.
       </p>
+
+      {/* BATCH E-5: Admin Authority Boundary & No Endorsement Disclosures */}
+      <div className="mt-12 pt-8 border-t border-slate-200 space-y-4">
+        <p className="text-sm text-slate-500">
+          Administrative actions are discretionary and based on available information at the time of review.
+        </p>
+        <p className="text-sm text-slate-500">
+          Presence on The Rail Exchange does not constitute endorsement, recommendation, or certification by the platform.
+        </p>
+      </div>
     </main>
   );
 }

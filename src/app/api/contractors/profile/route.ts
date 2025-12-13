@@ -4,6 +4,11 @@
  * FREE Contractor Profile - Simplified for basic profiles.
  * NO documents required at this stage.
  * 
+ * SECURITY CONTROLS (Section 8):
+ * - Contractor type validation (cannot select only "other")
+ * - Input sanitization
+ * - "Other" type abuse prevention
+ * 
  * GET /api/contractors/profile - Get current user's profile
  * POST /api/contractors/profile - Create/update profile
  */
@@ -15,6 +20,25 @@ import connectDB from '@/lib/db';
 import ContractorProfile from '@/models/ContractorProfile';
 import User from '@/models/User';
 import { Types } from 'mongoose';
+import { sanitizeString, sanitizeHTML } from '@/lib/sanitize';
+
+// SECTION 8: Valid contractor types
+const VALID_CONTRACTOR_TYPES = [
+  'track_construction',
+  'track_maintenance',
+  'signaling',
+  'bridge_construction',
+  'rolling_stock_maintenance',
+  'environmental',
+  'consulting',
+  'engineering',
+  'inspection',
+  'welding',
+  'other'
+];
+
+// Maximum "other" type description length (prevents gaming with long descriptions)
+const MAX_OTHER_DESCRIPTION = 150;
 
 /**
  * GET /api/contractors/profile
@@ -127,7 +151,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Cannot select only "Other"
+    // SECTION 8: Validate contractor types against allowed list
+    const invalidTypes = contractorTypes.filter((t: string) => !VALID_CONTRACTOR_TYPES.includes(t));
+    if (invalidTypes.length > 0) {
+      return NextResponse.json(
+        { error: `Invalid contractor type(s): ${invalidTypes.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Cannot select only "Other" (prevents misrepresentation)
     if (contractorTypes.length === 1 && contractorTypes[0] === 'other') {
       return NextResponse.json(
         { error: 'Cannot select only "Other". Please select at least one primary contractor type.' },
@@ -135,34 +168,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If "Other" is selected, description is required
-    if (contractorTypes.includes('other') && !otherTypeInfo?.description?.trim()) {
-      return NextResponse.json(
-        { error: 'Please provide a description for "Other" services' },
-        { status: 400 }
-      );
+    // If "Other" is selected, description is required but limited
+    if (contractorTypes.includes('other')) {
+      if (!otherTypeInfo?.description?.trim()) {
+        return NextResponse.json(
+          { error: 'Please provide a description for "Other" services' },
+          { status: 400 }
+        );
+      }
+      // Limit "other" description length to prevent keyword stuffing
+      if (otherTypeInfo.description.length > MAX_OTHER_DESCRIPTION) {
+        return NextResponse.json(
+          { error: `"Other" service description must be ${MAX_OTHER_DESCRIPTION} characters or less` },
+          { status: 400 }
+        );
+      }
     }
 
     await connectDB();
 
     const userId = new Types.ObjectId(session.user.id);
 
+    // SECURITY: Email verification required before creating contractor profile (enterprise abuse prevention)
+    const currentUser = await User.findById(userId).select('emailVerified');
+    if (!currentUser?.emailVerified) {
+      return NextResponse.json(
+        { error: 'This action is temporarily unavailable due to account or security requirements.' },
+        { status: 403 }
+      );
+    }
+
     // Check if profile exists
     const existingProfile = await ContractorProfile.findOne({ userId });
 
     // Build profile data matching model schema
+    // SECURITY: All text inputs sanitized
     const profileData: Record<string, unknown> = {
       userId,
-      businessName: companyName.trim(),
-      businessDescription: description?.trim() || 'Professional contractor services',
-      businessEmail: contactInfo.email.trim(),
-      businessPhone: contactInfo.phone?.trim() || 'Contact via email',
-      website: contactInfo.website?.trim() || '',
+      businessName: sanitizeString(companyName.trim(), { maxLength: 150 }) || companyName.trim(),
+      businessDescription: sanitizeHTML(description?.trim() || 'Professional contractor services') || 'Professional contractor services',
+      businessEmail: contactInfo.email.trim().toLowerCase(),
+      businessPhone: sanitizeString(contactInfo.phone?.trim() || 'Contact via email', { maxLength: 30 }) || 'Contact via email',
+      website: sanitizeString(contactInfo.website?.trim() || '', { maxLength: 200 }) || '',
       // NEW: Structured contractor types (PRIMARY CLASSIFICATION)
       contractorTypes: contractorTypes,
       subServices: subServices || {},
       otherTypeInfo: contractorTypes.includes('other') && otherTypeInfo ? {
-        description: otherTypeInfo.description?.trim().substring(0, 150),
+        description: sanitizeString(otherTypeInfo.description?.trim(), { maxLength: MAX_OTHER_DESCRIPTION }),
         submittedAt: new Date(),
         normalized: false,
       } : undefined,
@@ -173,7 +225,7 @@ export async function POST(request: NextRequest) {
       yearsInBusiness: existingProfile?.yearsInBusiness || 1,
       // Address - minimal required
       address: {
-        city: 'Not specified',
+        city: sanitizeString('Not specified', { maxLength: 100 }) || 'Not specified',
         state: primaryState || 'US',
         zipCode: '00000',
         country: 'USA',

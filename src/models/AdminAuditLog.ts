@@ -12,8 +12,29 @@ export interface IAdminAuditLog extends Document {
   _id: Types.ObjectId;
   adminId: Types.ObjectId;
   adminEmail: string;
-  action: 'delete_photo' | 'delete_listing' | 'suspend_user' | 'verify_contractor' | 'reject_contractor' | 'edit_listing' | 'refund' | 'other';
-  targetType: 'listing' | 'user' | 'contractor' | 'photo' | 'addon' | 'other';
+  action: 
+    | 'delete_photo' 
+    | 'delete_listing' 
+    | 'suspend_user' 
+    | 'activate_user'
+    | 'verify_contractor' 
+    | 'reject_contractor' 
+    | 'edit_listing' 
+    | 'refund' 
+    | 'role_change'
+    | 'verification_approve'
+    | 'verification_reject'
+    | 'badge_revoke'
+    | 'flag_listing'
+    | 'unflag_listing'
+    | 'flag_review'
+    | 'spam_action'
+    | 'promo_create'
+    | 'promo_delete'
+    | 'super_admin_grant'
+    | 'super_admin_revoke'
+    | 'other';
+  targetType: 'listing' | 'user' | 'contractor' | 'photo' | 'addon' | 'verification' | 'promo' | 'inquiry' | 'other';
   targetId: Types.ObjectId;
   targetTitle?: string;
   details: Record<string, unknown>;
@@ -53,13 +74,35 @@ const AdminAuditLogSchema = new Schema<IAdminAuditLog>(
     action: {
       type: String,
       required: true,
-      enum: ['delete_photo', 'delete_listing', 'suspend_user', 'verify_contractor', 'reject_contractor', 'edit_listing', 'refund', 'other'],
+      enum: [
+        'delete_photo', 
+        'delete_listing', 
+        'suspend_user', 
+        'activate_user',
+        'verify_contractor', 
+        'reject_contractor', 
+        'edit_listing', 
+        'refund', 
+        'role_change',
+        'verification_approve',
+        'verification_reject',
+        'badge_revoke',
+        'flag_listing',
+        'unflag_listing',
+        'flag_review',
+        'spam_action',
+        'promo_create',
+        'promo_delete',
+        'super_admin_grant',
+        'super_admin_revoke',
+        'other',
+      ],
       index: true,
     },
     targetType: {
       type: String,
       required: true,
-      enum: ['listing', 'user', 'contractor', 'photo', 'addon', 'other'],
+      enum: ['listing', 'user', 'contractor', 'photo', 'addon', 'verification', 'promo', 'inquiry', 'other'],
       index: true,
     },
     targetId: {

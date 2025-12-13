@@ -376,14 +376,14 @@ export default function ContractorVerificationPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-slate-600 bg-slate-50 p-4 rounded-lg">
                 <Info className="w-5 h-5" />
-                <span>Apply for the Verified Contractor badge</span>
+                <span>Apply for document review and verification badge</span>
               </div>
               <div className="space-y-3">
-                <h3 className="font-medium text-navy-900">Benefits of being verified:</h3>
+                <h3 className="font-medium text-navy-900">Benefits of document review:</h3>
                 <ul className="text-sm text-slate-600 space-y-2">
                   <li className="flex items-center gap-2">
                     <Shield className="w-4 h-4 text-green-500" />
-                    Trusted badge displayed on your profile
+                    Verification badge displayed on your profile
                   </li>
                   <li className="flex items-center gap-2">
                     <Star className="w-4 h-4 text-green-500" />

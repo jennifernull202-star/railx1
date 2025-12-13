@@ -129,28 +129,21 @@ export default function ContactPage() {
   return (
     <>
       <SiteHeader />
-      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {/* Hero Header */}
-      <section className="relative py-20 px-6 bg-gradient-to-br from-navy-900 via-navy-800 to-slate-900 overflow-hidden">
-        {/* Subtle pattern overlay */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
-        </div>
-        
-        <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Contact The Rail Exchange™
+      <main className="min-h-screen bg-white pt-20">
+      {/* Simple Header */}
+      <section className="py-12 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-navy-900 mb-3">
+            Contact Us
           </h1>
-          <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto">
-            Get in touch with our team for support, questions, or partnership inquiries.
+          <p className="text-base text-slate-600 max-w-lg mx-auto">
+            Questions, support, or partnership inquiries? We&apos;re here to help.
           </p>
         </div>
       </section>
 
       {/* Contact Form Section */}
-      <section className="py-16 px-6">
+      <section className="py-8 px-6">
         <div className="max-w-4xl mx-auto">
           {/* Success Message */}
           {isSuccess && (
@@ -193,7 +186,7 @@ export default function ContactPage() {
           )}
 
           {/* Form Card */}
-          <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 p-8 md:p-12">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8">
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Two Column Grid */}
               <div className="grid md:grid-cols-2 gap-6">
@@ -364,18 +357,15 @@ export default function ContactPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full md:w-auto px-10 py-4 bg-[#FF6A1A] hover:bg-[#e55d15] text-white font-semibold 
-                    text-lg rounded-xl shadow-lg shadow-orange-200 transition-all duration-200
+                  className="w-full md:w-auto px-8 py-3 bg-rail-orange hover:bg-[#e55f15] text-white font-semibold 
+                    text-base rounded-xl shadow-sm transition-colors duration-200
                     disabled:opacity-60 disabled:cursor-not-allowed
-                    focus:outline-none focus:ring-4 focus:ring-orange-200
-                    transform hover:scale-[1.02] active:scale-[0.98]"
+                    focus:outline-none focus:ring-2 focus:ring-rail-orange/50"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2">
-                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                      {/* Skeleton pulse loader instead of spinner */}
+                      <span className="w-5 h-5 bg-white/30 rounded-full animate-pulse" />
                       Sending...
                     </span>
                   ) : (

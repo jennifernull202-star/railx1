@@ -3,11 +3,18 @@
  * 
  * POST /api/auth/register
  * Creates a new user account with email/password.
+ * 
+ * SECURITY CONTROLS:
+ * - Rate limiting to prevent automated account creation
+ * - Input validation and sanitization
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import User, { UserRole } from '@/models/User';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { rateLimitRequest } from '@/lib/redis-rate-limit';
+import { sanitizeString } from '@/lib/sanitize';
 
 interface RegisterRequestBody {
   name: string;
@@ -18,6 +25,18 @@ interface RegisterRequestBody {
 
 export async function POST(request: NextRequest) {
   try {
+    // S-1.7: Redis-backed rate limiting (with in-memory fallback)
+    const redisRateLimit = await rateLimitRequest('register', request);
+    if (redisRateLimit) {
+      return redisRateLimit;
+    }
+    
+    // SECURITY: Additional in-memory rate limiting as backup
+    const rateLimitResponse = await checkRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const body: RegisterRequestBody = await request.json();
     const { name, email, password, role = 'buyer' } = body;
 

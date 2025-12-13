@@ -177,7 +177,7 @@ export function CategoryGrid() {
             <Link
               key={category.id}
               href={category.href}
-              className="group bg-white rounded-xl p-5 md:p-6 text-center border border-slate-100 shadow-[0_2px_8px_rgba(10,26,47,0.04)] hover:shadow-[0_8px_24px_rgba(10,26,47,0.08)] hover:border-slate-200 hover:-translate-y-0.5 transition-all duration-200"
+              className="group bg-white rounded-xl p-5 md:p-6 text-center border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-200"
             >
               <div className={`w-12 h-12 mx-auto mb-4 rounded-xl flex items-center justify-center ${category.color} transition-colors duration-200`}>
                 {category.icon}

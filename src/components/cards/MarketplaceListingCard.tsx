@@ -11,6 +11,10 @@
  * - Verified Seller Badge (trust signal)
  * - Price
  * 
+ * GLOBAL UI ENFORCEMENT:
+ * - Single badge rule: Elite > Premium > Featured > Verified
+ * - Skeleton loaders (no spinners)
+ * 
  * LIGHT PAYLOAD. NO EXTRA METRICS. NO CHARTS. NO DECORATION.
  */
 
@@ -18,6 +22,7 @@
 
 import Link from 'next/link';
 import { getImageUrl } from '@/lib/utils';
+import { getHighestBadge, BADGE_STYLES } from '@/lib/ui';
 
 interface MarketplaceListingCardProps {
   listing: {
@@ -94,34 +99,29 @@ export function MarketplaceListingCard({ listing }: MarketplaceListingCardProps)
           </div>
         )}
 
-        {/* Tier Badges - Top Left */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
-          {listing.premiumAddOns?.elite?.active && (
-            <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[10px] px-2 py-0.5 rounded font-semibold shadow-sm">
-              ELITE
-            </span>
-          )}
-          {listing.premiumAddOns?.premium?.active && !listing.premiumAddOns?.elite?.active && (
-            <span className="bg-purple-600 text-white text-[10px] px-2 py-0.5 rounded font-semibold shadow-sm">
-              PREMIUM
-            </span>
-          )}
-          {listing.premiumAddOns?.featured?.active && !listing.premiumAddOns?.premium?.active && !listing.premiumAddOns?.elite?.active && (
-            <span className="bg-rail-orange text-white text-[10px] px-2 py-0.5 rounded font-semibold shadow-sm">
-              FEATURED
-            </span>
-          )}
-        </div>
-
-        {/* Verified Badge - Top Right */}
-        {listing.sellerId?.isVerifiedSeller && (
-          <div className="absolute top-2 right-2 bg-green-600 text-white text-[10px] px-2 py-0.5 rounded font-semibold shadow-sm flex items-center gap-1">
-            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-            VERIFIED
-          </div>
-        )}
+        {/* Single Badge Rule: Elite > Premium > Featured > Verified (show only highest) */}
+        {/* S-2.1 & S-2.2: All badges have clarifying tooltips */}
+        {(() => {
+          const highestBadge = getHighestBadge({
+            elite: listing.premiumAddOns?.elite?.active,
+            premium: listing.premiumAddOns?.premium?.active,
+            featured: listing.premiumAddOns?.featured?.active,
+            verified: listing.sellerId?.isVerifiedSeller
+          });
+          if (!highestBadge) return null;
+          const style = BADGE_STYLES[highestBadge];
+          return (
+            <div className="absolute top-2 left-2">
+              <span 
+                className={`${style.bg} ${style.text} text-[10px] px-2 py-0.5 rounded font-semibold shadow-sm cursor-help`}
+                title={style.title}
+                role="tooltip"
+              >
+                {style.label.toUpperCase()}
+              </span>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Content - Minimal and Fast */}

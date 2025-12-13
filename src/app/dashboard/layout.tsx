@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import AIChatWidget from "@/components/AIChatWidget";
 import AddOnIndicator from "@/components/dashboard/AddOnIndicator";
+import VerificationRenewalBanner from "@/components/dashboard/VerificationRenewalBanner";
 import { SubscriptionProvider, useSubscription } from "@/components/providers/SubscriptionProvider";
 import {
   Home,
@@ -466,7 +467,11 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
 
       {/* Main content */}
       <main className="lg:ml-72 min-h-screen">
-        <div className="p-6 lg:p-8">{children}</div>
+        <div className="p-6 lg:p-8">
+          {/* Verification Renewal Banner - shows when verification expires within 60 days */}
+          <VerificationRenewalBanner warningThreshold={60} />
+          {children}
+        </div>
       </main>
 
       {/* AI Chat Widget */}

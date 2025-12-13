@@ -479,7 +479,10 @@ export function MarketplaceSearchFilters({
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {/* Verified Seller Only */}
           <div className="flex items-end">
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label 
+              className="flex items-center gap-2 cursor-pointer"
+              title="Verification reflects document review only and does not guarantee transaction outcomes."
+            >
               <input
                 type="checkbox"
                 checked={localFilters.verifiedSellerOnly || false}

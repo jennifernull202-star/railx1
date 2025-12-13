@@ -18,14 +18,20 @@ import AddOnPurchase from '@/models/AddOnPurchase';
 import Listing from '@/models/Listing';
 import { ADD_ON_TYPES } from '@/config/addons';
 
-// Verify cron secret to prevent unauthorized calls
+// SECURITY: CRON_SECRET is REQUIRED - fail closed if not configured
 const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify authorization
+    // SECURITY: Verify authorization - ALWAYS require secret
+    // Fail closed: If CRON_SECRET is not set, deny all access
+    if (!CRON_SECRET) {
+      console.error('SECURITY: CRON_SECRET not configured - blocking cron access');
+      return NextResponse.json({ error: 'Service not configured' }, { status: 401 });
+    }
+    
     const authHeader = request.headers.get('authorization');
-    if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+    if (authHeader !== `Bearer ${CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

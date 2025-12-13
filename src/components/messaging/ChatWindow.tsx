@@ -130,7 +130,12 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       <ScrollArea ref={scrollRef} className="flex-1 p-4">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="w-8 h-8 border-2 border-rail-orange border-t-transparent rounded-full animate-spin" />
+            {/* Skeleton pulse dots instead of spinner */}
+            <div className="flex gap-2">
+              <div className="w-3 h-3 rounded-full bg-rail-orange animate-pulse" style={{ animationDelay: '0ms' }} />
+              <div className="w-3 h-3 rounded-full bg-rail-orange animate-pulse" style={{ animationDelay: '150ms' }} />
+              <div className="w-3 h-3 rounded-full bg-rail-orange animate-pulse" style={{ animationDelay: '300ms' }} />
+            </div>
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
@@ -237,7 +242,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
             className="h-11 px-4 bg-rail-orange hover:bg-rail-orange-dark flex-shrink-0"
           >
             {isSending ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span className="w-5 h-5 bg-white/30 rounded-full animate-pulse" />
             ) : (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

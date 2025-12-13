@@ -3,6 +3,10 @@
  * 
  * Premium listing card for marketplace grid displays.
  * AutoTrader-style design with add-on indicators.
+ * 
+ * GLOBAL UI ENFORCEMENT:
+ * - Single badge rule: Elite > Premium > Featured > Verified
+ * - Skeleton loaders (no spinners)
  */
 
 'use client';
@@ -14,6 +18,7 @@ import { cn, getImageUrl } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { VerifiedSellerBadgeCompact } from '@/components/VerifiedSellerBadge';
+import { getHighestBadge, BADGE_STYLES } from '@/lib/ui';
 
 // Equipment data subset for card display
 export interface ListingCardEquipment {
@@ -166,31 +171,25 @@ const ListingCard: React.FC<ListingCardProps> = ({
           />
         </Link>
 
-        {/* Add-on Badges */}
+        {/* Single Badge Rule: Elite > Premium > Featured > Verified (show only highest) */}
+        {/* S-2.1 & S-2.2: All badges have clarifying tooltips */}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-          {isElite && (
-            <Badge className="bg-rail-orange text-white border-0 text-xs font-semibold">
-              Elite
-            </Badge>
-          )}
-          {isPremium && !isElite && (
-            <Badge className="bg-navy-900 text-white border-0 text-xs font-semibold">
-              Premium
-            </Badge>
-          )}
-          {isFeatured && !isPremium && !isElite && (
-            <Badge className="bg-status-info text-white border-0 text-xs font-semibold">
-              Featured
-            </Badge>
-          )}
+          {(() => {
+            const highestBadge = getHighestBadge({ elite: isElite, premium: isPremium, featured: isFeatured, verified: hasVerifiedBadge });
+            if (!highestBadge) return null;
+            const style = BADGE_STYLES[highestBadge];
+            return (
+              <Badge 
+                className={cn(style.bg, style.text, 'border-0 text-xs font-semibold cursor-help')}
+                title={style.title}
+              >
+                {style.label}
+              </Badge>
+            );
+          })()}
           {premiumAddOns?.aiEnhanced && (
-            <Badge variant="outline" className="bg-white/90 text-navy-900 border-navy-900/20 text-xs">
-              ✨ AI Enhanced
-            </Badge>
-          )}
-          {hasVerifiedBadge && (
-            <Badge className="bg-green-600 text-white border-0 text-xs font-semibold">
-              ✓ Verified Asset
+            <Badge variant="outline" className="bg-white/90 text-navy-900 border-navy-900/20 text-xs cursor-help" title="AI-assisted listing enhancement">
+              ✨ AI Assisted
             </Badge>
           )}
         </div>

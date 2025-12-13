@@ -2,18 +2,31 @@
  * THE RAIL EXCHANGE™ — Search Page
  * 
  * Unified search experience for listings and contractors.
+ * 
+ * BATCH 9 - SEARCH RESULTS PAGE:
+ * - Auto-search on input (300ms debounce)
+ * - Results count + query echo at top
+ * - Active filter chips always visible
+ * - Filters collapsed by default (sidebar dropdowns)
+ * - Sort dropdown: Relevance | Price | Newest
+ * - Default to ALL results (dropdown, no tabs)
+ * - Progressive loading (10 results + Load more)
+ * - Skeleton cards during load
+ * 
+ * BATCH 16 - CROSS-PAGE UX:
+ * - Empty state with next step: "No results found" + Browse categories → ✓
+ * - Skeleton loaders for initial load + Suspense fallback ✓
  */
 
 'use client';
 
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { getImageUrl } from '@/lib/utils';
 import { LISTING_CATEGORIES, LISTING_CONDITIONS } from '@/lib/listing-constants';
 import { SERVICE_CATEGORIES, US_STATES } from '@/lib/constants';
-import { ListingsMap } from '@/components/maps';
-import { VerifiedSellerBadgeCompact } from '@/components/VerifiedSellerBadge';
+import { getHighestBadge } from '@/lib/ui';
 
 const CATEGORY_LABELS: Record<string, string> = {
   'locomotives': 'Locomotives',
@@ -95,6 +108,21 @@ interface SearchResults {
   suggestions?: string[];
 }
 
+// Skeleton card for loading state
+function SkeletonCard() {
+  return (
+    <div className="flex gap-4 p-4 bg-white rounded-xl border border-surface-border">
+      <div className="w-24 h-24 bg-slate-200 rounded-lg animate-pulse" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 bg-slate-200 rounded w-1/4 animate-pulse" />
+        <div className="h-5 bg-slate-200 rounded w-3/4 animate-pulse" />
+        <div className="h-4 bg-slate-200 rounded w-1/3 animate-pulse" />
+        <div className="h-3 bg-slate-200 rounded w-1/2 animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 function formatPrice(price: Listing['price']): string {
   if (price.type === 'contact') return 'Contact';
   if (price.type === 'rfq') return 'RFQ';
@@ -108,13 +136,20 @@ function formatPrice(price: Listing['price']): string {
 }
 
 function ListingCard({ listing }: { listing: Listing }) {
+  const badge = getHighestBadge({
+    elite: listing.premiumAddOns?.elite?.active || listing._rankTier === 'elite',
+    premium: listing.premiumAddOns?.premium?.active || listing._rankTier === 'premium',
+    featured: listing.premiumAddOns?.featured?.active || listing._rankTier === 'featured',
+    verified: listing.sellerId?.isVerifiedSeller,
+  });
+
   return (
     <Link
       href={`/listings/${listing.slug || listing._id}`}
       className="group flex gap-4 p-4 bg-white rounded-xl border border-surface-border hover:shadow-card transition-all"
     >
       {/* Thumbnail */}
-      <div className="w-24 h-24 flex-shrink-0 bg-navy-100 rounded-lg overflow-hidden">
+      <div className="w-24 h-24 flex-shrink-0 bg-navy-100 rounded-lg overflow-hidden relative">
         {listing.primaryImageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -129,28 +164,24 @@ function ListingCard({ listing }: { listing: Listing }) {
             </svg>
           </div>
         )}
+        {/* Single highest badge */}
+        {badge && (
+          <span className={`absolute top-1 left-1 text-xs px-1.5 py-0.5 rounded font-semibold ${
+            badge === 'ELITE' ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white' :
+            badge === 'PREMIUM' ? 'bg-purple-600 text-white' :
+            badge === 'FEATURED' ? 'bg-rail-orange text-white' :
+            'bg-green-600 text-white'
+          }`}>
+            {badge}
+          </span>
+        )}
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-caption font-medium text-rail-orange">
-            {CATEGORY_LABELS[listing.category] || listing.category}
-          </span>
-          {/* Show tier badge based on ranking */}
-          {(listing._rankTier === 'elite' || listing.premiumAddOns?.elite?.active) && (
-            <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs px-2 py-0.5 rounded font-semibold">Elite</span>
-          )}
-          {(listing._rankTier === 'premium' || listing.premiumAddOns?.premium?.active) && !listing.premiumAddOns?.elite?.active && listing._rankTier !== 'elite' && (
-            <span className="bg-purple-600 text-white text-xs px-2 py-0.5 rounded font-semibold">Premium</span>
-          )}
-          {(listing._rankTier === 'featured' || listing.premiumAddOns?.featured?.active) && !listing.premiumAddOns?.premium?.active && !listing.premiumAddOns?.elite?.active && listing._rankTier !== 'premium' && listing._rankTier !== 'elite' && (
-            <span className="badge-featured text-xs py-0.5">Featured</span>
-          )}
-          {listing.sellerId?.isVerifiedSeller && (
-            <VerifiedSellerBadgeCompact />
-          )}
-        </div>
+        <span className="text-caption font-medium text-rail-orange">
+          {CATEGORY_LABELS[listing.category] || listing.category}
+        </span>
         <h3 className="text-body-md font-semibold text-navy-900 group-hover:text-rail-orange transition-colors line-clamp-1">
           {listing.title}
         </h3>
@@ -221,25 +252,27 @@ function ContractorCard({ contractor }: { contractor: Contractor }) {
 }
 
 function SearchPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [searchType, setSearchType] = useState(searchParams.get('type') || 'all');
   const [category, setCategory] = useState(searchParams.get('category') || '');
   const [condition, setCondition] = useState(searchParams.get('condition') || '');
   const [state, setState] = useState(searchParams.get('state') || '');
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [sortBy, setSortBy] = useState('relevance');
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<SearchResults | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'map'>(
-    searchParams.get('view') === 'map' ? 'map' : 'list'
-  );
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
   // Perform search
-  const performSearch = useCallback(async () => {
+  const performSearch = useCallback(async (resetPage = true) => {
     setIsLoading(true);
+    const currentPage = resetPage ? 1 : page;
+    if (resetPage) setPage(1);
 
     try {
       const params = new URLSearchParams();
@@ -248,451 +281,349 @@ function SearchPageContent() {
       if (category) params.set('category', category);
       if (condition) params.set('condition', condition);
       if (state) params.set('state', state);
+      if (sortBy !== 'relevance') params.set('sort', sortBy);
+      params.set('page', String(currentPage));
+      params.set('limit', '10');
 
       const res = await fetch(`/api/search?${params.toString()}`);
       const data = await res.json();
 
       if (data.success) {
-        setResults(data.data);
+        if (resetPage) {
+          setResults(data.data);
+        } else {
+          // Append results for load more
+          setResults(prev => ({
+            ...data.data,
+            listings: [...(prev?.listings || []), ...(data.data.listings || [])],
+            contractors: [...(prev?.contractors || []), ...(data.data.contractors || [])],
+          }));
+        }
+        // Check if there are more results
+        const total = (data.data.listingsTotal || 0) + (data.data.contractorsTotal || 0);
+        const loaded = ((resetPage ? 0 : results?.listings?.length || 0) + (data.data.listings?.length || 0)) +
+                       ((resetPage ? 0 : results?.contractors?.length || 0) + (data.data.contractors?.length || 0));
+        setHasMore(loaded < total);
       }
     } catch (error) {
       console.error('Search error:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [query, searchType, category, condition, state]);
+  }, [query, searchType, category, condition, state, sortBy, page, results]);
 
-  // Search on mount and when URL changes - also fetch if coming with view=map
+  // Auto-search with debounce (300ms)
   useEffect(() => {
-    if (query || category || condition || state || searchParams.get('view') === 'map') {
-      performSearch();
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
     }
-  }, [query, category, condition, state, searchType, performSearch, searchParams]);
+    debounceRef.current = setTimeout(() => {
+      if (query || category || condition || state) {
+        performSearch(true);
+      }
+    }, 300);
 
-  // Handle search submit
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [query, category, condition, state, searchType, sortBy]);
 
-    // Update URL
+  // Update URL without triggering navigation
+  useEffect(() => {
     const params = new URLSearchParams();
     if (query) params.set('q', query);
     if (searchType !== 'all') params.set('type', searchType);
     if (category) params.set('category', category);
     if (condition) params.set('condition', condition);
     if (state) params.set('state', state);
+    
+    const newUrl = params.toString() ? `/search?${params.toString()}` : '/search';
+    window.history.replaceState({}, '', newUrl);
+  }, [query, searchType, category, condition, state]);
 
-    router.push(`/search?${params.toString()}`);
-    performSearch();
+  // Clear single filter
+  const clearFilter = (filter: 'category' | 'condition' | 'state') => {
+    if (filter === 'category') setCategory('');
+    if (filter === 'condition') setCondition('');
+    if (filter === 'state') setState('');
   };
 
-  // Clear filters
-  const clearFilters = () => {
-    setCategory('');
-    setCondition('');
-    setState('');
+  // Load more results
+  const loadMore = () => {
+    setPage(p => p + 1);
+    performSearch(false);
   };
 
   const hasFilters = !!(category || condition || state);
   const totalResults = (results?.listingsTotal || 0) + (results?.contractorsTotal || 0);
 
   return (
-    <>
-      {/* Navigation */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-surface-border/50">
-        <nav className="container-rail">
-          <div className="flex items-center justify-between py-4">
-            <Link href="/" className="flex items-center">
-              <span className="text-heading-lg font-bold text-navy-900">The Rail</span>
-              <span className="text-heading-lg font-bold text-rail-orange ml-1">Exchange</span>
-              <span className="text-rail-orange text-sm font-medium ml-0.5">™</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/listings" className="text-body-md font-medium text-text-secondary hover:text-navy-900">
-                Listings
-              </Link>
-              <Link href="/contractors" className="text-body-md font-medium text-text-secondary hover:text-navy-900">
-                Contractors
-              </Link>
-            </div>
-          </div>
-        </nav>
-      </header>
-
-      <main className="flex-1 bg-surface-secondary min-h-screen">
+    <main className="flex-1 bg-surface-secondary min-h-screen">
+      <section className="container-rail py-6">
         {/* Search Header */}
-        <section className="bg-white border-b border-surface-border py-8">
-          <div className="container-rail">
-            <form onSubmit={handleSubmit}>
-              {/* Search Input */}
-              <div className="flex gap-4 mb-6">
-                <div className="flex-1 relative">
-                  <svg
-                    className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search listings, contractors, equipment..."
-                    className="form-input pl-12 py-4 text-lg w-full"
-                    autoFocus
-                  />
-                </div>
-                <button type="submit" className="btn-primary px-8">
-                  Search
-                </button>
-              </div>
-
-              {/* Type Tabs */}
-              <div className="flex gap-2 mb-4">
-                {[
-                  { value: 'all', label: 'All' },
-                  { value: 'listings', label: 'Listings' },
-                  { value: 'contractors', label: 'Contractors' },
-                ].map((tab) => (
-                  <button
-                    key={tab.value}
-                    type="button"
-                    onClick={() => setSearchType(tab.value)}
-                    className={`px-4 py-2 rounded-lg text-body-sm font-medium transition-colors ${
-                      searchType === tab.value
-                        ? 'bg-rail-orange text-white'
-                        : 'bg-surface-secondary text-text-secondary hover:bg-navy-100'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-body-sm font-medium transition-colors ${
-                    showFilters || hasFilters
-                      ? 'bg-navy-900 text-white'
-                      : 'bg-surface-secondary text-text-secondary hover:bg-navy-100'
-                  }`}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                  </svg>
-                  Filters
-                  {hasFilters && <span className="w-2 h-2 bg-rail-orange rounded-full" />}
-                </button>
-
-                {/* Map View Toggle */}
-                <button
-                  type="button"
-                  onClick={() => setViewMode(viewMode === 'list' ? 'map' : 'list')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-body-sm font-medium transition-colors ${
-                    viewMode === 'map'
-                      ? 'bg-rail-orange text-white'
-                      : 'bg-surface-secondary text-text-secondary hover:bg-navy-100'
-                  }`}
-                >
-                  {viewMode === 'map' ? (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                      </svg>
-                      List View
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                      </svg>
-                      Map View
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* Filters Panel */}
-              {showFilters && (
-                <div className="bg-surface-secondary rounded-xl p-6 space-y-4">
-                  <div className="grid sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="form-label">Category</label>
-                      <select
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        className="form-input"
-                      >
-                        <option value="">All Categories</option>
-                        {LISTING_CATEGORIES.map((cat) => (
-                          <option key={cat} value={cat}>
-                            {CATEGORY_LABELS[cat] || cat}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="form-label">Condition</label>
-                      <select
-                        value={condition}
-                        onChange={(e) => setCondition(e.target.value)}
-                        className="form-input"
-                      >
-                        <option value="">All Conditions</option>
-                        {LISTING_CONDITIONS.map((cond) => (
-                          <option key={cond} value={cond}>
-                            {CONDITION_LABELS[cond] || cond}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="form-label">State</label>
-                      <select
-                        value={state}
-                        onChange={(e) => setState(e.target.value)}
-                        className="form-input"
-                      >
-                        <option value="">All States</option>
-                        {US_STATES.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {hasFilters && (
-                    <button
-                      type="button"
-                      onClick={clearFilters}
-                      className="text-body-sm font-medium text-rail-orange hover:text-rail-orange-dark"
-                    >
-                      Clear all filters
-                    </button>
-                  )}
-                </div>
-              )}
-            </form>
+        <header className="space-y-4 mb-6">
+          {/* Search Input - auto search, no button */}
+          <div className="relative">
+            <svg
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search listings, contractors, equipment..."
+              className="form-input pl-12 py-3 w-full"
+              autoFocus
+            />
           </div>
-        </section>
 
-        {/* Results */}
-        <section className="py-8">
-          <div className="container-rail">
-            {/* Results Count */}
+          {/* Results count */}
+          {results && (
+            <p className="text-sm text-text-secondary">
+              {totalResults} results{query && <> for &quot;{query}&quot;</>}
+            </p>
+          )}
+
+          {/* Active Filter Chips */}
+          {hasFilters && (
+            <div className="flex flex-wrap gap-2">
+              {category && (
+                <button
+                  onClick={() => clearFilter('category')}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-rail-orange/10 text-rail-orange rounded-full text-sm"
+                >
+                  {CATEGORY_LABELS[category] || category}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+              {condition && (
+                <button
+                  onClick={() => clearFilter('condition')}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-rail-orange/10 text-rail-orange rounded-full text-sm"
+                >
+                  {CONDITION_LABELS[condition] || condition}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+              {state && (
+                <button
+                  onClick={() => clearFilter('state')}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-rail-orange/10 text-rail-orange rounded-full text-sm"
+                >
+                  {state}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Sort, Type & Mobile Filter Toggle */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Sort dropdown */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="form-input py-2 text-sm w-auto"
+            >
+              <option value="relevance">Relevance</option>
+              <option value="price">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="newest">Newest</option>
+            </select>
+
+            {/* Type dropdown */}
+            <select
+              value={searchType}
+              onChange={(e) => setSearchType(e.target.value)}
+              className="form-input py-2 text-sm w-auto"
+            >
+              <option value="all">All Results</option>
+              <option value="listings">Listings Only</option>
+              <option value="contractors">Contractors Only</option>
+            </select>
+
+            {/* Mobile Filters Toggle */}
+            <button
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className="md:hidden flex items-center gap-2 px-3 py-2 border border-surface-border rounded-lg text-sm text-navy-900 hover:bg-surface-secondary transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filters
+              {hasFilters && <span className="w-2 h-2 bg-rail-orange rounded-full" />}
+            </button>
+          </div>
+
+          {/* Mobile Filters Panel (collapsed by default) */}
+          {showMobileFilters && (
+            <div className="md:hidden grid grid-cols-2 gap-3 p-4 bg-white rounded-xl border border-surface-border">
+              <div>
+                <label className="text-xs font-medium text-text-secondary uppercase tracking-wide">Category</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="form-input mt-1 text-sm"
+                >
+                  <option value="">All</option>
+                  {LISTING_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>{CATEGORY_LABELS[cat] || cat}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-text-secondary uppercase tracking-wide">Condition</label>
+                <select
+                  value={condition}
+                  onChange={(e) => setCondition(e.target.value)}
+                  className="form-input mt-1 text-sm"
+                >
+                  <option value="">All</option>
+                  {LISTING_CONDITIONS.map((cond) => (
+                    <option key={cond} value={cond}>{CONDITION_LABELS[cond] || cond}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs font-medium text-text-secondary uppercase tracking-wide">State</label>
+                <select
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  className="form-input mt-1 text-sm"
+                >
+                  <option value="">All States</option>
+                  {US_STATES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+        </header>
+
+        {/* Main content with collapsed filters sidebar */}
+        <div className="flex gap-6">
+          {/* Collapsed Filters Sidebar */}
+          <aside className="hidden md:block w-48 flex-shrink-0">
+            <div className="space-y-4 sticky top-4">
+              <div>
+                <label className="text-xs font-medium text-text-secondary uppercase tracking-wide">Category</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="form-input mt-1 text-sm"
+                >
+                  <option value="">All</option>
+                  {LISTING_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {CATEGORY_LABELS[cat] || cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-text-secondary uppercase tracking-wide">Condition</label>
+                <select
+                  value={condition}
+                  onChange={(e) => setCondition(e.target.value)}
+                  className="form-input mt-1 text-sm"
+                >
+                  <option value="">All</option>
+                  {LISTING_CONDITIONS.map((cond) => (
+                    <option key={cond} value={cond}>
+                      {CONDITION_LABELS[cond] || cond}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-text-secondary uppercase tracking-wide">State</label>
+                <select
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  className="form-input mt-1 text-sm"
+                >
+                  <option value="">All</option>
+                  {US_STATES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </aside>
+
+          {/* Results List */}
+          <div className="flex-1">
+            {/* Initial Loading Skeleton (no results yet) */}
+            {isLoading && !results && (
+              <div className="space-y-3">
+                {[...Array(10)].map((_, i) => (
+                  <SkeletonCard key={i} />
+                ))}
+              </div>
+            )}
+
+            {/* Results with optional loading overlay for refetch */}
             {results && (
-              <div className="mb-6">
-                <p className="text-body-md text-text-secondary">
-                  {isLoading ? (
-                    'Searching...'
-                  ) : totalResults > 0 ? (
-                    <>
-                      Found <span className="font-semibold text-navy-900">{totalResults}</span> results
-                      {query && (
-                        <>
-                          {' '}for &quot;<span className="font-semibold text-navy-900">{query}</span>&quot;
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    'No results found'
-                  )}
-                </p>
-              </div>
-            )}
-
-            {/* Loading State */}
-            {isLoading && (
-              <div className="flex justify-center py-16">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rail-orange" />
-              </div>
-            )}
-
-            {/* Map View */}
-            {!isLoading && results && viewMode === 'map' && results.listings && results.listings.length > 0 && (
-              <div className="mb-8">
-                <ListingsMap
-                  listings={results.listings.map(listing => ({
-                    id: listing._id,
-                    title: listing.title,
-                    slug: listing.slug,
-                    category: listing.category,
-                    condition: listing.condition,
-                    price: listing.price,
-                    location: {
-                      city: listing.location.city,
-                      state: listing.location.state,
-                      // Use stored coordinates if available (from location autocomplete during listing creation)
-                      lat: listing.location.coordinates?.coordinates?.[1],
-                      lng: listing.location.coordinates?.coordinates?.[0],
-                    },
-                    primaryImageUrl: listing.primaryImageUrl,
-                    premiumAddOns: listing.premiumAddOns,
-                  }))}
-                  height="500px"
-                />
-                <p className="text-sm text-text-tertiary mt-4 text-center">
-                  Note: Map shows listings with location coordinates. Add Google Maps API key for full functionality.
-                </p>
-              </div>
-            )}
-
-            {/* Results Grid */}
-            {!isLoading && results && viewMode === 'list' && (
-              <div className="grid lg:grid-cols-2 gap-8">
+              <div className={`space-y-3 ${isLoading ? 'opacity-60' : ''}`}>
                 {/* Listings */}
                 {(searchType === 'all' || searchType === 'listings') &&
-                  results.listings &&
-                  results.listings.length > 0 && (
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="heading-md">
-                          Listings
-                          <span className="text-text-secondary font-normal ml-2">
-                            ({results.listingsTotal})
-                          </span>
-                        </h2>
-                        {searchType === 'all' && (results.listingsTotal || 0) > 10 && (
-                          <button
-                            onClick={() => setSearchType('listings')}
-                            className="text-body-sm font-medium text-rail-orange hover:text-rail-orange-dark"
-                          >
-                            View all →
-                          </button>
-                        )}
-                      </div>
-                      <div className="space-y-3">
-                        {results.listings.map((listing) => (
-                          <ListingCard key={listing._id} listing={listing} />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  results?.listings?.map((listing) => (
+                    <ListingCard key={listing._id} listing={listing} />
+                  ))}
 
                 {/* Contractors */}
                 {(searchType === 'all' || searchType === 'contractors') &&
-                  results.contractors &&
-                  results.contractors.length > 0 && (
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="heading-md">
-                          Contractors
-                          <span className="text-text-secondary font-normal ml-2">
-                            ({results.contractorsTotal})
-                          </span>
-                        </h2>
-                        {searchType === 'all' && (results.contractorsTotal || 0) > 10 && (
-                          <button
-                            onClick={() => setSearchType('contractors')}
-                            className="text-body-sm font-medium text-rail-orange hover:text-rail-orange-dark"
-                          >
-                            View all →
-                          </button>
-                        )}
-                      </div>
-                      <div className="space-y-3">
-                        {results.contractors.map((contractor) => (
-                          <ContractorCard key={contractor._id} contractor={contractor} />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  results?.contractors?.map((contractor) => (
+                    <ContractorCard key={contractor._id} contractor={contractor} />
+                  ))}
               </div>
             )}
 
             {/* Empty State */}
             {!isLoading && results && totalResults === 0 && (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 bg-surface-secondary rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-10 h-10 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <h3 className="heading-md mb-2">No results found</h3>
-                <p className="text-body-md text-text-secondary max-w-md mx-auto mb-6">
-                  Try adjusting your search terms or filters to find what you&apos;re looking for.
-                </p>
-                {hasFilters && (
-                  <button onClick={clearFilters} className="btn-outline">
-                    Clear filters
-                  </button>
-                )}
+              <div className="text-center py-12">
+                <p className="text-text-secondary mb-4">No results found.</p>
+                <Link href="/marketplace" className="text-rail-orange font-medium hover:underline">
+                  Browse categories →
+                </Link>
               </div>
             )}
 
-            {/* Suggestions */}
-            {results?.suggestions && results.suggestions.length > 0 && (
-              <div className="mt-8 p-6 bg-white rounded-xl border border-surface-border">
-                <h3 className="heading-sm mb-3">Related searches</h3>
-                <div className="flex flex-wrap gap-2">
-                  {results.suggestions.map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      onClick={() => {
-                        setQuery(suggestion);
-                        searchInputRef.current?.focus();
-                      }}
-                      className="px-4 py-2 bg-surface-secondary rounded-lg text-body-sm font-medium text-text-secondary hover:bg-navy-100 transition-colors"
-                    >
-                      {suggestion}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Initial State */}
-            {!query && !hasFilters && !results && (
-              <div className="text-center py-16">
-                <div className="w-24 h-24 bg-rail-orange/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-12 h-12 text-rail-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <h2 className="heading-lg mb-4">Search The Rail Exchange</h2>
-                <p className="text-body-lg text-text-secondary max-w-lg mx-auto mb-8">
-                  Find rail equipment, materials, contractors, and more. Use filters to narrow down your results.
-                </p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {['locomotives', 'freight-cars', 'track-materials', 'maintenance-of-way'].map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => {
-                        setCategory(cat);
-                        performSearch();
-                      }}
-                      className="px-4 py-2 bg-white border border-surface-border rounded-lg text-body-sm font-medium text-navy-900 hover:bg-surface-secondary transition-colors"
-                    >
-                      {CATEGORY_LABELS[cat]}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {/* Load More */}
+            {hasMore && !isLoading && (
+              <button
+                onClick={loadMore}
+                className="w-full mt-6 py-3 border border-surface-border rounded-lg text-navy-900 font-medium hover:bg-surface-secondary transition-colors"
+              >
+                Load more
+              </button>
             )}
           </div>
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-navy-900 text-white py-8">
-        <div className="container-rail text-center">
-          <p className="text-body-sm text-white/60">
-            © {new Date().getFullYear()} The Rail Exchange™. All rights reserved.
-          </p>
         </div>
-      </footer>
-    </>
+      </section>
+    </main>
   );
 }
 
@@ -700,9 +631,27 @@ function SearchPageContent() {
 export default function SearchPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-surface-secondary flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6A1A]"></div>
-      </div>
+      <main className="flex-1 bg-surface-secondary min-h-screen">
+        <section className="container-rail py-6">
+          <div className="space-y-4 mb-6">
+            <div className="h-12 bg-slate-200 rounded-lg animate-pulse" />
+            <div className="h-4 w-32 bg-slate-200 rounded animate-pulse" />
+          </div>
+          <div className="space-y-3">
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="flex gap-4 p-4 bg-white rounded-xl border border-surface-border">
+                <div className="w-24 h-24 bg-slate-200 rounded-lg animate-pulse" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-slate-200 rounded w-1/4 animate-pulse" />
+                  <div className="h-5 bg-slate-200 rounded w-3/4 animate-pulse" />
+                  <div className="h-4 bg-slate-200 rounded w-1/3 animate-pulse" />
+                  <div className="h-3 bg-slate-200 rounded w-1/2 animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
     }>
       <SearchPageContent />
     </Suspense>

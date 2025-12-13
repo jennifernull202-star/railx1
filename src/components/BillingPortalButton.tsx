@@ -2,11 +2,16 @@
  * THE RAIL EXCHANGE™ — Billing Portal Button
  * 
  * Client component to open Stripe Billing Portal.
+ * 
+ * GLOBAL UI ENFORCEMENT:
+ * - Inline, non-alarmist error feedback
+ * - Skeleton loaders (no spinners)
  */
 
 'use client';
 
 import { useState } from 'react';
+import { getErrorMessage } from '@/lib/ui';
 
 interface BillingPortalButtonProps {
   className?: string;
@@ -14,9 +19,11 @@ interface BillingPortalButtonProps {
 
 export default function BillingPortalButton({ className = '' }: BillingPortalButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleClick() {
     setLoading(true);
+    setError(null);
     
     try {
       const response = await fetch('/api/subscriptions/portal', {
@@ -26,37 +33,47 @@ export default function BillingPortalButton({ className = '' }: BillingPortalBut
       const data = await response.json();
 
       if (!response.ok) {
+        // Use standardized error messages for common API errors
+        if (response.status === 429) {
+          throw new Error(getErrorMessage('rate_limited'));
+        } else if (response.status === 403) {
+          throw new Error(getErrorMessage('forbidden'));
+        }
         throw new Error(data.error || 'Failed to open billing portal');
       }
 
       if (data.url) {
         window.location.href = data.url;
       }
-    } catch (error) {
-      console.error('Billing portal error:', error);
-      alert(error instanceof Error ? error.message : 'Failed to open billing portal');
+    } catch (err) {
+      console.error('Billing portal error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to open billing portal');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <button
-      onClick={handleClick}
-      disabled={loading}
-      className={`btn-primary ${className} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-    >
-      {loading ? (
-        <span className="flex items-center gap-2">
-          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          Opening...
-        </span>
-      ) : (
-        'Manage Billing'
+    <div className="flex flex-col">
+      <button
+        onClick={handleClick}
+        disabled={loading}
+        className={`btn-primary ${className} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      >
+        {loading ? (
+          <span className="flex items-center gap-2">
+            {/* Skeleton pulse loader instead of spinner */}
+            <span className="w-4 h-4 bg-current opacity-30 rounded-full animate-pulse" />
+            Opening...
+          </span>
+        ) : (
+          'Manage Billing'
+        )}
+      </button>
+      {/* Inline error feedback - non-alarmist copy */}
+      {error && (
+        <p className="mt-2 text-sm text-status-error">{error}</p>
       )}
-    </button>
+    </div>
   );
 }

@@ -3,6 +3,12 @@
  * 
  * GET: List all listings with filters
  * POST: Create new listing
+ * 
+ * SECURITY CONTROLS (Section 10):
+ * - Tag/keyword array limits to prevent SEO spam
+ * - Input sanitization
+ * - Duplicate title detection
+ * - Manufacturer enum enforcement
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -23,6 +29,21 @@ import {
   getVerificationResult,
   canPublishListings,
 } from '@/lib/verification';
+import { 
+  sanitizeString, 
+  sanitizeHTML, 
+  detectKeywordStuffing, 
+  validateManufacturer 
+} from '@/lib/sanitize';
+import {
+  checkListingCompleteness,
+  generateImageHashes,
+} from '@/lib/abuse-prevention';
+
+// SECTION 10: SEO/Content Spam Controls
+const MAX_TAGS = 10;
+const MAX_KEYWORDS = 15;
+const MAX_TAG_LENGTH = 50;
 
 // Define query interface
 interface ListingQuery {
@@ -246,6 +267,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // SECURITY: Email verification required before creating listings (enterprise abuse prevention)
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'This action is temporarily unavailable due to account or security requirements.',
+          code: 'EMAIL_UNVERIFIED'
+        },
+        { status: 403 }
+      );
+    }
+
     // Use unified verification helper
     const verificationResult = getVerificationResult(user);
     
@@ -389,10 +422,139 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // SECTION 10: SEO/Content Spam Controls
+    
+    // Validate and sanitize tags
+    let sanitizedTags: string[] = [];
+    if (body.tags && Array.isArray(body.tags)) {
+      if (body.tags.length > MAX_TAGS) {
+        return NextResponse.json(
+          { success: false, error: `Maximum ${MAX_TAGS} tags allowed` },
+          { status: 400 }
+        );
+      }
+      sanitizedTags = body.tags
+        .map((tag: string) => sanitizeString(tag, { maxLength: MAX_TAG_LENGTH }))
+        .filter((tag: string | null) => tag && tag.length > 0);
+    }
+
+    // Validate and sanitize keywords
+    let sanitizedKeywords: string[] = [];
+    if (body.keywords && Array.isArray(body.keywords)) {
+      if (body.keywords.length > MAX_KEYWORDS) {
+        return NextResponse.json(
+          { success: false, error: `Maximum ${MAX_KEYWORDS} keywords allowed` },
+          { status: 400 }
+        );
+      }
+      sanitizedKeywords = body.keywords
+        .map((kw: string) => sanitizeString(kw, { maxLength: MAX_TAG_LENGTH }))
+        .filter((kw: string | null) => kw && kw.length > 0);
+    }
+
+    // Check for keyword stuffing in title/description
+    if (detectKeywordStuffing(body.title) || detectKeywordStuffing(body.description)) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Your listing appears to contain keyword stuffing. Please use natural language in your title and description.',
+          code: 'KEYWORD_STUFFING_DETECTED'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate manufacturer if provided (equipment field)
+    if (body.equipment?.manufacturer && !validateManufacturer(body.equipment.manufacturer)) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Invalid manufacturer. Please select from the available options or contact support if yours is missing.',
+          code: 'INVALID_MANUFACTURER'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize title and description
+    const sanitizedTitle = sanitizeString(body.title, { maxLength: 200 }) || body.title;
+    const sanitizedDescription = sanitizeHTML(body.description) || body.description;
+
+    // SECTION 10: Check for duplicate titles from same seller (anti-spam)
+    const normalizedTitle = sanitizedTitle.toLowerCase().trim();
+    const duplicateListing = await Listing.findOne({
+      sellerId: session.user.id,
+      isActive: true,
+      $expr: {
+        $eq: [{ $toLower: '$title' }, normalizedTitle]
+      }
+    });
+    
+    if (duplicateListing) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'You already have an active listing with this title. Please use a unique title.',
+          code: 'DUPLICATE_TITLE'
+        },
+        { status: 400 }
+      );
+    }
+
+    // ================================================================
+    // S-1.3: FAKE LISTING DETECTION
+    // ================================================================
+    
+    // S-1.3a: Minimum content completeness check
+    const completenessResult = checkListingCompleteness({
+      title: sanitizedTitle,
+      price: body.price,
+      location: body.location,
+      media: body.media,
+    });
+    
+    if (!completenessResult.isComplete) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Listing does not meet minimum content requirements: ${completenessResult.missingFields.join(', ')}`,
+          code: 'INCOMPLETE_LISTING',
+          data: { missingFields: completenessResult.missingFields }
+        },
+        { status: 400 }
+      );
+    }
+    
+    // S-1.3b: Image hash duplicate detection across different sellers
+    let imageHashes: string[] = [];
+    if (body.media && Array.isArray(body.media) && body.media.length > 0) {
+      const imageUrls = body.media
+        .filter((m: { type?: string; url?: string }) => m.type === 'image' || !m.type)
+        .map((m: { url: string }) => m.url);
+      
+      imageHashes = generateImageHashes(imageUrls);
+      
+      // Check if these images are used by OTHER sellers (not this seller)
+      const duplicateImageListing = await Listing.findOne({
+        sellerId: { $ne: session.user.id },  // Different seller
+        imageHashes: { $in: imageHashes },   // Has matching image
+        isActive: true,
+        status: { $in: ['active', 'pending'] },
+      }).select('_id title sellerId');
+      
+      if (duplicateImageListing) {
+        // Auto-flag this listing for admin review
+        console.warn(`S-1.3: Duplicate image detected. User ${session.user.id} submitted images matching listing ${duplicateImageListing._id}`);
+        // Don't block, but flag for review - the listing will still be created but flagged
+        body._autoFlagged = true;
+        body._flagReason = 'Duplicate images detected from different seller';
+      }
+    }
+
     // Create listing
     const listingData = {
-      title: body.title,
-      description: body.description,
+      title: sanitizedTitle,
+      description: sanitizedDescription,
       category: body.category,
       subcategory: body.subcategory,
       condition: body.condition,
@@ -401,10 +563,10 @@ export async function POST(request: NextRequest) {
       sellerType: session.user.isContractor ? 'contractor' : 'individual',
       price: body.price || { type: 'contact', currency: 'USD' },
       location: {
-        city: body.location.city,
+        city: sanitizeString(body.location.city, { maxLength: 100 }) || body.location.city,
         state: body.location.state,
         country: body.location.country || 'USA',
-        zipCode: body.location.zipCode,
+        zipCode: sanitizeString(body.location.zipCode || '', { maxLength: 20 }) || '',
         // Add GeoJSON coordinates if lat/lng provided
         ...(body.location.lat && body.location.lng ? {
           coordinates: {
@@ -414,17 +576,23 @@ export async function POST(request: NextRequest) {
         } : {}),
       },
       media: body.media || [],
+      imageHashes: imageHashes, // S-1.3: Store image hashes for duplicate detection
       specifications: body.specifications || [],
       quantity: body.quantity || 1,
       quantityUnit: body.quantityUnit,
-      sku: body.sku,
+      sku: body.sku ? (sanitizeString(body.sku, { maxLength: 50 }) || undefined) : undefined,
       shippingOptions: body.shippingOptions || {
         localPickup: true,
         sellerShips: false,
         buyerArranges: true,
       },
-      tags: body.tags || [],
-      keywords: body.keywords || [],
+      tags: sanitizedTags,
+      keywords: sanitizedKeywords,
+      // S-1.3: Auto-flag if duplicate images detected
+      ...(body._autoFlagged ? {
+        isFlagged: true,
+        flagReason: body._flagReason,
+      } : {}),
     };
 
     const listing = await Listing.create(listingData);

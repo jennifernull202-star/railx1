@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, DragEvent } from 'react';
 import Image from 'next/image';
-import { Upload, X, GripVertical, Star, Loader2, ImageIcon, AlertCircle, CheckCircle } from 'lucide-react';
+import { Upload, X, GripVertical, Star, ImageIcon, AlertCircle, CheckCircle } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils';
 
 // #11 fix: Concurrency limiter for uploads (prevents browser overload)
@@ -351,7 +351,8 @@ export default function BulkPhotoUpload({
       {/* #6 fix: Upload Progress Indicator */}
       {uploadProgress && uploadProgress.total > 0 && (
         <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+          {/* Skeleton pulse loader instead of spinner */}
+          <span className="w-4 h-4 bg-blue-600 rounded-full animate-pulse" />
           <div className="flex-1">
             <div className="flex items-center justify-between text-sm text-blue-800 mb-1">
               <span>Uploading photos...</span>
@@ -490,7 +491,12 @@ export default function BulkPhotoUpload({
                 {/* Loading State */}
                 {image.uploading && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/80">
-                    <Loader2 className="w-8 h-8 text-rail-orange animate-spin" />
+                    {/* Skeleton pulse dots instead of spinner */}
+                    <div className="flex gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-rail-orange animate-pulse" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2.5 h-2.5 rounded-full bg-rail-orange animate-pulse" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2.5 h-2.5 rounded-full bg-rail-orange animate-pulse" style={{ animationDelay: '300ms' }} />
+                    </div>
                   </div>
                 )}
 

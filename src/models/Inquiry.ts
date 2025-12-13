@@ -18,6 +18,24 @@ export const INQUIRY_STATUSES = [
 
 export type InquiryStatus = typeof INQUIRY_STATUSES[number];
 
+// Buyer intent timeline options
+export const BUYER_TIMELINE_OPTIONS = [
+  'immediate',      // Need within 2 weeks
+  'short_term',     // Within 1-3 months
+  'medium_term',    // Within 3-6 months
+  'long_term',      // 6+ months / Planning phase
+  'unspecified',    // No timeline
+] as const;
+
+export type BuyerTimeline = typeof BUYER_TIMELINE_OPTIONS[number];
+
+// Buyer intent interface
+export interface IBuyerIntent {
+  quantity?: number;         // How many units they need
+  timeline?: BuyerTimeline;  // When they need it
+  purpose?: string;          // What they'll use it for (optional)
+}
+
 // Message interface for conversation thread
 export interface IMessage {
   sender: Types.ObjectId;
@@ -44,6 +62,11 @@ export interface IInquiry {
   sellerUnreadCount: number;
   isArchived: boolean;
   archivedBy?: Types.ObjectId;
+  // Buyer intent fields (Phase 3 - Lead Quality)
+  buyerIntent?: IBuyerIntent;
+  // Response time tracking
+  firstReplyAt?: Date;
+  responseTimeMinutes?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -143,6 +166,34 @@ const InquirySchema = new Schema<IInquiryDocument, IInquiryModel>(
     archivedBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
+    },
+    // Buyer intent fields (Phase 3 - Lead Quality)
+    buyerIntent: {
+      quantity: {
+        type: Number,
+        min: [1, 'Quantity must be at least 1'],
+      },
+      timeline: {
+        type: String,
+        enum: {
+          values: BUYER_TIMELINE_OPTIONS,
+          message: 'Invalid timeline option',
+        },
+        default: 'unspecified',
+      },
+      purpose: {
+        type: String,
+        maxlength: [500, 'Purpose cannot exceed 500 characters'],
+      },
+    },
+    // Response time tracking
+    firstReplyAt: {
+      type: Date,
+      default: null,
+    },
+    responseTimeMinutes: {
+      type: Number,
+      default: null,
     },
   },
   {

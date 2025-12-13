@@ -10,6 +10,11 @@
  * - Radius search with geospatial
  * - Seller type, verified seller toggle
  * 
+ * SECURITY CONTROLS (Section 1, 5, 10):
+ * - Rate limiting to prevent scraping
+ * - Input sanitization (regex escape, SQL injection prevention)
+ * - MongoDB operator stripping
+ * 
  * Ranking tiers from config:
  * - Featured = +1 tier (250 points)
  * - Premium = +2 tier (500 points)
@@ -22,6 +27,8 @@ import Listing, { LISTING_CATEGORIES, LISTING_CONDITIONS } from '@/models/Listin
 import ContractorProfile from '@/models/ContractorProfile';
 import User from '@/models/User';
 import { ADD_ON_RANKING_BOOST, ADD_ON_TYPES } from '@/config/addons';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { escapeRegex, validateManufacturer } from '@/lib/sanitize';
 
 // Add-on ranking weights for scoring (based on tier system)
 // Each tier = ~250 base points, multiplied by ranking boost from config
@@ -46,6 +53,12 @@ type SearchQuery = Record<string, any>;
  */
 export async function GET(request: NextRequest) {
   try {
+    // SECURITY: Rate limiting (Section 1)
+    const rateLimitResponse = await checkRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     await connectDB();
 
     const { searchParams } = new URL(request.url);
@@ -148,26 +161,29 @@ export async function GET(request: NextRequest) {
       // ============================================
       
       // Reporting marks (exact or partial match)
+      // SECURITY: Already escaped inline
       if (reportingMarks) {
         listingQuery['equipment.reportingMarks'] = { 
-          $regex: reportingMarks.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 
+          $regex: escapeRegex(reportingMarks), 
           $options: 'i' 
         };
       }
       
       // Manufacturer filter (multi-select)
+      // SECURITY: Validate against known manufacturers
       if (manufacturer) {
-        const manufacturers = manufacturer.split(',').map(m => m.trim());
+        const manufacturers = manufacturer.split(',').map(m => m.trim()).filter(m => validateManufacturer(m));
         if (manufacturers.length === 1) {
           listingQuery['equipment.manufacturer'] = manufacturers[0];
-        } else {
+        } else if (manufacturers.length > 0) {
           listingQuery['equipment.manufacturer'] = { $in: manufacturers };
         }
       }
       
       // Model filter (partial match)
+      // SECURITY: Escape regex special characters
       if (model) {
-        listingQuery['equipment.model'] = { $regex: model, $options: 'i' };
+        listingQuery['equipment.model'] = { $regex: escapeRegex(model), $options: 'i' };
       }
       
       // Year built range
@@ -425,10 +441,12 @@ export async function GET(request: NextRequest) {
         isPublished: true,
       };
 
+      // SECURITY: Escape query for regex use
       if (query) {
+        const escapedQuery = escapeRegex(query);
         contractorQuery.$or = [
-          { businessName: { $regex: query, $options: 'i' } },
-          { businessDescription: { $regex: query, $options: 'i' } },
+          { businessName: { $regex: escapedQuery, $options: 'i' } },
+          { businessDescription: { $regex: escapedQuery, $options: 'i' } },
         ];
       }
 
@@ -455,12 +473,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Generate search suggestions based on popular categories and tags
+    // SECURITY: Use escaped query for regex
     if (query.length >= 2) {
+      const escapedQuery = escapeRegex(query);
       // Get popular tags that match the query
       const tagAggregation = await Listing.aggregate([
         { $match: { isActive: true, status: 'active' } },
         { $unwind: '$tags' },
-        { $match: { tags: { $regex: query, $options: 'i' } } },
+        { $match: { tags: { $regex: escapedQuery, $options: 'i' } } },
         { $group: { _id: '$tags', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 5 },
@@ -493,6 +513,12 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: Rate limiting for autocomplete
+    const rateLimitResponse = await checkRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     await connectDB();
 
     const body = await request.json();
@@ -505,12 +531,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // SECURITY: Escape query for regex use
+    const escapedQuery = escapeRegex(query);
+
     // Get title suggestions from recent/popular listings
     const titleSuggestions = await Listing.find(
       {
         isActive: true,
         status: 'active',
-        title: { $regex: query, $options: 'i' },
+        title: { $regex: escapedQuery, $options: 'i' },
       },
       { title: 1, category: 1 }
     )

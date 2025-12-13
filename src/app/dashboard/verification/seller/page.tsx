@@ -79,9 +79,9 @@ const VERIFICATION_TIERS = {
     name: 'Standard Verification',
     price: 29,
     features: [
-      'AI identity verification',
-      'AI fraud check',
-      'AI authenticity check',
+      'AI-assisted identity review',
+      'AI-assisted document review',
+      'AI-assisted authenticity check',
       'Verified Seller badge',
       '24-hour approval SLA',
       'Valid for 1 year',
@@ -96,11 +96,11 @@ const VERIFICATION_TIERS = {
     name: 'Priority Verification',
     price: 49,
     features: [
-      'Instant AI verification',
-      'AI identity + fraud + authenticity checks',
+      'Expedited AI-assisted review',
+      'AI-assisted identity, document, and authenticity checks',
       'Priority Verified Seller badge',
       '3-day ranking boost for first listing',
-      'Priority AI queue for re-checks',
+      'Priority review queue',
       'Valid for 1 year',
     ],
     slaText: 'Instant approval',
@@ -540,9 +540,37 @@ export default function SellerVerificationPage() {
       {(!isActive || needsRenewal) && (
         <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
           <h2 className="text-lg font-semibold text-navy-900 mb-2">Upload Documents</h2>
-          <p className="text-sm text-slate-500 mb-6">
+          <p className="text-sm text-slate-500 mb-4">
             Upload the required documents below. All documents are stored securely and only accessible by admins.
           </p>
+
+          {/* Document Requirements Summary */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-blue-800 mb-2">What You&apos;ll Need</h3>
+                <ul className="text-sm text-blue-700 space-y-1.5">
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold">1.</span>
+                    <span><strong>Photo ID (Required):</strong> Driver&apos;s license, passport, or state ID</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="font-bold">2.</span>
+                    <span><strong>Business Document (Required):</strong> Upload ONE of the following:</span>
+                  </li>
+                </ul>
+                <ul className="text-sm text-blue-600 ml-6 mt-1 space-y-0.5">
+                  <li>• Business License (state or local)</li>
+                  <li>• EIN Letter from IRS (CP 575 or 147C)</li>
+                  <li>• LLC/Inc formation documents</li>
+                </ul>
+                <p className="text-xs text-blue-600 mt-3 italic">
+                  Individual sellers without a business: Use EIN application receipt or sole proprietor docs
+                </p>
+              </div>
+            </div>
+          </div>
 
           <div className="space-y-4">
             {DOCUMENT_TYPES.map((docType) => {
@@ -616,24 +644,82 @@ export default function SellerVerificationPage() {
         </div>
       )}
 
-      {/* Benefits Section */}
+      {/* Benefits Section - Why Verification Matters */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-navy-900 mb-4">Why Verify?</h2>
-        <div className="grid md:grid-cols-2 gap-4">
+        <h2 className="text-lg font-semibold text-navy-900 mb-2">Why Verification Matters</h2>
+        <p className="text-sm text-slate-500 mb-6">
+          Document review helps buyers identify sellers who have submitted business documentation.
+        </p>
+        
+        <div className="grid md:grid-cols-2 gap-5 mb-6">
           {[
-            { title: 'Create Listings', desc: 'Verification is required to list equipment for sale' },
-            { title: 'Trust Badge', desc: 'Blue verified badge on all your listings' },
-            { title: 'Buyer Confidence', desc: 'Buyers prefer verified sellers' },
-            { title: '1-Year Validity', desc: 'One payment covers you for a full year' },
-          ].map((benefit, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-navy-900">{benefit.title}</p>
-                <p className="text-sm text-slate-500">{benefit.desc}</p>
+            { 
+              title: 'Required to List', 
+              desc: 'Document submission is mandatory to create and publish equipment listings on the marketplace.',
+              icon: Shield,
+              color: 'blue'
+            },
+            { 
+              title: 'Verification Badge', 
+              desc: 'Your profile and listings display a verification badge after document review.',
+              icon: CheckCircle2,
+              color: 'green'
+            },
+            { 
+              title: 'Higher Search Ranking', 
+              desc: 'Document-reviewed sellers appear higher in search results, getting more buyer visibility.',
+              icon: TrendingUp,
+              color: 'amber'
+            },
+            { 
+              title: 'Buyer Recognition', 
+              desc: 'Many buyers filter for document-reviewed sellers when browsing listings.',
+              icon: Crown,
+              color: 'purple'
+            },
+          ].map((benefit, i) => {
+            const Icon = benefit.icon;
+            const colorClasses = {
+              blue: 'bg-blue-100 text-blue-600',
+              green: 'bg-emerald-100 text-emerald-600',
+              amber: 'bg-amber-100 text-amber-600',
+              purple: 'bg-purple-100 text-purple-600',
+            };
+            return (
+              <div key={i} className="flex items-start gap-3 p-4 bg-slate-50 rounded-xl">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${colorClasses[benefit.color as keyof typeof colorClasses]}`}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-semibold text-navy-900">{benefit.title}</p>
+                  <p className="text-sm text-slate-500 mt-0.5">{benefit.desc}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
+        </div>
+
+        {/* Verification Coverage */}
+        <div className="border-t border-slate-200 pt-5">
+          <h3 className="font-semibold text-navy-900 mb-3">One Payment, Full Year Coverage</h3>
+          <p className="text-sm text-slate-500 mb-3">
+            Unlike subscription services, your verification is a one-time payment that covers you for a full year.
+            No recurring charges, no surprise fees.
+          </p>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <span className="flex items-center gap-1.5 text-slate-600">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              365 days of verification
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-600">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              Unlimited listings
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-600">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              Renewal reminder at 30 days
+            </span>
+          </div>
         </div>
       </div>
 

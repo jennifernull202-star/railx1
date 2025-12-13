@@ -100,7 +100,12 @@ const MapWrapper: React.FC<MapWrapperProps> = ({
       {!isLoaded && (
         <div className="absolute inset-0 flex items-center justify-center bg-surface-secondary">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-rail-orange border-t-transparent rounded-full animate-spin" />
+            {/* Skeleton pulse dots instead of spinner */}
+            <div className="flex gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-rail-orange animate-pulse" style={{ animationDelay: '0ms' }} />
+              <div className="w-2.5 h-2.5 rounded-full bg-rail-orange animate-pulse" style={{ animationDelay: '150ms' }} />
+              <div className="w-2.5 h-2.5 rounded-full bg-rail-orange animate-pulse" style={{ animationDelay: '300ms' }} />
+            </div>
             <p className="text-sm text-text-secondary">Loading map...</p>
           </div>
         </div>

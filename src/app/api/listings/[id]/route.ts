@@ -178,6 +178,18 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
     // Handle publishing
     if (body.status === 'active' && listing.status !== 'active') {
+      // S-1.3c: Sold listings cannot be reactivated without admin review
+      if (listing.status === 'sold' && !isAdmin) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Listings marked as sold cannot be reactivated. Please contact support or create a new listing.',
+            code: 'SOLD_REACTIVATION_BLOCKED'
+          },
+          { status: 403 }
+        );
+      }
+      
       listing.publishedAt = new Date();
       // Set expiration to 90 days
       const expiresAt = new Date();

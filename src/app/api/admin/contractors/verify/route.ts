@@ -3,6 +3,10 @@
  * 
  * POST /api/admin/contractors/verify - Admin approve/reject verification
  * GET /api/admin/contractors/verify - Get pending verifications
+ * 
+ * AUDIT LOGGING:
+ * - All verification decisions are logged
+ * - Enterprise compliance requirement
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -10,7 +14,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db';
 import ContractorProfile from '@/models/ContractorProfile';
+import User from '@/models/User';
 import Notification from '@/models/Notification';
+import AdminAuditLog from '@/models/AdminAuditLog';
 import { Types } from 'mongoose';
 
 // ============================================================================
@@ -119,6 +125,19 @@ export async function POST(request: NextRequest) {
     }
 
     await profile.save();
+
+    // AUDIT LOG: Contractor verification decision
+    const admin = await User.findById(session.user.id).select('email');
+    await AdminAuditLog.logAction({
+      adminId: session.user.id,
+      adminEmail: admin?.email || session.user.email || 'unknown',
+      action: action === 'approve' ? 'verify_contractor' : 'reject_contractor',
+      targetType: 'contractor',
+      targetId: profile._id,
+      targetTitle: profile.businessName || 'Contractor Profile',
+      details: { userId: profile.userId },
+      reason: notes || `Contractor verification ${action}d by admin`,
+    });
 
     return NextResponse.json({
       success: true,

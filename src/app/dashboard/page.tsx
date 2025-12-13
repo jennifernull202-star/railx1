@@ -46,13 +46,16 @@ async function getDashboardData(userId: string): Promise<{
   sellerTier: string | null;
   trialEndsAt: Date | null;
   subscriptionStatus: string | null;
+  unreadInquiryCount: number;
 }> {
   await connectDB();
 
   const userObjectId = new Types.ObjectId(userId);
 
-  // Get listing stats and user info
-  const [statsResult, recentListings, user] = await Promise.all([
+  // Get listing stats, user info, and unread inquiries
+  const Inquiry = (await import('@/models/Inquiry')).default;
+  
+  const [statsResult, recentListings, user, listingIds] = await Promise.all([
     Listing.aggregate([
       { $match: { sellerId: userObjectId } },
       {
@@ -72,7 +75,14 @@ async function getDashboardData(userId: string): Promise<{
       .limit(5)
       .lean(),
     User.findById(userId).select('sellerTier isContractor contractorTier sellerSubscriptionStatus subscriptionCurrentPeriodEnd').lean(),
+    Listing.find({ sellerId: userObjectId }).select('_id').lean(),
   ]);
+  
+  // Count unread inquiries for user's listings
+  const unreadInquiryCount = await Inquiry.countDocuments({
+    listing: { $in: listingIds.map(l => l._id) },
+    status: 'new',
+  });
 
   const stats = statsResult[0] || {
     total: 0,
@@ -96,6 +106,7 @@ async function getDashboardData(userId: string): Promise<{
     sellerTier: user?.sellerTier || null,
     trialEndsAt,
     subscriptionStatus: user?.sellerSubscriptionStatus || null,
+    unreadInquiryCount,
   };
 }
 
@@ -106,7 +117,7 @@ export default async function DashboardPage() {
     return null;
   }
 
-  const { stats, recentListings, hasSubscription, isContractor, sellerTier, trialEndsAt, subscriptionStatus } = await getDashboardData(session.user.id);
+  const { stats, recentListings, hasSubscription, isContractor, sellerTier, trialEndsAt, subscriptionStatus, unreadInquiryCount } = await getDashboardData(session.user.id);
 
   // Calculate days remaining in trial
   const daysRemaining = trialEndsAt 
@@ -156,81 +167,46 @@ export default async function DashboardPage() {
         isContractor={isContractor}
       />
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="heading-xl mb-2">Welcome back, {session.user.name?.split(' ')[0] || 'there'}!</h1>
-        <p className="text-body-md text-text-secondary">
-          Here&apos;s an overview of your account activity.
-        </p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          title="Total Listings"
-          value={stats.total}
-          icon="listings"
-          color="navy"
-        />
-        <StatCard
-          title="Active Listings"
-          value={stats.active}
-          icon="active"
-          color="green"
-        />
-        <StatCard
-          title="Total Views"
-          value={stats.views}
-          icon="views"
-          color="blue"
-        />
-        <StatCard
-          title="Featured"
-          value={stats.featured}
-          icon="featured"
-          color="orange"
-        />
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
+      {/* Header with Hero CTA */}
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="heading-xl mb-1">Welcome back, {session.user.name?.split(' ')[0] || 'there'}!</h1>
+          <p className="text-body-md text-text-secondary">
+            {stats.active} active {stats.active === 1 ? 'listing' : 'listings'} • {stats.views.toLocaleString()} total views
+            {unreadInquiryCount > 0 && (
+              <Link href="/dashboard/inquiries" className="ml-2 text-rail-orange font-medium hover:text-rail-orange-dark">
+                • {unreadInquiryCount} new {unreadInquiryCount === 1 ? 'inquiry' : 'inquiries'} →
+              </Link>
+            )}
+          </p>
+        </div>
         <Link
           href="/listings/create"
-          className="group bg-white rounded-2xl p-6 border border-surface-border hover:border-rail-orange/30 hover:shadow-card transition-all"
+          className="btn-primary inline-flex items-center gap-2 whitespace-nowrap"
         >
-          <div className="w-12 h-12 bg-rail-orange/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-rail-orange/20 transition-colors">
-            <svg className="w-6 h-6 text-rail-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-          </div>
-          <h3 className="heading-md mb-2 group-hover:text-rail-orange transition-colors">Create Listing</h3>
-          <p className="text-body-sm text-text-secondary">List your equipment or materials for sale</p>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          Create Listing
         </Link>
+      </div>
 
-        <Link
-          href="/dashboard/listings"
-          className="group bg-white rounded-2xl p-6 border border-surface-border hover:border-rail-orange/30 hover:shadow-card transition-all"
-        >
-          <div className="w-12 h-12 bg-navy-100 rounded-xl flex items-center justify-center mb-4 group-hover:bg-navy-200 transition-colors">
-            <svg className="w-6 h-6 text-navy-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          </div>
-          <h3 className="heading-md mb-2 group-hover:text-rail-orange transition-colors">Manage Listings</h3>
-          <p className="text-body-sm text-text-secondary">View and edit your existing listings</p>
+      {/* Quick Links */}
+      <div className="flex flex-wrap gap-4 mb-8 text-body-sm">
+        <Link href="/dashboard/listings" className="text-text-secondary hover:text-navy-900 font-medium">
+          Manage Listings
         </Link>
-
-        <Link
-          href="/dashboard/inquiries"
-          className="group bg-white rounded-2xl p-6 border border-surface-border hover:border-rail-orange/30 hover:shadow-card transition-all"
-        >
-          <div className="w-12 h-12 bg-status-info/10 rounded-xl flex items-center justify-center mb-4 group-hover:bg-status-info/20 transition-colors">
-            <svg className="w-6 h-6 text-status-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-          </div>
-          <h3 className="heading-md mb-2 group-hover:text-rail-orange transition-colors">View Inquiries</h3>
-          <p className="text-body-sm text-text-secondary">Respond to buyer questions and offers</p>
+        <span className="text-text-tertiary">•</span>
+        <Link href="/dashboard/inquiries" className="text-text-secondary hover:text-navy-900 font-medium">
+          View Inquiries
+        </Link>
+        <span className="text-text-tertiary">•</span>
+        <Link href="/dashboard/billing" className="text-text-secondary hover:text-navy-900 font-medium">
+          Billing
+        </Link>
+        <span className="text-text-tertiary">•</span>
+        <Link href="/dashboard/settings" className="text-text-secondary hover:text-navy-900 font-medium">
+          Settings
         </Link>
       </div>
 
@@ -299,78 +275,20 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* Premium Add-ons Promo */}
-      <div className="mt-8 bg-gradient-to-r from-navy-700 to-navy-600 rounded-2xl p-8 text-white">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h2 className="heading-lg mb-2">Boost Your Visibility</h2>
-            <p className="text-body-md text-white/90 max-w-xl">
-              Get more views and inquiries with premium add-ons. Feature your listings, highlight them in search, and generate professional PDF spec sheets.
-            </p>
-          </div>
+      {/* Premium Add-ons Promo - Secondary placement */}
+      {stats.active > 0 && (
+        <div className="mt-8 bg-surface-secondary rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <p className="text-body-sm text-text-secondary">
+            <span className="font-medium text-navy-900">Want more visibility?</span> Feature or highlight your listings to get more inquiries.
+          </p>
           <Link
             href="/dashboard/listings"
-            className="flex-shrink-0 bg-rail-orange hover:bg-rail-orange-dark text-white font-medium py-3 px-6 rounded-xl transition-colors"
+            className="text-body-sm font-medium text-rail-orange hover:text-rail-orange-dark whitespace-nowrap"
           >
-            Upgrade Listings
+            View Add-ons →
           </Link>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({
-  title,
-  value,
-  icon,
-  color,
-}: {
-  title: string;
-  value: number;
-  icon: string;
-  color: 'navy' | 'green' | 'blue' | 'orange';
-}) {
-  const colorClasses = {
-    navy: 'bg-navy-100 text-navy-900',
-    green: 'bg-status-success/10 text-status-success',
-    blue: 'bg-status-info/10 text-status-info',
-    orange: 'bg-rail-orange/10 text-rail-orange',
-  };
-
-  const icons: Record<string, React.ReactNode> = {
-    listings: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-      </svg>
-    ),
-    active: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    views: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-      </svg>
-    ),
-    featured: (
-      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-      </svg>
-    ),
-  };
-
-  return (
-    <div className="bg-white rounded-2xl p-6 border border-surface-border">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colorClasses[color]}`}>
-          {icons[icon]}
-        </div>
-      </div>
-      <p className="text-display-sm font-bold text-navy-900">{value.toLocaleString()}</p>
-      <p className="text-body-sm text-text-secondary">{title}</p>
+      )}
     </div>
   );
 }

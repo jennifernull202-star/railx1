@@ -7,6 +7,10 @@
  * POST /api/admin/verification/sellers
  * - Approve or reject a seller verification
  * - On approval: Trigger Stripe subscription flow
+ * 
+ * AUDIT LOGGING:
+ * - All approval/rejection/revoke actions are logged to AdminAuditLog
+ * - Enterprise compliance requirement
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,6 +19,7 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import SellerVerification from '@/models/SellerVerification';
+import AdminAuditLog from '@/models/AdminAuditLog';
 import Stripe from 'stripe';
 
 const getStripe = () => {
@@ -223,6 +228,18 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      // AUDIT LOG: Verification approval
+      await AdminAuditLog.logAction({
+        adminId: admin._id,
+        adminEmail: admin.email,
+        action: 'verification_approve',
+        targetType: 'verification',
+        targetId: verification._id,
+        targetTitle: `Seller Verification: ${user.email}`,
+        details: { userId: user._id, userEmail: user.email },
+        reason: notes || 'Admin approved verification',
+      });
+
       return NextResponse.json({
         success: true,
         action: 'approved',
@@ -261,7 +278,17 @@ export async function POST(request: NextRequest) {
       user.isVerifiedSeller = false;
       await user.save();
 
-      // TODO: Send rejection email with reason
+      // AUDIT LOG: Verification rejection
+      await AdminAuditLog.logAction({
+        adminId: admin._id,
+        adminEmail: admin.email,
+        action: 'verification_reject',
+        targetType: 'verification',
+        targetId: verification._id,
+        targetTitle: `Seller Verification: ${user.email}`,
+        details: { userId: user._id, userEmail: user.email },
+        reason: rejectionReason,
+      });
       
       return NextResponse.json({
         success: true,
@@ -296,6 +323,18 @@ export async function POST(request: NextRequest) {
       user.verifiedSellerStatus = 'revoked';
       user.verifiedSellerExpiresAt = new Date();
       await user.save();
+
+      // AUDIT LOG: Badge revocation
+      await AdminAuditLog.logAction({
+        adminId: admin._id,
+        adminEmail: admin.email,
+        action: 'badge_revoke',
+        targetType: 'verification',
+        targetId: verification._id,
+        targetTitle: `Seller Verification: ${user.email}`,
+        details: { userId: user._id, userEmail: user.email },
+        reason: notes || 'Badge revoked by admin',
+      });
 
       return NextResponse.json({
         success: true,

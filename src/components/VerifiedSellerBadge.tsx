@@ -32,12 +32,10 @@ interface VerifiedSellerBadgeProps {
   className?: string;
 }
 
-const BADGE_TOOLTIP = `Verified Seller: Documentation reviewed.
-Transactions and payments are not guaranteed by The Rail Exchange.`;
+const BADGE_TOOLTIP = `Verification reflects document submission and review.
+The Rail Exchange does not verify ownership, authority to sell, transaction validity, or item condition.`;
 
-const FULL_DISCLAIMER = `Verified Seller indicates identity and business documentation were submitted and reviewed.
-The Rail Exchange does not guarantee transactions, payments, item condition, or outcomes.
-All transactions occur directly between buyers and sellers.`;
+const FULL_DISCLAIMER = `Verification reflects document submission and review. The Rail Exchange does not verify ownership, authority to sell, transaction validity, or item condition. All transactions, inspections, payments, and due diligence occur directly between buyers and sellers.`;
 
 export function VerifiedSellerBadge({
   size = 'sm',

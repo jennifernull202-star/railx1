@@ -159,8 +159,8 @@ export default function BecomeContractorPage() {
               Ready to Start?
             </h2>
             <p className="text-text-secondary mb-6 max-w-xl mx-auto">
-              It&apos;s free to list your services. You can optionally upgrade to Verified Contractor
-              for premium features and the trusted badge.
+              It&apos;s free to list your services. You can optionally upgrade for document review,
+              a verification badge, priority placement, and enhanced visibility.
             </p>
 
             {error && (
@@ -225,8 +225,8 @@ export default function BecomeContractorPage() {
                   What&apos;s the Verified Contractor badge?
                 </h4>
                 <p className="text-text-secondary">
-                  Verified Contractors go through our verification process and receive
-                  a trusted badge, priority placement, and access to premium leads.
+                  Contractors who complete document review receive a verification badge,
+                  priority placement, and enhanced visibility to buyers.
                 </p>
               </div>
             </div>

@@ -74,7 +74,7 @@ const CategoryTile: React.FC<CategoryTileProps> = ({
     <Link href={linkHref}>
       <Card className={cn(
         "group overflow-hidden rounded-xl cursor-pointer transition-all duration-300",
-        "hover:shadow-lg hover:-translate-y-1",
+        "hover:shadow-md",
         colorVariants[color],
         className
       )}>

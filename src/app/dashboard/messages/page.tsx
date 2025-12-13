@@ -11,6 +11,7 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/utils';
+import { Shield, Clock, Package } from 'lucide-react';
 
 interface InquiryListing {
   _id: string;
@@ -23,6 +24,14 @@ interface InquiryUser {
   _id: string;
   name: string;
   email: string;
+  verifiedSeller?: boolean;
+  verifiedSellerExpiresAt?: string;
+}
+
+interface BuyerIntent {
+  quantity?: number;
+  timeline?: 'immediate' | 'short_term' | 'medium_term' | 'long_term' | 'unspecified';
+  purpose?: string;
 }
 
 interface Inquiry {
@@ -40,6 +49,8 @@ interface Inquiry {
   lastMessageAt: string;
   buyerUnreadCount: number;
   sellerUnreadCount: number;
+  buyerIntent?: BuyerIntent;
+  responseTimeMinutes?: number;
   createdAt: string;
 }
 
@@ -205,6 +216,19 @@ export default function InboxPage() {
               const unread = getUnreadCount(inquiry);
               const otherParty = getOtherParty(inquiry);
               const lastMessage = inquiry.messages[inquiry.messages.length - 1];
+              
+              // Check if buyer is verified (for seller view)
+              const isBuyerVerified = role === 'seller' && inquiry.buyer?.verifiedSeller && 
+                (!inquiry.buyer.verifiedSellerExpiresAt || new Date(inquiry.buyer.verifiedSellerExpiresAt) > new Date());
+              
+              // Format buyer intent timeline
+              const timelineLabels: Record<string, string> = {
+                immediate: 'Urgent',
+                short_term: '1-3 mo',
+                medium_term: '3-6 mo',
+                long_term: '6+ mo',
+                unspecified: '',
+              };
 
               return (
                 <Link
@@ -242,9 +266,18 @@ export default function InboxPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className={`text-body-md ${unread > 0 ? 'font-semibold text-navy-900' : 'font-medium text-navy-900'} line-clamp-1`}>
-                            {otherParty.name}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className={`text-body-md ${unread > 0 ? 'font-semibold text-navy-900' : 'font-medium text-navy-900'} line-clamp-1`}>
+                              {otherParty.name}
+                            </p>
+                            {/* Verified Buyer Badge - only show in seller view */}
+                            {isBuyerVerified && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
+                                <Shield className="w-3 h-3" />
+                                Verified
+                              </span>
+                            )}
+                          </div>
                           <p className="text-body-sm text-text-secondary line-clamp-1">
                             {inquiry.subject}
                           </p>
@@ -258,6 +291,24 @@ export default function InboxPage() {
                           </span>
                         </div>
                       </div>
+
+                      {/* Buyer Intent Tags - only show in seller view */}
+                      {role === 'seller' && inquiry.buyerIntent && (inquiry.buyerIntent.quantity || inquiry.buyerIntent.timeline !== 'unspecified') && (
+                        <div className="flex items-center gap-2 mt-1.5">
+                          {inquiry.buyerIntent.quantity && inquiry.buyerIntent.quantity > 1 && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
+                              <Package className="w-3 h-3" />
+                              Qty: {inquiry.buyerIntent.quantity}
+                            </span>
+                          )}
+                          {inquiry.buyerIntent.timeline && timelineLabels[inquiry.buyerIntent.timeline] && (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-xs">
+                              <Clock className="w-3 h-3" />
+                              {timelineLabels[inquiry.buyerIntent.timeline]}
+                            </span>
+                          )}
+                        </div>
+                      )}
 
                       {/* Last Message Preview */}
                       <p className="text-body-sm text-text-tertiary mt-1 line-clamp-1">

@@ -154,7 +154,7 @@ const NewMessageComposer: React.FC<NewMessageComposerProps> = ({
             >
               {isSending ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  <span className="w-4 h-4 bg-white/30 rounded-full animate-pulse mr-2" />
                   Sending...
                 </>
               ) : (

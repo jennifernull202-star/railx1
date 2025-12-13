@@ -216,6 +216,9 @@ export interface IListingDocument extends Document {
   media: ListingMedia[];
   primaryImageUrl?: string;
   
+  // S-1.3: Image hashes for duplicate detection
+  imageHashes?: string[];
+  
   // ============================================
   // STRUCTURED EQUIPMENT DATA (Buyer Audit Upgrade)
   // ============================================
@@ -267,6 +270,11 @@ export interface IListingDocument extends Document {
   isActive: boolean;
   isFlagged: boolean;
   flagReason?: string;
+  
+  // BATCH E-3: Auto-flagging metadata (admin visibility)
+  reportCount: number;  // Total number of reports received
+  uniqueReporterCount: number;  // Number of unique users who reported
+  lastReportAt?: Date;  // When was the last report
   
   // Timestamps (auto)
   createdAt: Date;
@@ -389,6 +397,13 @@ const ListingSchema = new Schema<IListingDocument, IListingModel>(
       },
     },
     primaryImageUrl: String,
+    
+    // S-1.3: Image hashes for duplicate detection across sellers
+    imageHashes: {
+      type: [String],
+      index: true,
+      default: [],
+    },
     
     // Legacy Specifications (backward compatibility)
     specifications: [{
@@ -532,6 +547,11 @@ const ListingSchema = new Schema<IListingDocument, IListingModel>(
     isActive: { type: Boolean, default: true, index: true },
     isFlagged: { type: Boolean, default: false },
     flagReason: String,
+    
+    // BATCH E-3: Auto-flagging metadata (admin visibility)
+    reportCount: { type: Number, default: 0 },
+    uniqueReporterCount: { type: Number, default: 0 },
+    lastReportAt: { type: Date },
   },
   {
     timestamps: true,

@@ -221,7 +221,7 @@ export default async function ContractorProfilePage() {
             <div className="flex-1">
               <h3 className="font-semibold text-navy-900 mb-1">Get Verified</h3>
               <p className="text-sm text-slate-600 mb-3">
-                Verified contractors get a trust badge, priority in search results, and more leads.
+                Document-reviewed contractors get a verification badge, priority in search results, and enhanced visibility.
               </p>
               <button className="text-sm font-semibold text-rail-orange hover:underline">
                 Apply for Verification →

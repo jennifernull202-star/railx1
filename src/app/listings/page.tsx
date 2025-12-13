@@ -418,8 +418,6 @@ async function ListingsGrid({ searchParams }: { searchParams: Promise<SearchPara
 
       {/* Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {/* Always show promo card first */}
-        <FeaturedListingPromoCard />
         {listings.length > 0 ? (
           listings.map((listing) => (
             <ListingCard key={listing._id} listing={listing} />
@@ -427,11 +425,7 @@ async function ListingsGrid({ searchParams }: { searchParams: Promise<SearchPara
         ) : !noDatabase ? (
           <EmptyState hasFilters={hasFilters} />
         ) : (
-          <>
-            <FeaturedListingPromoCard />
-            <FeaturedListingPromoCard />
-            <FeaturedListingPromoCard />
-          </>
+          <EmptyState hasFilters={hasFilters} />
         )}
       </div>
 

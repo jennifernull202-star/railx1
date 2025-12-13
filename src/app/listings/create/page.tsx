@@ -12,7 +12,17 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getImageUrl } from '@/lib/utils';
-import { LISTING_CATEGORIES, LISTING_CONDITIONS } from '@/lib/listing-constants';
+import { 
+  LISTING_CATEGORIES, 
+  LISTING_CONDITIONS,
+  AVAILABILITY_OPTIONS,
+  LOCOMOTIVE_MANUFACTURERS,
+  RAILCAR_MANUFACTURERS,
+  AAR_CAR_TYPES,
+  requiresEquipmentData,
+  isLocomotiveCategory,
+  isRailcarCategory,
+} from '@/lib/listing-constants';
 import { US_STATES } from '@/lib/constants';
 import LocationAutocomplete, { LocationResult } from '@/components/search/LocationAutocomplete';
 import BulkPhotoUpload, { UploadedImage } from '@/components/forms/BulkPhotoUpload';
@@ -49,6 +59,27 @@ interface Specification {
   unit: string;
 }
 
+// Structured equipment data for rolling stock
+interface EquipmentFormData {
+  // Core identifiers (required for equipment categories)
+  reportingMarks: string;
+  manufacturer: string;
+  model: string;
+  yearBuilt: string;
+  availability: string;
+  
+  // Locomotive-specific
+  horsepower: string;
+  fraCompliant: 'yes' | 'no' | 'unknown' | '';
+  engineHours: string;
+  mileage: string;
+  
+  // Railcar-specific
+  aarCarType: string;
+  loadLimit: string;
+  axleCount: string;
+}
+
 interface ListingFormData {
   title: string;
   description: string;
@@ -72,9 +103,9 @@ interface ListingFormData {
 
 const STEPS = [
   { id: 1, name: 'Basic Info', description: 'Title, category, and condition' },
-  { id: 2, name: 'Details', description: 'Price, location, and quantity' },
-  { id: 3, name: 'Photos', description: 'Add images and documents' },
-  { id: 4, name: 'Specifications', description: 'Technical details' },
+  { id: 2, name: 'Equipment Data', description: 'Structured equipment details' },
+  { id: 3, name: 'Pricing & Location', description: 'Price, location, and quantity' },
+  { id: 4, name: 'Photos', description: 'Add images and documents' },
   { id: 5, name: 'Review', description: 'Review and publish' },
 ];
 
@@ -119,6 +150,22 @@ export default function CreateListingPage() {
   const [tagInput, setTagInput] = useState('');
   const [draftRestored, setDraftRestored] = useState(false);
   
+  // Structured equipment data state
+  const [equipmentData, setEquipmentData] = useState<EquipmentFormData>({
+    reportingMarks: '',
+    manufacturer: '',
+    model: '',
+    yearBuilt: '',
+    availability: '',
+    horsepower: '',
+    fraCompliant: '',
+    engineHours: '',
+    mileage: '',
+    aarCarType: '',
+    loadLimit: '',
+    axleCount: '',
+  });
+  
   // #8 fix: localStorage key for draft auto-save
   const DRAFT_STORAGE_KEY = 'railx-listing-draft';
   
@@ -154,6 +201,7 @@ export default function CreateListingPage() {
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft);
         if (parsed.formData) setFormData(parsed.formData);
+        if (parsed.equipmentData) setEquipmentData(parsed.equipmentData);
         if (parsed.media) setMedia(parsed.media);
         if (parsed.specifications) setSpecifications(parsed.specifications);
         if (parsed.currentStep) setCurrentStep(parsed.currentStep);
@@ -169,6 +217,7 @@ export default function CreateListingPage() {
     try {
       const draftData = {
         formData,
+        equipmentData,
         media: media.filter(m => !m.uploading && !m.error), // Only save completed uploads
         specifications,
         currentStep,
@@ -178,7 +227,7 @@ export default function CreateListingPage() {
     } catch (e) {
       console.error('Failed to save draft:', e);
     }
-  }, [formData, media, specifications, currentStep]);
+  }, [formData, equipmentData, media, specifications, currentStep]);
   
   // #8 fix: Debounced auto-save on form changes
   useEffect(() => {
@@ -212,6 +261,10 @@ export default function CreateListingPage() {
 
   const updateFormData = (updates: Partial<ListingFormData>) => {
     setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  const updateEquipmentData = (updates: Partial<EquipmentFormData>) => {
+    setEquipmentData(prev => ({ ...prev, ...updates }));
   };
 
   const addSpecification = () => {
@@ -265,6 +318,60 @@ export default function CreateListingPage() {
         return true;
 
       case 2:
+        // Equipment data validation for rolling stock categories
+        if (requiresEquipmentData(formData.category)) {
+          if (!equipmentData.manufacturer.trim()) {
+            setError('Manufacturer is required');
+            return false;
+          }
+          if (!equipmentData.model.trim()) {
+            setError('Model is required');
+            return false;
+          }
+          if (!equipmentData.yearBuilt || parseInt(equipmentData.yearBuilt) < 1900 || parseInt(equipmentData.yearBuilt) > new Date().getFullYear() + 1) {
+            setError('Please enter a valid year built (1900 - present)');
+            return false;
+          }
+          if (!equipmentData.availability) {
+            setError('Availability status is required');
+            return false;
+          }
+          
+          // Locomotive-specific validation
+          if (isLocomotiveCategory(formData.category)) {
+            if (!equipmentData.horsepower || parseInt(equipmentData.horsepower) < 100) {
+              setError('Horsepower is required for locomotives (minimum 100)');
+              return false;
+            }
+            if (!equipmentData.fraCompliant) {
+              setError('FRA compliance status is required for locomotives');
+              return false;
+            }
+            if (!equipmentData.engineHours && !equipmentData.mileage) {
+              setError('Either engine hours or mileage is required for locomotives');
+              return false;
+            }
+          }
+          
+          // Railcar-specific validation
+          if (isRailcarCategory(formData.category)) {
+            if (!equipmentData.aarCarType) {
+              setError('AAR car type is required for railcars');
+              return false;
+            }
+            if (!equipmentData.loadLimit || parseInt(equipmentData.loadLimit) < 1000) {
+              setError('Load limit is required for railcars (minimum 1,000 lbs)');
+              return false;
+            }
+            if (!equipmentData.axleCount) {
+              setError('Axle count is required for railcars');
+              return false;
+            }
+          }
+        }
+        return true;
+
+      case 3:
         if (formData.priceType === 'fixed' && !formData.priceAmount) {
           setError('Please enter a price or select "Contact for Price"');
           return false;
@@ -279,12 +386,8 @@ export default function CreateListingPage() {
         }
         return true;
 
-      case 3:
-        // Photos are optional but recommended
-        return true;
-
       case 4:
-        // Specifications are optional
+        // Photos are optional but recommended
         return true;
 
       default:
@@ -372,43 +475,69 @@ export default function CreateListingPage() {
   };
 
   // Build listing data object
-  const buildListingData = (asDraft: boolean) => ({
-    title: formData.title,
-    description: formData.description,
-    category: formData.category,
-    subcategory: formData.subcategory,
-    condition: formData.condition,
-    status: asDraft ? 'draft' : 'active',
-    price: {
-      type: formData.priceType,
-      amount: formData.priceAmount ? parseFloat(formData.priceAmount) : undefined,
-      currency: 'USD',
-    },
-    location: {
-      city: formData.city,
-      state: formData.state,
-      zipCode: formData.zipCode,
-      country: 'USA',
-      lat: formData.lat,
-      lng: formData.lng,
-    },
-    media: media.filter(m => !m.uploading && !m.error).map((m, i) => ({
-      url: m.url,
-      type: 'image' as const,
-      caption: '',
-      isPrimary: m.isPrimary,
-      order: i,
-    })),
-    specifications: specifications.filter(s => s.label && s.value),
-    quantity: parseInt(formData.quantity) || 1,
-    quantityUnit: formData.quantityUnit,
-    shippingOptions: {
-      localPickup: formData.localPickup,
-      sellerShips: formData.sellerShips,
-      buyerArranges: formData.buyerArranges,
-    },
-    tags: formData.tags,
-  });
+  const buildListingData = (asDraft: boolean) => {
+    // Build equipment data object for rolling stock
+    const equipment = requiresEquipmentData(formData.category) ? {
+      reportingMarks: equipmentData.reportingMarks || undefined,
+      manufacturer: equipmentData.manufacturer,
+      model: equipmentData.model,
+      yearBuilt: equipmentData.yearBuilt ? parseInt(equipmentData.yearBuilt) : undefined,
+      availability: equipmentData.availability || undefined,
+      // Locomotive-specific fields
+      ...(isLocomotiveCategory(formData.category) && {
+        horsepower: equipmentData.horsepower ? parseInt(equipmentData.horsepower) : undefined,
+        fraCompliant: equipmentData.fraCompliant === 'yes' ? true : 
+                      equipmentData.fraCompliant === 'no' ? false : undefined,
+        engineHours: equipmentData.engineHours ? parseInt(equipmentData.engineHours) : undefined,
+        mileage: equipmentData.mileage ? parseInt(equipmentData.mileage) : undefined,
+      }),
+      // Railcar-specific fields
+      ...(isRailcarCategory(formData.category) && {
+        aarCarType: equipmentData.aarCarType || undefined,
+        loadLimit: equipmentData.loadLimit ? parseInt(equipmentData.loadLimit) : undefined,
+        axleCount: equipmentData.axleCount ? parseInt(equipmentData.axleCount) : undefined,
+      }),
+    } : undefined;
+
+    return {
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      subcategory: formData.subcategory,
+      condition: formData.condition,
+      status: asDraft ? 'draft' : 'active',
+      price: {
+        type: formData.priceType,
+        amount: formData.priceAmount ? parseFloat(formData.priceAmount) : undefined,
+        currency: 'USD',
+      },
+      location: {
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: 'USA',
+        lat: formData.lat,
+        lng: formData.lng,
+      },
+      media: media.filter(m => !m.uploading && !m.error).map((m, i) => ({
+        url: m.url,
+        type: 'image' as const,
+        caption: '',
+        isPrimary: m.isPrimary,
+        order: i,
+      })),
+      equipment,
+      specifications: specifications.filter(s => s.label && s.value),
+      quantity: parseInt(formData.quantity) || 1,
+      quantityUnit: formData.quantityUnit,
+      shippingOptions: {
+        localPickup: formData.localPickup,
+        sellerShips: formData.sellerShips,
+        buyerArranges: formData.buyerArranges,
+      },
+      tags: formData.tags,
+    };
+  };
 
   const handleSubmit = async (asDraft: boolean = false) => {
     if (!validateStep(currentStep)) return;
@@ -604,6 +733,11 @@ export default function CreateListingPage() {
                     quantity: '1', quantityUnit: '', localPickup: true, sellerShips: false,
                     buyerArranges: true, tags: [],
                   });
+                  setEquipmentData({
+                    reportingMarks: '', manufacturer: '', model: '', yearBuilt: '', availability: '',
+                    horsepower: '', fraCompliant: '', engineHours: '', mileage: '',
+                    aarCarType: '', loadLimit: '', axleCount: '',
+                  });
                   setMedia([]);
                   setSpecifications([]);
                   setCurrentStep(1);
@@ -755,8 +889,230 @@ export default function CreateListingPage() {
               </div>
             )}
 
-            {/* Step 2: Details */}
+            {/* Step 2: Equipment Data (for rolling stock categories) */}
             {currentStep === 2 && (
+              <div className="space-y-6">
+                <h2 className="heading-lg mb-2">Equipment Details</h2>
+                
+                {requiresEquipmentData(formData.category) ? (
+                  <>
+                    <p className="text-body-md text-text-secondary mb-6">
+                      Provide structured equipment data to help buyers find and evaluate your listing.
+                      These fields are required for {formData.category === 'locomotives' ? 'locomotives' : 'railcars'}.
+                    </p>
+
+                    {/* Core Equipment Fields */}
+                    <div className="bg-surface-secondary rounded-xl p-6 space-y-4">
+                      <h3 className="text-lg font-semibold text-navy-900">Core Identification</h3>
+                      
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="form-label">Manufacturer *</label>
+                          <select
+                            value={equipmentData.manufacturer}
+                            onChange={(e) => updateEquipmentData({ manufacturer: e.target.value })}
+                            className="form-input"
+                          >
+                            <option value="">Select manufacturer</option>
+                            {(isLocomotiveCategory(formData.category) ? LOCOMOTIVE_MANUFACTURERS : RAILCAR_MANUFACTURERS).map((mfr) => (
+                              <option key={mfr} value={mfr}>{mfr}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="form-label">Model *</label>
+                          <input
+                            type="text"
+                            value={equipmentData.model}
+                            onChange={(e) => updateEquipmentData({ model: e.target.value })}
+                            placeholder={isLocomotiveCategory(formData.category) ? "e.g., SD70ACe, GP38-2" : "e.g., 5161, 25500"}
+                            className="form-input"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="form-label">Year Built *</label>
+                          <input
+                            type="number"
+                            value={equipmentData.yearBuilt}
+                            onChange={(e) => updateEquipmentData({ yearBuilt: e.target.value })}
+                            placeholder="e.g., 2015"
+                            min="1900"
+                            max={new Date().getFullYear() + 1}
+                            className="form-input"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label">Reporting Marks</label>
+                          <input
+                            type="text"
+                            value={equipmentData.reportingMarks}
+                            onChange={(e) => updateEquipmentData({ reportingMarks: e.target.value.toUpperCase() })}
+                            placeholder="e.g., BNSF 1234, UP 5678"
+                            className="form-input uppercase"
+                          />
+                          <p className="text-xs text-text-tertiary mt-1">Railroad reporting marks (letters + numbers)</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="form-label">Availability Status *</label>
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {AVAILABILITY_OPTIONS.map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => updateEquipmentData({ availability: option.value })}
+                              className={`p-3 rounded-xl border-2 text-left transition-all ${
+                                equipmentData.availability === option.value
+                                  ? 'border-rail-orange bg-rail-orange/5'
+                                  : 'border-surface-border hover:border-navy-200'
+                              }`}
+                            >
+                              <span className="text-sm font-medium text-navy-900">{option.label}</span>
+                              <p className="text-xs text-text-secondary mt-0.5">{option.description}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Locomotive-Specific Fields */}
+                    {isLocomotiveCategory(formData.category) && (
+                      <div className="bg-blue-50 rounded-xl p-6 space-y-4">
+                        <h3 className="text-lg font-semibold text-navy-900">Locomotive Specifications</h3>
+                        
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="form-label">Horsepower *</label>
+                            <input
+                              type="number"
+                              value={equipmentData.horsepower}
+                              onChange={(e) => updateEquipmentData({ horsepower: e.target.value })}
+                              placeholder="e.g., 4400"
+                              min="100"
+                              className="form-input"
+                            />
+                            <p className="text-xs text-text-tertiary mt-1">Rated horsepower</p>
+                          </div>
+                          <div>
+                            <label className="form-label">FRA Compliance *</label>
+                            <select
+                              value={equipmentData.fraCompliant}
+                              onChange={(e) => updateEquipmentData({ fraCompliant: e.target.value as EquipmentFormData['fraCompliant'] })}
+                              className="form-input"
+                            >
+                              <option value="">Select status</option>
+                              <option value="yes">Yes - FRA Compliant</option>
+                              <option value="no">No - Not FRA Compliant</option>
+                              <option value="unknown">Unknown</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="form-label">Engine Hours</label>
+                            <input
+                              type="number"
+                              value={equipmentData.engineHours}
+                              onChange={(e) => updateEquipmentData({ engineHours: e.target.value })}
+                              placeholder="e.g., 45000"
+                              min="0"
+                              className="form-input"
+                            />
+                            <p className="text-xs text-text-tertiary mt-1">Total engine hours (if known)</p>
+                          </div>
+                          <div>
+                            <label className="form-label">Mileage</label>
+                            <input
+                              type="number"
+                              value={equipmentData.mileage}
+                              onChange={(e) => updateEquipmentData({ mileage: e.target.value })}
+                              placeholder="e.g., 250000"
+                              min="0"
+                              className="form-input"
+                            />
+                            <p className="text-xs text-text-tertiary mt-1">Total mileage (if known)</p>
+                          </div>
+                        </div>
+                        
+                        <p className="text-sm text-blue-800 bg-blue-100 p-3 rounded-lg">
+                          <strong>Note:</strong> Either engine hours or mileage is required.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Railcar-Specific Fields */}
+                    {isRailcarCategory(formData.category) && (
+                      <div className="bg-amber-50 rounded-xl p-6 space-y-4">
+                        <h3 className="text-lg font-semibold text-navy-900">Railcar Specifications</h3>
+                        
+                        <div>
+                          <label className="form-label">AAR Car Type *</label>
+                          <select
+                            value={equipmentData.aarCarType}
+                            onChange={(e) => updateEquipmentData({ aarCarType: e.target.value })}
+                            className="form-input"
+                          >
+                            <option value="">Select AAR car type</option>
+                            {AAR_CAR_TYPES.map((type) => (
+                              <option key={type.value} value={type.value}>{type.label}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="form-label">Load Limit (lbs) *</label>
+                            <input
+                              type="number"
+                              value={equipmentData.loadLimit}
+                              onChange={(e) => updateEquipmentData({ loadLimit: e.target.value })}
+                              placeholder="e.g., 286000"
+                              min="1000"
+                              className="form-input"
+                            />
+                            <p className="text-xs text-text-tertiary mt-1">Maximum load capacity in pounds</p>
+                          </div>
+                          <div>
+                            <label className="form-label">Axle Count *</label>
+                            <select
+                              value={equipmentData.axleCount}
+                              onChange={(e) => updateEquipmentData({ axleCount: e.target.value })}
+                              className="form-input"
+                            >
+                              <option value="">Select axle count</option>
+                              <option value="4">4 axles (2 trucks)</option>
+                              <option value="6">6 axles (3 trucks)</option>
+                              <option value="8">8 axles (4 trucks)</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="bg-surface-secondary rounded-xl p-8 text-center">
+                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-navy-900 mb-2">No Equipment Data Required</h3>
+                    <p className="text-text-secondary">
+                      The category &quot;{CATEGORY_LABELS[formData.category]?.label || formData.category}&quot; does not require structured equipment data.
+                      <br />You can proceed to the next step.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 3: Pricing & Location */}
+            {currentStep === 3 && (
               <div className="space-y-6">
                 <h2 className="heading-lg mb-6">Pricing & Location</h2>
 
@@ -919,8 +1275,8 @@ export default function CreateListingPage() {
               </div>
             )}
 
-            {/* Step 3: Photos */}
-            {currentStep === 3 && (
+            {/* Step 4: Photos */}
+            {currentStep === 4 && (
               <div className="space-y-6">
                 <h2 className="heading-lg mb-2">Photos & Documents</h2>
                 <p className="text-body-md text-text-secondary mb-6">
@@ -949,108 +1305,6 @@ export default function CreateListingPage() {
               </div>
             )}
 
-            {/* Step 4: Specifications */}
-            {currentStep === 4 && (
-              <div className="space-y-6">
-                <h2 className="heading-lg mb-6">Technical Specifications</h2>
-
-                <p className="text-body-md text-text-secondary">
-                  Add technical details that buyers care about. These help your listing appear in relevant searches.
-                </p>
-
-                {/* Specifications List */}
-                <div className="space-y-4">
-                  {specifications.map((spec, index) => (
-                    <div key={index} className="flex gap-4 items-start">
-                      <div className="flex-1 grid sm:grid-cols-3 gap-3">
-                        <input
-                          type="text"
-                          value={spec.label}
-                          onChange={(e) => updateSpecification(index, 'label', e.target.value)}
-                          placeholder="Label (e.g., Horsepower)"
-                          className="form-input"
-                        />
-                        <input
-                          type="text"
-                          value={spec.value}
-                          onChange={(e) => updateSpecification(index, 'value', e.target.value)}
-                          placeholder="Value (e.g., 4,400)"
-                          className="form-input"
-                        />
-                        <input
-                          type="text"
-                          value={spec.unit}
-                          onChange={(e) => updateSpecification(index, 'unit', e.target.value)}
-                          placeholder="Unit (e.g., HP)"
-                          className="form-input"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeSpecification(index)}
-                        className="p-3 text-text-tertiary hover:text-red-500 transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={addSpecification}
-                  className="btn-outline"
-                >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Add Specification
-                </button>
-
-                {/* Tags */}
-                <div className="pt-6 border-t border-surface-border">
-                  <label className="form-label">Tags</label>
-                  <p className="text-body-sm text-text-secondary mb-3">
-                    Add keywords to help buyers find your listing
-                  </p>
-                  <div className="flex gap-2 mb-3">
-                    <input
-                      type="text"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-                      placeholder="Enter a tag and press Enter"
-                      className="form-input flex-1"
-                    />
-                    <button type="button" onClick={addTag} className="btn-outline">
-                      Add
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {formData.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-surface-secondary rounded-full text-body-sm"
-                      >
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => removeTag(tag)}
-                          className="text-text-tertiary hover:text-red-500"
-                        >
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Step 5: Review */}
             {currentStep === 5 && (
               <div className="space-y-6">
@@ -1072,6 +1326,15 @@ export default function CreateListingPage() {
                       <span className="badge-secondary">{CONDITION_LABELS[formData.condition]?.label}</span>
                     </div>
                     <h3 className="heading-md mb-2">{formData.title || 'Untitled Listing'}</h3>
+                    
+                    {/* Equipment Identity */}
+                    {requiresEquipmentData(formData.category) && equipmentData.manufacturer && (
+                      <p className="text-lg font-semibold text-navy-800 mb-2">
+                        {equipmentData.yearBuilt} {equipmentData.manufacturer} {equipmentData.model}
+                        {equipmentData.reportingMarks && <span className="text-text-secondary ml-2">({equipmentData.reportingMarks})</span>}
+                      </p>
+                    )}
+                    
                     <p className="text-body-lg font-semibold text-rail-orange mb-3">
                       {formData.priceType === 'fixed' || formData.priceType === 'negotiable'
                         ? `$${parseFloat(formData.priceAmount || '0').toLocaleString()}`
@@ -1086,6 +1349,73 @@ export default function CreateListingPage() {
                   </div>
                 </div>
 
+                {/* Equipment Data Summary */}
+                {requiresEquipmentData(formData.category) && (
+                  <div className="p-4 bg-surface-secondary rounded-xl">
+                    <h4 className="heading-sm mb-3">Equipment Data</h4>
+                    <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-body-sm">
+                      <div className="flex justify-between">
+                        <dt className="text-text-secondary">Manufacturer</dt>
+                        <dd className="font-medium">{equipmentData.manufacturer || '-'}</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt className="text-text-secondary">Model</dt>
+                        <dd className="font-medium">{equipmentData.model || '-'}</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt className="text-text-secondary">Year Built</dt>
+                        <dd className="font-medium">{equipmentData.yearBuilt || '-'}</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt className="text-text-secondary">Reporting Marks</dt>
+                        <dd className="font-medium">{equipmentData.reportingMarks || '-'}</dd>
+                      </div>
+                      <div className="flex justify-between">
+                        <dt className="text-text-secondary">Availability</dt>
+                        <dd className="font-medium">{AVAILABILITY_OPTIONS.find(o => o.value === equipmentData.availability)?.label || '-'}</dd>
+                      </div>
+                      
+                      {isLocomotiveCategory(formData.category) && (
+                        <>
+                          <div className="flex justify-between">
+                            <dt className="text-text-secondary">Horsepower</dt>
+                            <dd className="font-medium">{equipmentData.horsepower ? `${parseInt(equipmentData.horsepower).toLocaleString()} HP` : '-'}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-text-secondary">FRA Compliant</dt>
+                            <dd className="font-medium">{equipmentData.fraCompliant === 'yes' ? 'Yes' : equipmentData.fraCompliant === 'no' ? 'No' : 'Unknown'}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-text-secondary">Engine Hours</dt>
+                            <dd className="font-medium">{equipmentData.engineHours ? parseInt(equipmentData.engineHours).toLocaleString() : '-'}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-text-secondary">Mileage</dt>
+                            <dd className="font-medium">{equipmentData.mileage ? parseInt(equipmentData.mileage).toLocaleString() : '-'}</dd>
+                          </div>
+                        </>
+                      )}
+                      
+                      {isRailcarCategory(formData.category) && (
+                        <>
+                          <div className="flex justify-between">
+                            <dt className="text-text-secondary">AAR Car Type</dt>
+                            <dd className="font-medium">{AAR_CAR_TYPES.find(t => t.value === equipmentData.aarCarType)?.label || '-'}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-text-secondary">Load Limit</dt>
+                            <dd className="font-medium">{equipmentData.loadLimit ? `${parseInt(equipmentData.loadLimit).toLocaleString()} lbs` : '-'}</dd>
+                          </div>
+                          <div className="flex justify-between">
+                            <dt className="text-text-secondary">Axle Count</dt>
+                            <dd className="font-medium">{equipmentData.axleCount || '-'}</dd>
+                          </div>
+                        </>
+                      )}
+                    </dl>
+                  </div>
+                )}
+
                 {/* Summary */}
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="p-4 bg-surface-secondary rounded-xl">
@@ -1098,10 +1428,6 @@ export default function CreateListingPage() {
                       <div className="flex justify-between">
                         <dt className="text-text-secondary">Photos</dt>
                         <dd className="font-medium">{media.length}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-text-secondary">Specifications</dt>
-                        <dd className="font-medium">{specifications.filter(s => s.label && s.value).length}</dd>
                       </div>
                     </dl>
                   </div>

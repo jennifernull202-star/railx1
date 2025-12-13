@@ -44,16 +44,16 @@ export default function HowItWorksPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-navy-900/5 via-transparent to-rail-orange/5" />
         <div className="container-rail relative">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-rail-orange/10 border border-rail-orange/20 rounded-full mb-6">
-              <Zap className="w-4 h-4 text-rail-orange" />
-              <span className="text-sm font-semibold text-rail-orange">The #1 Rail Industry Marketplace</span>
-            </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-navy-900 tracking-tight mb-6">
               How <span className="text-rail-orange">The Rail Exchange</span> Works
             </h1>
-            <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto">
-              Connect with verified buyers, sellers, and contractors in the rail industry.
+            <p className="text-lg md:text-xl text-slate-600 mb-6 max-w-2xl mx-auto">
+              Connect with document-reviewed buyers, sellers, and contractors in the rail industry.
               Whether you&apos;re buying equipment, selling inventory, or offering services — we make it simple.
+            </p>
+            {/* BATCH E-4: Platform Introduction Statement */}
+            <p className="text-sm text-slate-500 mb-10 max-w-2xl mx-auto">
+              The Rail Exchange is a listing and introduction platform. All transactions, inspections, payments, and due diligence occur directly between buyers and sellers.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -70,35 +70,6 @@ export default function HowItWorksPage() {
                 Browse Marketplace
               </Link>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Platform Overview */}
-      <section className="py-16 bg-white">
-        <div className="container-rail">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-navy-900 mb-4">One Platform, Endless Possibilities</h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              The Rail Exchange connects every part of the rail industry supply chain
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-8 max-w-5xl mx-auto">
-            {[
-              { icon: Search, title: 'Search & Discover', desc: 'Browse thousands of listings with map-based local search' },
-              { icon: MessageSquare, title: 'Connect & Message', desc: 'Direct messaging with sellers and contractors' },
-              { icon: ShoppingCart, title: 'Buy & Sell', desc: 'Secure transactions with trusted industry professionals' },
-              { icon: Sparkles, title: 'AI-Powered', desc: 'Smart search, AI-enhanced listings, and more' },
-            ].map((item, idx) => (
-              <div key={idx} className="text-center">
-                <div className="w-16 h-16 mx-auto bg-rail-orange/10 rounded-2xl flex items-center justify-center mb-4">
-                  <item.icon className="w-8 h-8 text-rail-orange" />
-                </div>
-                <h3 className="font-semibold text-navy-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-slate-600">{item.desc}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -302,7 +273,7 @@ export default function HowItWorksPage() {
                 {
                   step: '3',
                   title: 'Appear in Search',
-                  desc: 'Verified contractors rank higher in search results and get trust indicators.',
+                  desc: 'Document-reviewed contractors rank higher in search results and display verification indicators.',
                   icon: Search,
                 },
                 {
@@ -328,15 +299,15 @@ export default function HowItWorksPage() {
             <div className="mt-12 bg-green-50 rounded-2xl p-8 border border-green-100">
               <h3 className="font-semibold text-navy-900 mb-4 flex items-center gap-2">
                 <Shield className="w-5 h-5 text-green-600" />
-                Verified Contractor Benefits
+                Document-Reviewed Contractor Benefits
               </h3>
               <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  'Verified badge on profile',
+                  'Verification badge on profile',
                   'Priority in search results',
-                  'Trust indicators for buyers',
+                  'Verification indicators for buyers',
                   'Featured in directory',
-                  'Document verification',
+                  'Document review process',
                   'Analytics dashboard',
                   'Priority support',
                   'Enhanced profile visibility',
@@ -393,44 +364,6 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Maximize Results */}
-      <section className="py-20 bg-gradient-to-r from-navy-900 to-navy-800 text-white">
-        <div className="container-rail">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Maximize Your Results</h2>
-            <p className="text-lg text-white/80 mb-12">
-              Whether buying, selling, or offering services — here&apos;s how to get the most from The Rail Exchange
-            </p>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {[
-                {
-                  title: 'Complete Your Profile',
-                  desc: 'Profiles with photos and detailed info get 3x more engagement.',
-                  icon: Users,
-                },
-                {
-                  title: 'Use High-Quality Photos',
-                  desc: 'Listings with 5+ photos get 2x more inquiries.',
-                  icon: Star,
-                },
-                {
-                  title: 'Respond Quickly',
-                  desc: 'Sellers who respond within 24 hours close 4x more deals.',
-                  icon: Zap,
-                },
-              ].map((tip, idx) => (
-                <div key={idx} className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm">
-                  <tip.icon className="w-10 h-10 text-rail-orange mx-auto mb-4" />
-                  <h3 className="font-semibold text-white mb-2">{tip.title}</h3>
-                  <p className="text-sm text-white/70">{tip.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="py-20">
         <div className="container-rail">
@@ -456,6 +389,40 @@ export default function HowItWorksPage() {
                 View Pricing
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BATCH E-5: Governance FAQ Section */}
+      <section className="py-16 bg-slate-50 border-t border-slate-200">
+        <div className="container-rail">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold text-navy-900 mb-8 text-center">
+              Platform Governance
+            </h2>
+            
+            {/* FAQ: Fraud/Misrepresentation Protections */}
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+              <h3 className="font-semibold text-navy-900 mb-4">
+                What protections does The Rail Exchange provide against fraud or misrepresentation?
+              </h3>
+              <div className="text-slate-600 space-y-3">
+                <p>
+                  The Rail Exchange performs document review for verification and enforces platform policies.
+                </p>
+                <p>
+                  Buyers and sellers are responsible for conducting their own due diligence, inspections, and transaction safeguards.
+                </p>
+                <p>
+                  The platform does not provide escrow, payment guarantees, or transaction insurance.
+                </p>
+              </div>
+            </div>
+
+            {/* BATCH E-5: Admin Authority Boundary Statement */}
+            <p className="text-sm text-slate-500 text-center mt-8">
+              Administrative actions are discretionary and based on available information at the time of review.
+            </p>
           </div>
         </div>
       </section>

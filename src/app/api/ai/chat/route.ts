@@ -4,11 +4,25 @@
  * Provides AI-powered responses to customer support questions.
  * Uses OpenAI GPT to answer questions about the platform.
  * Includes escalation to human support via email.
+ * 
+ * SECURITY CONTROLS (Section 6):
+ * - Rate limiting to prevent abuse
+ * - Prompt injection detection
+ * - Input sanitization
+ * - Output validation
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { sendEmail } from '@/lib/email';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { 
+  detectPromptInjection, 
+  wrapUserContent, 
+  buildHardenedSystemPrompt,
+  validateAIOutput 
+} from '@/lib/ai-safety';
+import { sanitizeString } from '@/lib/sanitize';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -138,11 +152,28 @@ ${transcript}
 
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: Rate limiting (Section 6)
+    const rateLimitResponse = await checkRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const body = await request.json();
     const { messages, escalate } = body as { messages: ChatMessage[]; escalate?: boolean };
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages required' }, { status: 400 });
+    }
+
+    // SECURITY: Check for prompt injection in recent messages
+    for (const msg of messages.filter(m => m.role === 'user').slice(-3)) {
+      if (detectPromptInjection(msg.content)) {
+        console.warn('AI prompt injection attempt detected');
+        return NextResponse.json({
+          message: "I can only help with questions about The Rail Exchange marketplace. Please ask about our services, listings, subscriptions, or contractor services.",
+          blocked: true
+        });
+      }
     }
 
     // Check if user explicitly requested escalation or if auto-escalation is needed
@@ -163,18 +194,32 @@ export async function POST(request: NextRequest) {
     // Limit conversation history to last 10 messages to manage context
     const recentMessages = messages.slice(-10);
 
+    // SECURITY: Wrap user content and use hardened system prompt
+    const hardenedSystemPrompt = buildHardenedSystemPrompt(SYSTEM_PROMPT);
+    const hardenedMessages = recentMessages.map(m => ({
+      role: m.role,
+      content: m.role === 'user' ? wrapUserContent(sanitizeString(m.content || '', { maxLength: 2000 }) || '') : m.content
+    }));
+
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...recentMessages,
+        { role: 'system', content: hardenedSystemPrompt },
+        ...hardenedMessages,
       ],
       max_tokens: 500,
       temperature: 0.7,
     });
 
-    const assistantMessage = response.choices[0]?.message?.content || 
+    let assistantMessage = response.choices[0]?.message?.content || 
       "I apologize, but I couldn't generate a response. Please try again or contact support@therailexchange.com.";
+
+    // SECURITY: Validate AI output for dangerous patterns
+    const outputValidation = validateAIOutput(assistantMessage);
+    if (!outputValidation.safe) {
+      console.warn(`AI output validation failed: ${outputValidation.issues.join(', ')}`);
+      assistantMessage = "I can help you with questions about The Rail Exchange marketplace. Please ask about our services, listings, or contractor directory.";
+    }
 
     return NextResponse.json({ message: assistantMessage });
   } catch (error) {

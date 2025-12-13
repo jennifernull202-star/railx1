@@ -133,21 +133,21 @@ export default function GetVerifiedPage() {
         <BenefitCard
           icon={TrendingUp}
           title="Higher Ranking"
-          description="Verified contractors appear higher in search results and directory listings."
+          description="Document-reviewed contractors appear higher in search results and directory listings."
           iconBg="bg-green-100"
           iconColor="text-green-600"
         />
         <BenefitCard
           icon={BadgeCheck}
-          title="Trust Badge"
-          description="Your profile displays a verified icon that builds instant credibility."
+          title="Verification Badge"
+          description="Your profile displays a verification badge after document review."
           iconBg="bg-blue-100"
           iconColor="text-blue-600"
         />
         <BenefitCard
           icon={Users}
-          title="More Leads"
-          description="Buyers prefer verified professionals. Get more inquiries and job requests."
+          title="Enhanced Visibility"
+          description="Document-reviewed contractors get enhanced visibility and more inquiries."
           iconBg="bg-purple-100"
           iconColor="text-purple-600"
         />
@@ -156,14 +156,14 @@ export default function GetVerifiedPage() {
       {/* What's Included */}
       <div className="bg-white rounded-xl border border-slate-200 p-8 mb-10">
         <h2 className="text-xl font-bold text-navy-900 mb-6 text-center">
-          What&apos;s Included in Verification
+          What&apos;s Included in Document Review
         </h2>
         <div className="grid sm:grid-cols-2 gap-4">
-          <IncludedItem text="Identity Verification" />
-          <IncludedItem text="Insurance Verification" />
+          <IncludedItem text="Identity Document Review" />
+          <IncludedItem text="Insurance Document Review" />
           <IncludedItem text="Safety Certifications Review" />
-          <IncludedItem text="Business Legitimacy Check" />
-          <IncludedItem text="AI Fraud Detection" />
+          <IncludedItem text="Business Documentation Check" />
+          <IncludedItem text="AI-Assisted Document Review" />
           <IncludedItem text="Human Admin Review" />
         </div>
       </div>
@@ -282,7 +282,7 @@ function VerificationStatusCard({ status }: { status: VerificationStatus }) {
     none: {
       icon: Shield,
       title: 'Not Verified',
-      description: 'Start your verification journey to earn a trusted badge.',
+      description: 'Start document review to earn a verification badge.',
       bg: 'bg-slate-50',
       border: 'border-slate-200',
       iconBg: 'bg-slate-100',
@@ -303,8 +303,8 @@ function VerificationStatusCard({ status }: { status: VerificationStatus }) {
     },
     ai_approved: {
       icon: FileCheck,
-      title: 'AI Review Complete',
-      description: 'Your documents passed AI review! Complete payment to activate your badge.',
+      title: 'Document Review Complete',
+      description: 'Your documents passed review! Complete payment to activate your verification badge.',
       bg: 'bg-blue-50',
       border: 'border-blue-200',
       iconBg: 'bg-blue-100',
@@ -317,7 +317,7 @@ function VerificationStatusCard({ status }: { status: VerificationStatus }) {
     approved: {
       icon: CheckCircle,
       title: 'Approved - Awaiting Payment',
-      description: 'Your verification is approved! Complete payment to activate your badge.',
+      description: 'Your verification is approved! Complete payment to activate your verification badge.',
       bg: 'bg-green-50',
       border: 'border-green-200',
       iconBg: 'bg-green-100',

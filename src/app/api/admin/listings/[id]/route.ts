@@ -2,6 +2,10 @@
  * THE RAIL EXCHANGE™ — Admin Single Listing API
  * 
  * Update listing status (admin only).
+ * 
+ * AUDIT LOGGING:
+ * - All listing status changes and deletions are logged
+ * - Enterprise compliance requirement
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -9,7 +13,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db';
 import Listing from '@/models/Listing';
+import User from '@/models/User';
 import Notification, { NOTIFICATION_TYPES } from '@/models/Notification';
+import AdminAuditLog from '@/models/AdminAuditLog';
 import { Types } from 'mongoose';
 import { deleteFile, extractKeyFromUrl } from '@/lib/s3';
 
@@ -81,6 +87,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         link: `/dashboard/listings`,
         data: { listingId: listing._id },
       });
+
+      // AUDIT LOG: Listing status change
+      const admin = await User.findById(session.user.id).select('email');
+      await AdminAuditLog.logAction({
+        adminId: session.user.id,
+        adminEmail: admin?.email || session.user.email || 'unknown',
+        action: status === 'removed' ? 'delete_listing' : 'edit_listing',
+        targetType: 'listing',
+        targetId: listing._id,
+        targetTitle: listing.title,
+        details: { previousStatus, newStatus: status },
+        reason: adminNotes || `Status changed to ${status}`,
+      });
     }
 
     return NextResponse.json({
@@ -150,6 +169,19 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     // Delete the listing
     await Listing.findByIdAndDelete(id);
+
+    // AUDIT LOG: Listing deletion
+    const admin = await User.findById(session.user.id).select('email');
+    await AdminAuditLog.logAction({
+      adminId: session.user.id,
+      adminEmail: admin?.email || session.user.email || 'unknown',
+      action: 'delete_listing',
+      targetType: 'listing',
+      targetId: new Types.ObjectId(id),
+      targetTitle: listing.title,
+      details: { sellerId: listing.sellerId },
+      reason: 'Admin deleted listing',
+    });
 
     return NextResponse.json({
       success: true,

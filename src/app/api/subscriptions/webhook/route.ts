@@ -6,6 +6,9 @@
  * - customer.subscription.updated (plan changes)
  * - customer.subscription.deleted (cancellation)
  * - invoice.payment_failed (payment issues)
+ * 
+ * SECURITY: Implements idempotency via StripeEvent model
+ * RULE: If event already processed, skip. Fail closed on DB errors.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,6 +18,7 @@ import User, { SubscriptionStatusType, SellerTierType, ContractorTierType } from
 import AddOnPurchase from '@/models/AddOnPurchase';
 import Listing from '@/models/Listing';
 import SellerVerification from '@/models/SellerVerification';
+import StripeEvent from '@/models/StripeEvent';
 import { ADD_ON_TYPES, VISIBILITY_ADDONS, calculateExpirationDate, type AddOnType } from '@/config/addons';
 
 // Initialize Stripe lazily to avoid build-time errors
@@ -64,6 +68,26 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
+    // SECURITY: Idempotency check - skip if already processed
+    // Fail closed: If DB check fails, return 500 (not 200)
+    try {
+      const alreadyProcessed = await StripeEvent.isProcessed(event.id);
+      if (alreadyProcessed) {
+        console.log(`Stripe event ${event.id} already processed, skipping`);
+        return NextResponse.json({ received: true, skipped: true });
+      }
+    } catch (dbError) {
+      // SECURITY: Fail closed - if we can't check idempotency, reject the webhook
+      console.error('Failed to check event idempotency:', dbError);
+      return NextResponse.json(
+        { error: 'Database error during idempotency check' },
+        { status: 500 }
+      );
+    }
+
+    // Process the event
+    let processingError: string | null = null;
+
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -107,9 +131,33 @@ export async function POST(request: NextRequest) {
         console.log(`Unhandled subscription event type: ${event.type}`);
     }
 
+    // SECURITY: Mark event as processed for idempotency
+    try {
+      await StripeEvent.markProcessed(event.id, event.type, {
+        processed: true,
+        ...(processingError ? { error: processingError } : {}),
+      });
+    } catch (markError) {
+      // Log but don't fail - event was processed successfully
+      console.error('Failed to mark event as processed:', markError);
+    }
+
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error('Webhook error:', error);
+    
+    // SECURITY: Try to mark event as failed for tracking
+    // Note: We may not have event.id if parsing failed
+    try {
+      // @ts-expect-error - event may not be defined
+      if (event?.id) {
+        // @ts-expect-error - event may not be defined
+        await StripeEvent.markFailed(event.id, event.type || 'unknown', String(error));
+      }
+    } catch {
+      // Ignore - best effort
+    }
+    
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }

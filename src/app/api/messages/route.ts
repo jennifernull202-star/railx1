@@ -3,6 +3,11 @@
  * 
  * GET /api/messages - Get user's message threads
  * POST /api/messages - Send a new message
+ * 
+ * SECURITY CONTROLS:
+ * - Rate limiting to prevent spam
+ * - Input sanitization
+ * - Self-messaging prevention
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -11,6 +16,8 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db';
 import { Message, Thread } from '@/models/Message';
 import mongoose from 'mongoose';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { sanitizeHTML } from '@/lib/sanitize';
 
 export async function GET(request: NextRequest) {
   try {
@@ -80,6 +87,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // SECURITY: Rate limiting
+    const rateLimitResponse = await checkRateLimit(request, {
+      userId: session.user.id,
+    });
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     await connectDB();
 
     const body = await request.json();
@@ -143,11 +158,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create message
+    // SECURITY: Sanitize content before saving
+    const sanitizedContent = sanitizeHTML(content.trim()) || content.trim();
+    
     const message = await Message.create({
       senderId: session.user.id,
       recipientId,
       threadId: thread._id,
-      content: content.trim(),
+      content: sanitizedContent,
       attachments: attachments || [],
       listingId,
     });

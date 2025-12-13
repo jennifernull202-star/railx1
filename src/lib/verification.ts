@@ -236,7 +236,7 @@ export function getVerificationDisplayName(type: VerificationType, status: Verif
   if (status !== VERIFICATION_STATUS.ACTIVE) {
     switch (status) {
       case VERIFICATION_STATUS.PENDING_AI:
-        return 'Verification Pending (AI Review)';
+        return 'Verification Pending (Document Review)';
       case VERIFICATION_STATUS.PENDING_ADMIN:
         return 'Verification Pending (Admin Review)';
       case VERIFICATION_STATUS.EXPIRED:

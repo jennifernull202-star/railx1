@@ -32,15 +32,23 @@ const getTransporter = () => {
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@therailexchange.com';
 
-// Verify cron secret to prevent unauthorized access
-function verifyCronSecret(request: NextRequest): boolean {
-  const authHeader = request.headers.get('authorization');
+// SECURITY: Verify cron secret - FAIL CLOSED if not configured
+function verifyCronSecret(request: NextRequest): { allowed: boolean; error?: string } {
   const cronSecret = process.env.CRON_SECRET;
   
-  // Allow if no secret configured (dev mode)
-  if (!cronSecret) return true;
+  // SECURITY: CRON_SECRET is REQUIRED - fail closed if not set
+  // DO NOT allow access without a configured secret
+  if (!cronSecret) {
+    console.error('SECURITY: CRON_SECRET not configured - blocking cron access');
+    return { allowed: false, error: 'Service not configured' };
+  }
   
-  return authHeader === `Bearer ${cronSecret}`;
+  const authHeader = request.headers.get('authorization');
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return { allowed: false, error: 'Unauthorized' };
+  }
+  
+  return { allowed: true };
 }
 
 async function sendRenewalEmail(
@@ -152,9 +160,10 @@ async function sendRenewalEmail(
 }
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret
-  if (!verifyCronSecret(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // SECURITY: Verify cron secret - fail closed
+  const authCheck = verifyCronSecret(request);
+  if (!authCheck.allowed) {
+    return NextResponse.json({ error: authCheck.error }, { status: 401 });
   }
 
   try {

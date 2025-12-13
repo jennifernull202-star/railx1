@@ -2,6 +2,10 @@
  * THE RAIL EXCHANGE™ — Admin Single User API
  * 
  * Get and update individual user (admin only).
+ * 
+ * AUDIT LOGGING:
+ * - User suspension/activation and role changes are logged
+ * - Enterprise compliance requirement
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -9,6 +13,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
+import AdminAuditLog from '@/models/AdminAuditLog';
 import { Types } from 'mongoose';
 
 interface RouteParams {
@@ -109,7 +114,36 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       user.name = name;
     }
 
+    const wasActivated = typeof isActive === 'boolean' && isActive !== user.isActive;
+    const previousIsActive = user.isActive;
+
     await user.save();
+
+    // AUDIT LOG: User status/role changes
+    if (wasActivated || role) {
+      const admin = await User.findById(session.user.id).select('email');
+      await AdminAuditLog.logAction({
+        adminId: session.user.id,
+        adminEmail: admin?.email || session.user.email || 'unknown',
+        action: wasActivated 
+          ? (isActive ? 'activate_user' : 'suspend_user')
+          : 'role_change',
+        targetType: 'user',
+        targetId: user._id,
+        targetTitle: user.email,
+        details: { 
+          userName: user.name,
+          userEmail: user.email,
+          previousRole: role ? user.role : undefined,
+          newRole: role,
+          previousIsActive: wasActivated ? previousIsActive : undefined,
+          newIsActive: wasActivated ? isActive : undefined,
+        },
+        reason: wasActivated 
+          ? `User ${isActive ? 'activated' : 'suspended'} by admin`
+          : `User role changed to ${role}`,
+      });
+    }
 
     return NextResponse.json({
       success: true,

@@ -8,7 +8,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2, Bot, User } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -243,7 +243,7 @@ export default function AIChatWidget() {
                 className="w-10 h-10 bg-rail-orange text-white rounded-xl flex items-center justify-center hover:bg-[#e55f15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="w-4 h-4 bg-white/30 rounded-full animate-pulse" />
                 ) : (
                   <Send className="w-4 h-4" />
                 )}

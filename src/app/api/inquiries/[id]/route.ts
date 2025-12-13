@@ -148,12 +148,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     inquiry.messages.push(newMessage);
     inquiry.lastMessageAt = new Date();
 
-    // Update unread counts
+    // Update unread counts and track seller response time
     if (isBuyer) {
       inquiry.sellerUnreadCount += 1;
     } else {
       inquiry.buyerUnreadCount += 1;
       inquiry.status = 'replied';
+      
+      // Track first seller response time (Phase 3 - Response Time)
+      if (!inquiry.firstReplyAt) {
+        inquiry.firstReplyAt = new Date();
+        // Calculate response time in minutes from inquiry creation to first reply
+        const createdAt = new Date(inquiry.createdAt);
+        const firstReply = new Date();
+        const responseTimeMs = firstReply.getTime() - createdAt.getTime();
+        inquiry.responseTimeMinutes = Math.round(responseTimeMs / (1000 * 60));
+      }
     }
 
     await inquiry.save();
@@ -237,7 +247,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Update allowed fields
     if (status && isSeller) {
+      const previousStatus = inquiry.status;
       inquiry.status = status;
+      
+      // BATCH E-3: Inquiry spam signaling
+      // When seller marks inquiry as spam, increment buyer's spam counter
+      if (status === 'spam' && previousStatus !== 'spam') {
+        try {
+          await User.updateOne(
+            { _id: inquiry.buyer },
+            { $inc: { inquirySpamMarkedCount: 1 } }
+          );
+          console.log(`Buyer ${inquiry.buyer} spam counter incremented by seller ${userId}`);
+        } catch (spamError) {
+          // Log but don't fail the request
+          console.error('Failed to increment spam counter:', spamError);
+        }
+      }
     }
 
     if (typeof isArchived === 'boolean') {

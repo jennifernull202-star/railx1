@@ -3,12 +3,37 @@
  * 
  * Provides authentication using credentials (email/password).
  * Uses JWT sessions with role-based access control.
+ * 
+ * SECURITY CONTROLS:
+ * - 24-hour session max age (enterprise requirement)
+ * - 4-hour idle timeout (enterprise requirement)
+ * - Failed login attempt logging (audit compliance)
  */
 
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
+import LoginAttemptLog from '@/models/LoginAttemptLog';
+
+// Helper to log failed login attempts (fire-and-forget, don't block auth flow)
+async function logFailedAttempt(
+  email: string,
+  reason: 'invalid_credentials' | 'account_not_found' | 'account_inactive',
+  userId?: string
+) {
+  try {
+    await LoginAttemptLog.logAttempt({
+      userId,
+      email,
+      ipAddress: 'server', // IP captured at API layer if needed
+      reason,
+      success: false,
+    });
+  } catch (err) {
+    console.error('Failed to log login attempt:', err);
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -38,10 +63,14 @@ export const authOptions: NextAuthOptions = {
           const user = await User.findByEmail(credentials.email);
 
           if (!user) {
+            // SECURITY: Log failed attempt - account not found
+            await logFailedAttempt(credentials.email, 'account_not_found');
             throw new Error('No account found with this email');
           }
 
           if (!user.isActive) {
+            // SECURITY: Log failed attempt - account inactive
+            await logFailedAttempt(credentials.email, 'account_inactive', user._id.toString());
             throw new Error('Your account has been deactivated');
           }
 
@@ -49,6 +78,8 @@ export const authOptions: NextAuthOptions = {
           const isPasswordValid = await user.comparePassword(credentials.password);
 
           if (!isPasswordValid) {
+            // SECURITY: Log failed attempt - invalid credentials
+            await logFailedAttempt(credentials.email, 'invalid_credentials', user._id.toString());
             throw new Error('Invalid password');
           }
 
@@ -82,11 +113,11 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 24 * 60 * 60, // 24 hours (enterprise security requirement)
   },
 
   jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 24 * 60 * 60, // 24 hours (enterprise security requirement)
   },
 
   pages: {
@@ -111,27 +142,50 @@ export const authOptions: NextAuthOptions = {
         token.subscriptionTier = user.subscriptionTier;
         token.isVerifiedContractor = user.isVerifiedContractor;
         token.contractorTier = user.contractorTier;
+        // SECURITY: Track last activity for idle timeout (4 hours)
+        token.lastActivity = Date.now();
+      }
+
+      // SECURITY: Idle timeout check (4 hours = 14400000ms)
+      // If idle for too long, mark token as expired to force re-auth
+      const IDLE_TIMEOUT_MS = 4 * 60 * 60 * 1000;
+      if (token.lastActivity && Date.now() - (token.lastActivity as number) > IDLE_TIMEOUT_MS) {
+        // Mark token as expired - session callback will handle logout
+        token.expired = true;
+      } else {
+        // Update last activity on each request
+        token.lastActivity = Date.now();
       }
 
       // Handle session updates
+      // SECURITY: Only allow updating non-privileged fields
+      // subscriptionTier, isVerifiedContractor, isContractor CANNOT be modified
+      // by client-side session.update() - these must come from DB/webhook only
       if (trigger === 'update' && session) {
+        // ALLOWED: Profile fields only
         token.name = session.name || token.name;
         token.image = session.image || token.image;
-        if (session.subscriptionTier !== undefined) {
-          token.subscriptionTier = session.subscriptionTier;
-        }
-        if (session.isVerifiedContractor !== undefined) {
-          token.isVerifiedContractor = session.isVerifiedContractor;
-        }
-        if (session.isContractor !== undefined) {
-          token.isContractor = session.isContractor;
-        }
+        
+        // SECURITY: REMOVED - No client-controlled privilege mutation
+        // subscriptionTier, isVerifiedContractor, isContractor are READ-ONLY from JWT
+        // All access checks must verify against database state
+        // DO NOT UNCOMMENT:
+        // - session.subscriptionTier
+        // - session.isVerifiedContractor
+        // - session.isContractor
       }
 
       return token;
     },
 
     async session({ session, token }) {
+      // SECURITY: Check for idle timeout expiration
+      if (token.expired) {
+        // Return an empty session to force re-authentication
+        // The client-side will detect this and redirect to login
+        return { ...session, user: undefined, expires: new Date(0).toISOString() };
+      }
+
       if (token && session.user) {
         session.user.id = token.id;
         session.user.email = token.email;

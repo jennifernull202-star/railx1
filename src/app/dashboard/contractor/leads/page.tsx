@@ -106,62 +106,54 @@ export default async function ContractorLeadsPage() {
   }
 
   const newLeads = leads.filter(l => l.status === 'new').length;
-  const repliedLeads = leads.filter(l => l.status === 'replied').length;
+  
+  // Sort: new leads first, then by date
+  const sortedLeads = [...leads].sort((a, b) => {
+    if (a.status === 'new' && b.status !== 'new') return -1;
+    if (a.status !== 'new' && b.status === 'new') return 1;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-navy-900">Service Leads</h1>
-        <p className="text-slate-500">Inquiries from potential clients for {profile.companyName}</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <MessageSquare className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-navy-900">{leads.length}</p>
-              <p className="text-xs text-slate-500">Total Leads</p>
-            </div>
-          </div>
+      {/* Header with New Leads Callout */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-navy-900">Service Leads</h1>
+          <p className="text-slate-500">Inquiries from potential clients for {profile.companyName}</p>
         </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-              <AlertCircle className="w-5 h-5 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-navy-900">{newLeads}</p>
-              <p className="text-xs text-slate-500">New Leads</p>
-            </div>
+        {newLeads > 0 ? (
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <AlertCircle className="w-5 h-5 text-yellow-600" />
+            <span className="font-semibold text-yellow-800">
+              {newLeads} new {newLeads === 1 ? 'lead' : 'leads'}
+            </span>
           </div>
-        </div>
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-navy-900">{repliedLeads}</p>
-              <p className="text-xs text-slate-500">Replied</p>
-            </div>
+        ) : leads.length > 0 ? (
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-lg">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <span className="font-medium text-green-800">All caught up!</span>
           </div>
-        </div>
+        ) : null}
       </div>
 
       {/* Leads List */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-100">
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
           <h2 className="font-semibold text-navy-900">Recent Leads</h2>
+          <span className="text-sm text-slate-500">{leads.length} total</span>
         </div>
-        {leads.length > 0 ? (
+        {sortedLeads.length > 0 ? (
           <div className="divide-y divide-slate-100">
-            {leads.map((lead) => (
-              <div key={lead._id} className="p-4 hover:bg-slate-50 transition-colors">
+            {sortedLeads.map((lead) => (
+              <div 
+                key={lead._id} 
+                className={`p-4 transition-colors ${
+                  lead.status === 'new' 
+                    ? 'bg-yellow-50/50 hover:bg-yellow-50' 
+                    : 'hover:bg-slate-50'
+                }`}
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3 flex-1">
                     <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">

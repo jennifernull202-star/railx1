@@ -404,7 +404,7 @@ export default async function ContractorsPage({
                 Rail Industry Contractors
               </h1>
               <p className="text-heading-sm text-white/80">
-                Find verified contractors for track work, signaling, electrical, bridge construction, and more.
+                Find document-reviewed contractors for track work, signaling, electrical, bridge construction, and more.
               </p>
             </div>
           </div>

@@ -1,6 +1,16 @@
+/**
+ * THE RAIL EXCHANGE™ — Contact Form API
+ * 
+ * SECURITY CONTROLS:
+ * - Rate limiting to prevent spam
+ * - Input validation and sanitization
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Contact from '@/models/Contact';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { sanitizeHTML, sanitizeString } from '@/lib/sanitize';
 
 interface ContactFormData {
   name: string;
@@ -13,6 +23,12 @@ interface ContactFormData {
 
 export async function POST(request: NextRequest) {
   try {
+    // SECURITY: Rate limiting
+    const rateLimitResponse = await checkRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     const body: ContactFormData = await request.json();
     const { name, companyName, email, phone, category, message } = body;
 
@@ -64,13 +80,14 @@ export async function POST(request: NextRequest) {
     // Connect to database and save
     await connectDB();
 
+    // SECURITY: Sanitize inputs before saving
     const contact = await Contact.create({
-      name: name.trim(),
-      companyName: companyName?.trim() || undefined,
+      name: sanitizeString(name.trim(), { maxLength: 100 }) || name.trim(),
+      companyName: companyName ? sanitizeString(companyName.trim(), { maxLength: 150 }) || undefined : undefined,
       email: email.trim().toLowerCase(),
-      phone: phone?.trim() || undefined,
+      phone: phone ? sanitizeString(phone.trim(), { maxLength: 20 }) || undefined : undefined,
       category,
-      message: message.trim(),
+      message: sanitizeHTML(message.trim()) || message.trim(),
       status: 'new',
     });
 

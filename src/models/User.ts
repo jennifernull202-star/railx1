@@ -62,7 +62,16 @@ export interface IUser {
   // Shared Stripe fields
   stripeCustomerId: string | null;
   
-  // Subscription metadata
+  // SECURITY: Separate subscription periods - do not share one field
+  // Seller subscription period
+  sellerCurrentPeriodEnd: Date | null;
+  sellerCancelAtPeriodEnd: boolean;
+  
+  // Contractor subscription period  
+  contractorCurrentPeriodEnd: Date | null;
+  contractorCancelAtPeriodEnd: boolean;
+  
+  // Legacy shared field (deprecated - use separate fields above)
   subscriptionCurrentPeriodEnd: Date | null;
   subscriptionCancelAtPeriodEnd: boolean;
   
@@ -144,6 +153,25 @@ export interface IUser {
     locationVerified?: boolean;
     locationVerifiedAt?: Date;
   };
+  
+  // ============================================
+  // SECTION 9: SPAM & ABUSE TRACKING
+  // ============================================
+  spamWarnings: number;  // Count of spam warnings (escalates to suspension at 3)
+  spamSuspendedUntil: Date | null;  // If suspended, when does it lift
+  spamLastWarningAt: Date | null;  // When was the last warning issued
+  reportCount: number;  // Number of times this user's content was reported
+  
+  // BATCH E-3: Serial reporter detection (admin visibility only)
+  isSerialReporterFlagged: boolean;  // Internal flag for high-volume reporters
+  serialReporterFlaggedAt: Date | null;
+  
+  // BATCH E-3: Inquiry spam tracking (when sellers mark buyer's inquiries as spam)
+  inquirySpamMarkedCount: number;  // How many times other sellers marked this buyer's inquiries as spam
+  
+  // S-1.4: False report tracking for rate-limiting abuse reporters
+  rejectedReportCount: number;  // Reports marked invalid/false by admin
+  reportRateLimitedUntil: Date | null;  // Rate limit for repeat false reporters
   
   // Recently viewed listings (for buyer dashboard)
   recentlyViewed?: {
@@ -347,6 +375,29 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
       default: null,
       sparse: true,
     },
+    
+    // SECURITY: Separate subscription periods - do not share one field
+    // Seller subscription period
+    sellerCurrentPeriodEnd: {
+      type: Date,
+      default: null,
+    },
+    sellerCancelAtPeriodEnd: {
+      type: Boolean,
+      default: false,
+    },
+    
+    // Contractor subscription period
+    contractorCurrentPeriodEnd: {
+      type: Date,
+      default: null,
+    },
+    contractorCancelAtPeriodEnd: {
+      type: Boolean,
+      default: false,
+    },
+    
+    // Legacy shared field (deprecated - migrate to separate fields)
     subscriptionCurrentPeriodEnd: {
       type: Date,
       default: null,
@@ -523,6 +574,25 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
       locationVerified: { type: Boolean, default: false },
       locationVerifiedAt: { type: Date },
     },
+    
+    // ============================================
+    // SECTION 9: SPAM & ABUSE TRACKING
+    // ============================================
+    spamWarnings: { type: Number, default: 0 },
+    spamSuspendedUntil: { type: Date, default: null },
+    spamLastWarningAt: { type: Date, default: null },
+    reportCount: { type: Number, default: 0 },
+    
+    // BATCH E-3: Serial reporter detection (admin visibility only)
+    isSerialReporterFlagged: { type: Boolean, default: false },
+    serialReporterFlaggedAt: { type: Date, default: null },
+    
+    // BATCH E-3: Inquiry spam tracking
+    inquirySpamMarkedCount: { type: Number, default: 0 },
+    
+    // S-1.4: False report tracking for rate-limiting abuse reporters
+    rejectedReportCount: { type: Number, default: 0 },  // Reports marked invalid/false
+    reportRateLimitedUntil: { type: Date, default: null },  // Rate limit for false reporters
     
     // Recently viewed listings
     recentlyViewed: [{

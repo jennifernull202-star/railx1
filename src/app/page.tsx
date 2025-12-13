@@ -151,31 +151,6 @@ export default async function HomePage() {
           
           <div className="relative z-20 container-rail max-w-[1280px] mx-auto px-5 md:px-8 py-10 md:py-16 lg:py-20 flex items-center">
             <div className="max-w-4xl mx-auto text-center">
-              
-              {/* Trust Stats Bar */}
-              <div className="relative z-20 inline-flex flex-wrap justify-center items-center gap-4 md:gap-6 px-5 py-3 bg-white/10 backdrop-blur-md rounded-full mb-8 border border-white/20">
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-[13px] md:text-[14px] font-semibold text-white">Free to List</span>
-                </div>
-                <span className="hidden md:block w-px h-4 bg-white/30" />
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                  </svg>
-                  <span className="text-[13px] md:text-[14px] font-semibold text-white">Verified Sellers</span>
-                </div>
-                <span className="hidden md:block w-px h-4 bg-white/30" />
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span className="text-[13px] md:text-[14px] font-semibold text-white">Industry-Focused</span>
-                </div>
-              </div>
-
               {/* Headline */}
               <h1 className="relative z-20 text-[32px] md:text-[44px] lg:text-[52px] font-bold text-white leading-[1.1] tracking-tight mb-5">
                 The Marketplace Where{" "}
@@ -185,7 +160,7 @@ export default async function HomePage() {
               {/* Subheadline */}
               <p className="relative z-20 text-[16px] md:text-[18px] text-white/90 max-w-2xl mx-auto mb-5 leading-relaxed">
                 Buy and sell locomotives, freight cars, track materials, and MOW equipment.
-                Connect with verified contractors nationwide.
+                Connect with document-reviewed contractors nationwide.
               </p>
 
               {/* Quick Category Pills */}
@@ -234,20 +209,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Announcement Banner */}
-        <section className="py-3 bg-navy-900 border-b border-navy-800">
-          <div className="max-w-[1280px] mx-auto px-5 md:px-8">
-            <div className="flex items-center justify-center gap-3 text-[13px]">
-              <span className="flex items-center gap-2 text-white font-medium">
-                <span className="px-2 py-0.5 bg-rail-orange text-white text-[11px] font-bold rounded">NEW</span>
-                Welcome to The Rail Exchange — The dedicated marketplace for rail industry equipment, materials, and services.
-              </span>
-            </div>
-          </div>
-        </section>
 
-        {/* Section Separator */}
-        <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
 
         {/* Category Section - Mega Categories */}
         <section className="pt-12 pb-10 bg-white">
@@ -265,10 +227,10 @@ export default async function HomePage() {
               {/* Rolling Stock - Mega Category */}
               <Link
                 href="/listings?category=locomotives"
-                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-rail-orange/30 hover:-translate-y-1 transition-all duration-300"
+                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-md hover:border-rail-orange/30 transition-all duration-200"
               >
-                <div className="w-12 h-12 mx-auto mb-4 bg-rail-orange/10 rounded-xl flex items-center justify-center group-hover:bg-rail-orange/15 group-hover:scale-110 transition-all duration-300">
-                  <span className="text-2xl group-hover:animate-bounce">🚂</span>
+                <div className="w-12 h-12 mx-auto mb-4 bg-rail-orange/10 rounded-xl flex items-center justify-center">
+                  <span className="text-2xl">🚂</span>
                 </div>
                 <h3 className="text-[15px] font-semibold text-navy-900 text-center mb-1 group-hover:text-rail-orange transition-colors duration-200">
                   Rolling Stock
@@ -286,9 +248,9 @@ export default async function HomePage() {
               {/* Track & Infrastructure */}
               <Link
                 href="/listings?category=track-materials"
-                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-navy-900/30 hover:-translate-y-1 transition-all duration-300"
+                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200"
               >
-                <div className="w-12 h-12 mx-auto mb-4 bg-navy-900/8 rounded-xl flex items-center justify-center group-hover:bg-navy-900/12 group-hover:scale-110 transition-all duration-300">
+                <div className="w-12 h-12 mx-auto mb-4 bg-navy-900/8 rounded-xl flex items-center justify-center">
                   <span className="text-2xl">🛤️</span>
                 </div>
                 <h3 className="text-[15px] font-semibold text-navy-900 text-center mb-1 group-hover:text-rail-orange transition-colors duration-200">
@@ -307,9 +269,9 @@ export default async function HomePage() {
               {/* MOW Equipment */}
               <Link
                 href="/listings?category=maintenance-of-way"
-                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-amber-500/30 hover:-translate-y-1 transition-all duration-300"
+                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200"
               >
-                <div className="w-12 h-12 mx-auto mb-4 bg-amber-500/10 rounded-xl flex items-center justify-center group-hover:bg-amber-500/15 group-hover:scale-110 transition-all duration-300">
+                <div className="w-12 h-12 mx-auto mb-4 bg-amber-500/10 rounded-xl flex items-center justify-center">
                   <span className="text-2xl">🛠️</span>
                 </div>
                 <h3 className="text-[15px] font-semibold text-navy-900 text-center mb-1 group-hover:text-rail-orange transition-colors duration-200">
@@ -328,16 +290,16 @@ export default async function HomePage() {
               {/* Contractors */}
               <Link
                 href="/contractors"
-                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-emerald-500/30 hover:-translate-y-1 transition-all duration-300"
+                className="group bg-white rounded-xl p-5 md:p-6 border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200"
               >
-                <div className="w-12 h-12 mx-auto mb-4 bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:bg-emerald-500/15 group-hover:scale-110 transition-all duration-300">
+                <div className="w-12 h-12 mx-auto mb-4 bg-emerald-500/10 rounded-xl flex items-center justify-center">
                   <span className="text-2xl">👷</span>
                 </div>
                 <h3 className="text-[15px] font-semibold text-navy-900 text-center mb-1 group-hover:text-rail-orange transition-colors duration-200">
                   Contractors
                 </h3>
                 <p className="text-[13px] text-slate-500 text-center leading-snug mb-3">
-                  Verified • Insured • Nationwide
+                  Document-Reviewed • Insured • Nationwide
                 </p>
                 <div className="text-center">
                   <span className="inline-flex items-center px-2.5 py-1 bg-emerald-100 group-hover:bg-emerald-200 text-emerald-700 text-[11px] font-medium rounded-full transition-colors duration-200">
@@ -349,24 +311,21 @@ export default async function HomePage() {
 
             {/* Secondary Categories Row */}
             <div className="mt-5 flex flex-wrap justify-center gap-2">
-              <Link href="/listings?category=parts-components" className="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-rail-orange hover:text-white text-slate-700 text-[13px] font-medium rounded-full transition-all duration-200 hover:-translate-y-0.5">
+              <Link href="/listings?category=parts-components" className="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-medium rounded-full transition-colors duration-200">
                 Parts & Components
               </Link>
-              <Link href="/listings?category=signals-communications" className="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-rail-orange hover:text-white text-slate-700 text-[13px] font-medium rounded-full transition-all duration-200 hover:-translate-y-0.5">
+              <Link href="/listings?category=signals-communications" className="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-medium rounded-full transition-colors duration-200">
                 Signals & Communications
               </Link>
-              <Link href="/listings?category=tools-equipment" className="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-rail-orange hover:text-white text-slate-700 text-[13px] font-medium rounded-full transition-all duration-200 hover:-translate-y-0.5">
+              <Link href="/listings?category=tools-equipment" className="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-medium rounded-full transition-colors duration-200">
                 Tools & Equipment
               </Link>
-              <Link href="/listings" className="inline-flex items-center px-4 py-2 bg-navy-900 hover:bg-navy-800 text-white text-[13px] font-medium rounded-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+              <Link href="/listings" className="inline-flex items-center px-4 py-2 bg-navy-900 hover:bg-navy-800 text-white text-[13px] font-medium rounded-full transition-colors duration-200">
                 View All →
               </Link>
             </div>
           </div>
         </section>
-
-        {/* Section Separator */}
-        <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
 
         {/* Featured Listings - Dynamic */}
         <section className="pt-14 pb-12 bg-gradient-to-b from-slate-50/60 to-white">
@@ -376,7 +335,8 @@ export default async function HomePage() {
                 <h2 className="text-[28px] md:text-[32px] font-bold text-navy-900 tracking-tight mb-2">
                   Featured Listings
                 </h2>
-                <p className="text-[15px] text-slate-500">Premium equipment from verified sellers</p>
+                <p className="text-[15px] text-slate-500">Premium equipment from document-reviewed sellers</p>
+                <p className="text-[12px] text-slate-400 mt-1">Featured placement reflects paid visibility options and does not indicate quality, condition, or endorsement.</p>
               </div>
               <Link
                 href="/listings?featured=true"
@@ -541,7 +501,7 @@ export default async function HomePage() {
                   
                   <div className="relative z-10">
                     <h3 className="text-[20px] md:text-[24px] font-bold text-white mb-2">Nationwide Coverage</h3>
-                    <p className="text-[14px] text-white/70">Find verified rail contractors across the USA</p>
+                    <p className="text-[14px] text-white/70">Find document-reviewed rail contractors across the USA</p>
                   </div>
                   
                   {/* Features Grid */}
@@ -552,7 +512,7 @@ export default async function HomePage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <p className="text-[12px] text-white/80 font-medium">Verified Profiles</p>
+                      <p className="text-[12px] text-white/80 font-medium">Document-Reviewed Profiles</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur rounded-xl p-4 text-center">
                       <div className="w-10 h-10 mx-auto mb-2 bg-white/20 rounded-lg flex items-center justify-center">
@@ -576,7 +536,7 @@ export default async function HomePage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
                       </div>
-                      <p className="text-[12px] text-white/80 font-medium">Insurance Verified</p>
+                      <p className="text-[12px] text-white/80 font-medium">Insurance Documentation</p>
                     </div>
                   </div>
                   
@@ -596,180 +556,6 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
-
-        {/* Add-Ons Section - Premium Dark */}
-        <section className="py-14 md:py-16 lg:py-20 bg-[#0d1f35]">
-          <div className="container-rail max-w-[1280px] mx-auto px-6 md:px-8">
-            <div className="text-center mb-14">
-              <h2 className="text-[28px] md:text-[36px] font-bold text-white tracking-tight mb-4">
-                Boost Your Visibility
-              </h2>
-              <p className="text-[16px] text-white/80 max-w-2xl mx-auto">
-                Premium add-ons to help your listings and profile stand out from the competition
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-5 md:gap-6 mb-10">
-              {/* Featured - $20/30 days */}
-              <div className="bg-white/[0.06] backdrop-blur rounded-2xl p-7 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.1)] hover:border-rail-orange/40 transition-all duration-300">
-                <div className="w-11 h-11 bg-rail-orange/15 rounded-xl flex items-center justify-center mb-5">
-                  <svg className="w-5 h-5 text-rail-orange" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                </div>
-                <h3 className="text-[18px] font-semibold text-white mb-2">Featured Listing</h3>
-                <p className="text-[14px] text-white/75 mb-5 leading-relaxed">
-                  Get 2x more views with priority placement and a featured badge in search.
-                </p>
-                <p className="text-[22px] font-bold text-rail-orange">$20<span className="text-[14px] font-medium text-white/60">/30 days</span></p>
-              </div>
-
-              {/* Premium - $50/30 days - Popular */}
-              <div className="bg-white/[0.06] backdrop-blur rounded-2xl p-7 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.1)] hover:border-rail-orange/40 transition-all duration-300 relative">
-                <div className="absolute -top-2.5 right-5 bg-rail-orange text-white text-[11px] font-bold px-3 py-1 rounded-full shadow-lg">
-                  POPULAR
-                </div>
-                <div className="w-11 h-11 bg-purple-500/15 rounded-xl flex items-center justify-center mb-5">
-                  <svg className="w-5 h-5 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5 2a2 2 0 00-2 2v14l3.5-2 3.5 2 3.5-2 3.5 2V4a2 2 0 00-2-2H5zm2.5 3a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm6.207.293a1 1 0 00-1.414 0l-6 6a1 1 0 101.414 1.414l6-6a1 1 0 000-1.414zM12.5 10a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <h3 className="text-[18px] font-semibold text-white mb-2">Premium Placement</h3>
-                <p className="text-[14px] text-white/75 mb-5 leading-relaxed">
-                  Get 5x more inquiries with category page pins and premium badge visibility.
-                </p>
-                <p className="text-[22px] font-bold text-purple-400">$50<span className="text-[14px] font-medium text-white/60">/30 days</span></p>
-              </div>
-
-              {/* Elite - $99/30 days */}
-              <div className="bg-white/[0.06] backdrop-blur rounded-2xl p-7 border border-white/[0.08] shadow-[0_4px_20px_rgba(0,0,0,0.1)] hover:border-amber-500/40 transition-all duration-300">
-                <div className="w-11 h-11 bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-xl flex items-center justify-center mb-5">
-                  <svg className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                </div>
-                <h3 className="text-[18px] font-semibold text-white mb-2">Elite Placement</h3>
-                <p className="text-[14px] text-white/75 mb-5 leading-relaxed">
-                  Homepage spotlight + category pins = maximum visibility and fastest sales.
-                </p>
-                <p className="text-[22px] font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">$99<span className="text-[14px] font-medium text-white/60">/30 days</span></p>
-              </div>
-            </div>
-
-            {/* Additional Add-Ons Row */}
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="flex items-center gap-3.5 bg-white/[0.04] rounded-xl p-4 border border-white/[0.06]">
-                <div className="w-9 h-9 bg-blue-500/15 rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M13.5 3a1.5 1.5 0 100 3h.5a.5.5 0 01.5.5v.5a1.5 1.5 0 003 0V6a1 1 0 00-1-1h-.5a1.5 1.5 0 01-1.5-1.5V3zm-5 0A1.5 1.5 0 017 4.5V5a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3H6a.5.5 0 01.5.5v.5a1.5 1.5 0 003 0V9.5a.5.5 0 01.5-.5h.5a1.5 1.5 0 000-3H10a1 1 0 01-1-1v-.5A1.5 1.5 0 008.5 3z" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="text-[14px] font-semibold text-white">AI Enhancement</h4>
-                  <p className="text-[12px] text-white/60">$10 — Optimized listing content</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3.5 bg-white/[0.04] rounded-xl p-4 border border-white/[0.06]">
-                <div className="w-9 h-9 bg-slate-500/15 rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="text-[14px] font-semibold text-white">Spec Sheet</h4>
-                  <p className="text-[12px] text-white/60">$25 — Auto-generated PDF</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3.5 bg-white/[0.04] rounded-xl p-4 border border-white/[0.06]">
-                <div className="w-9 h-9 bg-emerald-500/15 rounded-lg flex items-center justify-center">
-                  <svg className="w-4 h-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="text-[14px] font-semibold text-white">Verified Badge</h4>
-                  <p className="text-[12px] text-white/60">$149/year — Build trust instantly</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Section Separator */}
-        <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
-
-        {/* Testimonials Section - Coming Soon */}
-        <section className="py-14 md:py-16 lg:py-20 bg-slate-50">
-          <div className="max-w-[1280px] mx-auto px-5 md:px-8">
-            <div className="text-center">
-              <h2 className="text-[24px] md:text-[32px] font-bold text-navy-900 tracking-tight mb-3">
-                What Our Users Say
-              </h2>
-              <p className="text-[15px] text-slate-500 max-w-2xl mx-auto mb-8">
-                Hear from rail professionals who buy and sell on The Rail Exchange
-              </p>
-              <div className="max-w-md mx-auto bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
-                <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
-                  <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <h3 className="text-[18px] font-semibold text-navy-900 mb-2">Testimonials Coming Soon</h3>
-                <p className="text-[14px] text-slate-500 leading-relaxed">
-                  We&apos;re collecting feedback from our early users. Check back soon to see what rail professionals are saying about their experience.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Section Separator */}
-        <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
-
-        {/* Trust Badges Section */}
-        <section className="py-10 md:py-12 bg-white">
-          <div className="max-w-[1280px] mx-auto px-5 md:px-8">
-            <div className="text-center mb-8">
-              <p className="text-[13px] font-medium text-slate-400 uppercase tracking-wider">Trusted By Industry Leaders</p>
-            </div>
-            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500">
-              {/* Rail Industry Association Badges */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">🚂</span>
-                </div>
-                <span className="text-[11px] font-medium text-slate-500">AAR Compliant</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">🛡️</span>
-                </div>
-                <span className="text-[11px] font-medium text-slate-500">Verified Sellers</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">🔒</span>
-                </div>
-                <span className="text-[11px] font-medium text-slate-500">Secure Platform</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">⭐</span>
-                </div>
-                <span className="text-[11px] font-medium text-slate-500">Quality Listings</span>
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-16 h-16 bg-slate-100 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl">🇺🇸</span>
-                </div>
-                <span className="text-[11px] font-medium text-slate-500">USA Based</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Section Separator */}
-        <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
 
         {/* FAQ Section */}
         <section className="py-14 md:py-16 lg:py-20 bg-slate-50">
@@ -806,7 +592,8 @@ export default async function HomePage() {
                   </svg>
                 </summary>
                 <div className="px-5 pb-5 text-[14px] text-slate-600 leading-relaxed">
-                  Purchase the Verified Seller badge ($149/year) and our team will verify your business credentials, including your company registration, industry experience, and track record. Verified sellers see 3x more inquiries on average.
+                  {/* S-2.6: Clarified verification description */}
+                  Purchase the Verified Seller badge ($149/year) and submit business documents for AI-assisted review. This includes company registration and industry documentation. Verification indicates document submission and review—it does not guarantee ownership, authority to sell, or transaction outcomes.
                 </div>
               </details>
 
@@ -852,44 +639,6 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Section Separator */}
-        <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
-
-        {/* Newsletter Section */}
-        <section className="py-14 md:py-16 bg-navy-900">
-          <div className="max-w-[700px] mx-auto px-5 md:px-8 text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full mb-6">
-              <span className="text-[13px] font-medium text-white/90">📧 Stay Updated</span>
-            </div>
-            <h2 className="text-[24px] md:text-[32px] font-bold text-white tracking-tight mb-4">
-              Get Rail Industry Updates
-            </h2>
-            <p className="text-[15px] text-white/70 mb-8 leading-relaxed max-w-lg mx-auto">
-              Be the first to know about new listings, market insights, and platform updates. 
-              Subscribe to our newsletter.
-            </p>
-            <form className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <input 
-                type="email" 
-                placeholder="Enter your work email"
-                className="flex-1 h-12 px-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder:text-white/50 text-[15px] focus:outline-none focus:ring-2 focus:ring-rail-orange focus:border-transparent"
-              />
-              <button 
-                type="submit"
-                className="h-12 px-6 bg-rail-orange text-white text-[15px] font-semibold rounded-xl hover:bg-[#e55f15] transition-colors whitespace-nowrap"
-              >
-                Subscribe
-              </button>
-            </form>
-            <p className="text-[12px] text-white/50 mt-4">
-              No spam. Unsubscribe anytime. We respect your inbox.
-            </p>
-          </div>
-        </section>
-
-        {/* Section Separator */}
-        <div className="border-t border-slate-200 mx-auto max-w-[1280px] px-6 md:px-8" />
-
         {/* CTA Section - Premium */}
         <section className="py-14 md:py-16 lg:py-20 bg-white">
           <div className="max-w-[1280px] mx-auto px-5 md:px-8 text-center">
@@ -903,7 +652,7 @@ export default async function HomePage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
                 href="/listings/create" 
-                className="inline-flex items-center justify-center h-14 px-8 bg-rail-orange text-white text-[16px] font-semibold rounded-xl shadow-md hover:bg-[#e55f15] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+                className="inline-flex items-center justify-center h-14 px-8 bg-rail-orange text-white text-[16px] font-semibold rounded-xl shadow-sm hover:bg-[#e55f15] hover:shadow-md transition-all duration-200"
               >
                 List Your Equipment Free
               </Link>
@@ -985,6 +734,10 @@ export default async function HomePage() {
           <div className="text-center text-[13px] text-white/50 mt-8">
             <p>
               © {new Date().getFullYear()} The Rail Exchange™. All rights reserved.
+            </p>
+            {/* BATCH E-5: No Endorsement Disclosure */}
+            <p className="mt-3 text-[11px] text-white/40">
+              Presence on The Rail Exchange does not constitute endorsement, recommendation, or certification by the platform.
             </p>
           </div>
         </div>

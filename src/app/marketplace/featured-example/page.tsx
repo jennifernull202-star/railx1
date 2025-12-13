@@ -381,7 +381,8 @@ export default function FeaturedExamplePage() {
                     <span className="text-amber-400">👑</span> Elite Visibility
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="text-purple-400">🤖</span> AI-Enhanced Listing
+                    {/* S-2.5: Neutral AI language */}
+                    <span className="text-purple-400">🤖</span> AI-Assisted Content
                   </li>
                 </ul>
                 <Link href="/pricing">

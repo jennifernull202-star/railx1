@@ -2,6 +2,19 @@
  * THE RAIL EXCHANGE™ — Listing Detail Page
  * 
  * Displays a single listing with all details, images, and contact options.
+ * 
+ * BATCH 10 - LISTING DETAIL PAGE:
+ * Primary Goal: User decides to contact seller.
+ * 
+ * Above-the-fold: Image, Title, Price, Location, Condition, Seller trust, ONE CTA
+ * Content order: Gallery → Title/Price/Location/CTA → Description → Specs (collapsed) → Shipping → Compliance (collapsed) → Price History (collapsed)
+ * Single badge on image (highest tier only)
+ * Sticky Contact Seller CTA (mobile + desktop)
+ * Gallery affordance: "View X photos" overlay
+ * Back link only (no breadcrumbs)
+ * 
+ * BATCH 16 - CROSS-PAGE UX:
+ * - Skeleton loader via loading.tsx ✓
  */
 
 import { Metadata } from 'next';
@@ -12,8 +25,9 @@ import connectDB from '@/lib/db';
 import Listing from '@/models/Listing';
 import mongoose from 'mongoose';
 import ContactSellerForm from '@/components/ContactSellerForm';
-import { VerifiedSellerBadgeWithLabel } from '@/components/VerifiedSellerBadge';
 import RelevantContractors from '@/components/contractor/RelevantContractors';
+import ReportListingButton from '@/components/ReportListingButton';
+import { getHighestBadge, BADGE_STYLES } from '@/lib/ui';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -87,6 +101,7 @@ interface ListingData {
     insideHeight?: number;
     cubicCapacity?: number;
     numberOfAxles?: number;
+    axleCount?: number;
     fraCompliant?: boolean;
     dotCompliant?: boolean;
     hazmatCertified?: boolean;
@@ -249,7 +264,24 @@ export default async function ListingDetailPage({ params }: PageProps) {
   const sortedMedia = [...listing.media].sort((a, b) => a.order - b.order);
   const primaryImage = sortedMedia.find(m => m.isPrimary) || sortedMedia[0];
   const images = sortedMedia.filter(m => m.type === 'image');
-  const documents = sortedMedia.filter(m => m.type === 'document');
+
+  // Get single highest badge
+  const badge = getHighestBadge({
+    elite: listing.premiumAddOns.elite?.active,
+    premium: listing.premiumAddOns.premium?.active,
+    featured: listing.premiumAddOns.featured?.active,
+    verified: listing.sellerId?.isVerifiedSeller,
+  });
+
+  // Check if there are specs to show
+  const hasSpecs = listing.specifications?.length > 0 || listing.equipment;
+  const hasCompliance = listing.equipment && (
+    listing.equipment.fraCompliant !== undefined ||
+    listing.equipment.dotCompliant !== undefined ||
+    listing.equipment.hazmatCertified !== undefined
+  );
+  const hasPriceHistory = listing.priceHistory && listing.priceHistory.length > 1;
+  const hasShipping = listing.shippingOptions;
 
   return (
     <>
@@ -262,844 +294,348 @@ export default async function ListingDetailPage({ params }: PageProps) {
               <span className="text-heading-lg font-bold text-rail-orange ml-1">Exchange</span>
               <span className="text-rail-orange text-sm font-medium ml-0.5">™</span>
             </Link>
-            <div className="flex items-center gap-4">
-              <Link href="/listings" className="text-body-md font-medium text-text-secondary hover:text-navy-900">
-                ← All Listings
-              </Link>
-              <Link href="/listings/create" className="btn-primary py-2 px-4">
-                List Your Equipment
-              </Link>
-            </div>
+            <Link href="/listings" className="text-body-md font-medium text-text-secondary hover:text-navy-900">
+              ← All Listings
+            </Link>
           </div>
         </nav>
       </header>
 
-      <main className="flex-1 bg-surface-secondary pb-16">
-        {/* Breadcrumb */}
-        <div className="bg-white border-b border-surface-border">
-          <div className="container-rail py-4">
-            <nav className="flex items-center gap-2 text-body-sm">
-              <Link href="/listings" className="text-text-secondary hover:text-navy-900">
-                Listings
-              </Link>
-              <span className="text-text-tertiary">/</span>
-              <Link
-                href={`/listings?category=${listing.category}`}
-                className="text-text-secondary hover:text-navy-900"
-              >
-                {CATEGORY_LABELS[listing.category] || listing.category}
-              </Link>
-              <span className="text-text-tertiary">/</span>
-              <span className="text-navy-900 font-medium truncate">{listing.title}</span>
-            </nav>
-          </div>
-        </div>
-
-        <div className="container-rail py-8">
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Left Column - Images & Details */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Image Gallery */}
-              <div className="bg-white rounded-2xl shadow-card border border-surface-border overflow-hidden">
-                {/* Main Image */}
-                <div className="aspect-[4/3] bg-navy-100 relative">
-                  {primaryImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={getImageUrl(primaryImage.url)}
-                      alt={listing.title}
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <svg className="w-24 h-24 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  )}
-
-                  {/* Elite Badge */}
-                  {listing.premiumAddOns.elite?.active && (
-                    <div className="absolute top-4 left-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1.5 rounded-lg font-semibold text-sm flex items-center shadow-lg">
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                      Elite
-                    </div>
-                  )}
-
-                  {/* Premium Badge */}
-                  {listing.premiumAddOns.premium?.active && !listing.premiumAddOns.elite?.active && (
-                    <div className="absolute top-4 left-4 bg-purple-600 text-white px-3 py-1.5 rounded-lg font-semibold text-sm flex items-center shadow-lg">
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      Premium
-                    </div>
-                  )}
-
-                  {/* Featured Badge */}
-                  {listing.premiumAddOns.featured?.active && !listing.premiumAddOns.premium?.active && !listing.premiumAddOns.elite?.active && (
-                    <div className="absolute top-4 left-4 badge-featured">
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      Featured
-                    </div>
-                  )}
-
-                  {/* AI Enhanced Badge (additional indicator) */}
-                  {listing.premiumAddOns.aiEnhanced && (
-                    <div className="absolute top-4 right-4 bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium flex items-center">
-                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M13.5 3a1.5 1.5 0 100 3h.5a.5.5 0 01.5.5v.5a1.5 1.5 0 003 0V6a1 1 0 00-1-1h-.5a1.5 1.5 0 01-1.5-1.5V3zm-5 0A1.5 1.5 0 017 4.5V5a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3H6a.5.5 0 01.5.5v.5a1.5 1.5 0 003 0V9.5a.5.5 0 01.5-.5h.5a1.5 1.5 0 000-3H10a1 1 0 01-1-1v-.5A1.5 1.5 0 008.5 3z" />
-                      </svg>
-                      AI
-                    </div>
-                  )}
-
-                  {/* Verified Asset Badge */}
-                  {listing.premiumAddOns.verifiedBadge?.active && (
-                    <div className={`absolute ${listing.premiumAddOns.aiEnhanced ? 'top-12' : 'top-4'} right-4 bg-green-600 text-white px-2 py-1 rounded text-xs font-medium flex items-center`}>
-                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Verified Asset
-                    </div>
-                  )}
-                </div>
-
-                {/* Thumbnail Strip */}
-                {images.length > 1 && (
-                  <div className="p-4 border-t border-surface-border">
-                    <div className="flex gap-2 overflow-x-auto pb-2">
-                      {images.slice(0, 8).map((img, index) => (
-                        <button
-                          key={index}
-                          className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 ${
-                            img.isPrimary ? 'border-rail-orange' : 'border-surface-border'
-                          }`}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={getImageUrl(img.url)}
-                            alt={`${listing.title} ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      ))}
-                      {images.length > 8 && (
-                        <div className="flex-shrink-0 w-20 h-20 rounded-lg bg-surface-secondary flex items-center justify-center text-body-sm font-medium text-text-secondary">
-                          +{images.length - 8}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Description */}
-              <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
-                <h2 className="heading-lg mb-4">Description</h2>
-                <div className="prose max-w-none text-body-md text-text-primary whitespace-pre-wrap">
-                  {listing.description}
-                </div>
-              </div>
-
-              {/* BUYER AUDIT: Structured Equipment Specifications */}
-              {listing.equipment && (
-                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="heading-lg">Technical Specifications</h2>
-                    {/* Export button */}
-                    <a
-                      href={`/api/listings/${listing._id}/export?format=pdf`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm font-medium text-rail-orange hover:text-rail-orange-dark"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                      Export Specs
-                    </a>
-                  </div>
-                  
-                  {/* Identity & Registration */}
-                  {(listing.equipment.reportingMarks || listing.equipment.manufacturer || listing.equipment.model) && (
-                    <div className="mb-6">
-                      <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Identity & Registration</h3>
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        {listing.equipment.reportingMarks && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Reporting Marks</span>
-                            <span className="text-body-sm font-mono font-semibold text-navy-900">{listing.equipment.reportingMarks}</span>
-                          </div>
-                        )}
-                        {listing.equipment.manufacturer && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Manufacturer</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.manufacturer}</span>
-                          </div>
-                        )}
-                        {listing.equipment.model && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Model</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.model}</span>
-                          </div>
-                        )}
-                        {listing.equipment.yearBuilt && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Year Built</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.yearBuilt}</span>
-                          </div>
-                        )}
-                        {listing.equipment.yearRebuilt && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Year Rebuilt</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.yearRebuilt}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Locomotive-specific specs */}
-                  {listing.category === 'locomotives' && (listing.equipment.horsepower || listing.equipment.engineHours || listing.equipment.mileage) && (
-                    <div className="mb-6">
-                      <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Power & Performance</h3>
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {listing.equipment.horsepower && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Horsepower</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.horsepower.toLocaleString()} HP</span>
-                          </div>
-                        )}
-                        {listing.equipment.tractionMotors && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Traction Motors</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.tractionMotors}</span>
-                          </div>
-                        )}
-                        {listing.equipment.fuelCapacity && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Fuel Capacity</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.fuelCapacity.toLocaleString()} gal</span>
-                          </div>
-                        )}
-                        {listing.equipment.engineHours && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Engine Hours</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.engineHours.toLocaleString()}</span>
-                          </div>
-                        )}
-                        {listing.equipment.mileage && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Mileage</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.mileage.toLocaleString()} mi</span>
-                          </div>
-                        )}
-                        {listing.equipment.muCapable !== undefined && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">MU Capable</span>
-                            <span className={`text-body-sm font-semibold ${listing.equipment.muCapable ? 'text-green-600' : 'text-text-tertiary'}`}>
-                              {listing.equipment.muCapable ? 'Yes' : 'No'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Freight car-specific specs */}
-                  {(listing.equipment.aarCarType || listing.equipment.loadLimit || listing.equipment.cubicCapacity) && (
-                    <div className="mb-6">
-                      <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Capacity & Dimensions</h3>
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {listing.equipment.aarCarType && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">AAR Car Type</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.aarCarType}</span>
-                          </div>
-                        )}
-                        {listing.equipment.loadLimit && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Load Limit</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.loadLimit.toLocaleString()} lbs</span>
-                          </div>
-                        )}
-                        {listing.equipment.lightWeight && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Light Weight</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.lightWeight.toLocaleString()} lbs</span>
-                          </div>
-                        )}
-                        {listing.equipment.insideLength && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Inside Length</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.insideLength}&apos;</span>
-                          </div>
-                        )}
-                        {listing.equipment.insideWidth && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Inside Width</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.insideWidth}&apos;</span>
-                          </div>
-                        )}
-                        {listing.equipment.insideHeight && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Inside Height</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.insideHeight}&apos;</span>
-                          </div>
-                        )}
-                        {listing.equipment.cubicCapacity && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Cubic Capacity</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.cubicCapacity.toLocaleString()} cu ft</span>
-                          </div>
-                        )}
-                        {listing.equipment.numberOfAxles && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Number of Axles</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.numberOfAxles}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Mechanical specs */}
-                  {(listing.equipment.airBrakeType || listing.equipment.couplerType || listing.equipment.gauge) && (
-                    <div className="mb-6">
-                      <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Mechanical</h3>
-                      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {listing.equipment.gauge && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Gauge</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.gauge}</span>
-                          </div>
-                        )}
-                        {listing.equipment.weight && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Weight</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.weight.toLocaleString()} lbs</span>
-                          </div>
-                        )}
-                        {listing.equipment.airBrakeType && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Air Brake Type</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.airBrakeType}</span>
-                          </div>
-                        )}
-                        {listing.equipment.couplerType && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Coupler Type</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.couplerType}</span>
-                          </div>
-                        )}
-                        {listing.equipment.handbrakeType && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Handbrake</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.handbrakeType}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Availability */}
-                  {(listing.equipment.availability || listing.equipment.currentLocation) && (
-                    <div className="mb-6">
-                      <h3 className="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Availability</h3>
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        {listing.equipment.availability && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Status</span>
-                            <span className="text-body-sm font-semibold text-navy-900 capitalize">{listing.equipment.availability.replace('-', ' ')}</span>
-                          </div>
-                        )}
-                        {listing.equipment.currentLocation?.railroad && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Current Railroad</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.currentLocation.railroad}</span>
-                          </div>
-                        )}
-                        {listing.equipment.currentLocation?.station && (
-                          <div className="flex justify-between items-center p-3 bg-surface-secondary rounded-lg">
-                            <span className="text-body-sm text-text-secondary">Station</span>
-                            <span className="text-body-sm font-semibold text-navy-900">{listing.equipment.currentLocation.station}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+      <main className="flex-1 bg-surface-secondary pb-32">
+        <div className="container-rail py-6">
+          {/* 1. IMAGE GALLERY */}
+          <div className="bg-white rounded-2xl shadow-card border border-surface-border overflow-hidden mb-6">
+            <div className="aspect-[4/3] md:aspect-[16/9] bg-navy-100 relative">
+              {primaryImage ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={getImageUrl(primaryImage.url)}
+                  alt={listing.title}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <svg className="w-24 h-24 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
                 </div>
               )}
 
-              {/* BUYER AUDIT: FRA Compliance Module */}
-              {listing.equipment && (listing.equipment.fraCompliant !== undefined || listing.equipment.dotCompliant !== undefined || listing.equipment.hazmatCertified !== undefined) && (
-                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
-                  <h2 className="heading-lg mb-6">Compliance & Certifications</h2>
-                  <div className="grid sm:grid-cols-3 gap-4">
-                    <div className={`p-4 rounded-xl text-center ${listing.equipment.fraCompliant ? 'bg-green-50 border-2 border-green-200' : 'bg-surface-secondary border border-surface-border'}`}>
-                      <div className={`w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center ${listing.equipment.fraCompliant ? 'bg-green-100' : 'bg-gray-100'}`}>
-                        {listing.equipment.fraCompliant ? (
-                          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        )}
-                      </div>
-                      <p className={`text-body-sm font-semibold ${listing.equipment.fraCompliant ? 'text-green-800' : 'text-text-tertiary'}`}>FRA Compliant</p>
-                      <p className="text-xs text-text-secondary mt-1">
-                        {listing.equipment.fraCompliant ? 'Approved for Class I operations' : 'Not FRA certified'}
-                      </p>
-                    </div>
-
-                    <div className={`p-4 rounded-xl text-center ${listing.equipment.dotCompliant ? 'bg-green-50 border-2 border-green-200' : 'bg-surface-secondary border border-surface-border'}`}>
-                      <div className={`w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center ${listing.equipment.dotCompliant ? 'bg-green-100' : 'bg-gray-100'}`}>
-                        {listing.equipment.dotCompliant ? (
-                          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        )}
-                      </div>
-                      <p className={`text-body-sm font-semibold ${listing.equipment.dotCompliant ? 'text-green-800' : 'text-text-tertiary'}`}>DOT Compliant</p>
-                      <p className="text-xs text-text-secondary mt-1">
-                        {listing.equipment.dotCompliant ? 'DOT regulations met' : 'Not DOT certified'}
-                      </p>
-                    </div>
-
-                    <div className={`p-4 rounded-xl text-center ${listing.equipment.hazmatCertified ? 'bg-green-50 border-2 border-green-200' : 'bg-surface-secondary border border-surface-border'}`}>
-                      <div className={`w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center ${listing.equipment.hazmatCertified ? 'bg-green-100' : 'bg-gray-100'}`}>
-                        {listing.equipment.hazmatCertified ? (
-                          <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        ) : (
-                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        )}
-                      </div>
-                      <p className={`text-body-sm font-semibold ${listing.equipment.hazmatCertified ? 'text-green-800' : 'text-text-tertiary'}`}>Hazmat Certified</p>
-                      <p className="text-xs text-text-secondary mt-1">
-                        {listing.equipment.hazmatCertified ? 'Hazmat approved' : 'Not hazmat certified'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Inspection Dates */}
-                  {(listing.equipment.lastInspectionDate || listing.equipment.nextInspectionDue) && (
-                    <div className="mt-4 pt-4 border-t border-surface-border">
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        {listing.equipment.lastInspectionDate && (
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                            <div>
-                              <p className="text-xs text-text-secondary">Last Inspection</p>
-                              <p className="text-body-sm font-semibold text-navy-900">
-                                {new Date(listing.equipment.lastInspectionDate).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                        {listing.equipment.nextInspectionDue && (
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                              new Date(listing.equipment.nextInspectionDue) < new Date() ? 'bg-red-100' : 'bg-green-100'
-                            }`}>
-                              <svg className={`w-5 h-5 ${
-                                new Date(listing.equipment.nextInspectionDue) < new Date() ? 'text-red-600' : 'text-green-600'
-                              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            </div>
-                            <div>
-                              <p className="text-xs text-text-secondary">Next Inspection Due</p>
-                              <p className={`text-body-sm font-semibold ${
-                                new Date(listing.equipment.nextInspectionDue) < new Date() ? 'text-red-600' : 'text-navy-900'
-                              }`}>
-                                {new Date(listing.equipment.nextInspectionDue).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+              {/* Single Highest Badge - S-3.6: Added tooltip for trust clarity */}
+              {badge && (
+                <div 
+                  className={`absolute top-4 left-4 px-3 py-1.5 rounded-lg font-semibold text-sm flex items-center shadow-lg cursor-help ${
+                    badge === 'ELITE' ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white' :
+                    badge === 'PREMIUM' ? 'bg-purple-600 text-white' :
+                    badge === 'FEATURED' ? 'bg-rail-orange text-white' :
+                    'bg-green-600 text-white'
+                  }`}
+                  title={BADGE_STYLES[badge]?.title || 'Badge reflects account status.'}
+                >
+                  {badge === 'ELITE' && <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
+                  {badge === 'PREMIUM' && <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>}
+                  {badge === 'FEATURED' && <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>}
+                  {badge === 'VERIFIED' && <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
+                  {badge}
                 </div>
               )}
 
-              {/* BUYER AUDIT: Price History (if available) */}
-              {listing.priceHistory && listing.priceHistory.length > 1 && (
-                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
-                  <h2 className="heading-lg mb-4">Price History</h2>
-                  <div className="space-y-3">
-                    {listing.priceHistory.slice().reverse().map((entry, index) => (
-                      <div key={index} className="flex items-center justify-between py-2 border-b border-surface-border last:border-0">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            index === 0 ? 'bg-green-100' : 'bg-gray-100'
-                          }`}>
-                            {index === 0 ? (
-                              <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                            ) : (
-                              <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 4a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z" clipRule="evenodd" />
-                              </svg>
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-body-sm font-semibold text-navy-900">
-                              ${entry.amount.toLocaleString()}
-                            </p>
-                            <p className="text-xs text-text-secondary">
-                              {new Date(entry.changedAt).toLocaleDateString()}
-                              {entry.reason && ` • ${entry.reason}`}
-                            </p>
-                          </div>
-                        </div>
-                        {index > 0 && listing.priceHistory && (
-                          <span className={`text-sm font-medium ${
-                            entry.amount < listing.priceHistory[listing.priceHistory.length - 1 - index + 1]?.amount 
-                              ? 'text-green-600' 
-                              : 'text-red-600'
-                          }`}>
-                            {entry.amount < (listing.priceHistory[listing.priceHistory.length - 1 - index + 1]?.amount || 0)
-                              ? `↓ $${((listing.priceHistory[listing.priceHistory.length - 1 - index + 1]?.amount || 0) - entry.amount).toLocaleString()}`
-                              : `↑ $${(entry.amount - (listing.priceHistory[listing.priceHistory.length - 1 - index + 1]?.amount || 0)).toLocaleString()}`
-                            }
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              {/* Photo count - Gallery affordance */}
+              {images.length > 1 && (
+                <button className="absolute bottom-4 right-4 bg-black/70 hover:bg-black/80 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  View {images.length} photos
+                </button>
               )}
-
-              {/* Specifications (legacy) */}
-              {listing.specifications && listing.specifications.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
-                  <h2 className="heading-lg mb-6">Specifications</h2>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    {listing.specifications.map((spec, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-center p-4 bg-surface-secondary rounded-xl"
-                      >
-                        <span className="text-body-md text-text-secondary">{spec.label}</span>
-                        <span className="text-body-md font-semibold text-navy-900">
-                          {spec.value}
-                          {spec.unit && <span className="text-text-secondary ml-1">{spec.unit}</span>}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Documents */}
-              {documents.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
-                  <h2 className="heading-lg mb-4">Documents</h2>
-                  <div className="space-y-3">
-                    {documents.map((doc, index) => (
-                      <a
-                        key={index}
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-4 bg-surface-secondary rounded-xl hover:bg-navy-50 transition-colors"
-                      >
-                        <div className="w-10 h-10 bg-rail-orange/10 rounded-lg flex items-center justify-center">
-                          <svg className="w-5 h-5 text-rail-orange" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-body-md font-medium text-navy-900">
-                            {doc.caption || `Document ${index + 1}`}
-                          </p>
-                          <p className="text-caption text-text-secondary">PDF Document</p>
-                        </div>
-                        <svg className="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Shipping */}
-              <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 md:p-8">
-                <h2 className="heading-lg mb-4">Shipping & Pickup</h2>
-                <div className="grid sm:grid-cols-3 gap-4">
-                  <div className={`p-4 rounded-xl text-center ${listing.shippingOptions.localPickup ? 'bg-green-50 border border-green-200' : 'bg-surface-secondary'}`}>
-                    <svg className={`w-6 h-6 mx-auto mb-2 ${listing.shippingOptions.localPickup ? 'text-green-600' : 'text-text-tertiary'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <p className={`text-body-sm font-medium ${listing.shippingOptions.localPickup ? 'text-green-800' : 'text-text-tertiary'}`}>
-                      Local Pickup
-                    </p>
-                    <p className="text-caption text-text-secondary mt-1">
-                      {listing.shippingOptions.localPickup ? 'Available' : 'Not Available'}
-                    </p>
-                  </div>
-
-                  <div className={`p-4 rounded-xl text-center ${listing.shippingOptions.sellerShips ? 'bg-green-50 border border-green-200' : 'bg-surface-secondary'}`}>
-                    <svg className={`w-6 h-6 mx-auto mb-2 ${listing.shippingOptions.sellerShips ? 'text-green-600' : 'text-text-tertiary'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                    </svg>
-                    <p className={`text-body-sm font-medium ${listing.shippingOptions.sellerShips ? 'text-green-800' : 'text-text-tertiary'}`}>
-                      Seller Ships
-                    </p>
-                    <p className="text-caption text-text-secondary mt-1">
-                      {listing.shippingOptions.sellerShips ? 'Available' : 'Not Available'}
-                    </p>
-                  </div>
-
-                  <div className={`p-4 rounded-xl text-center ${listing.shippingOptions.buyerArranges ? 'bg-green-50 border border-green-200' : 'bg-surface-secondary'}`}>
-                    <svg className={`w-6 h-6 mx-auto mb-2 ${listing.shippingOptions.buyerArranges ? 'text-green-600' : 'text-text-tertiary'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
-                    <p className={`text-body-sm font-medium ${listing.shippingOptions.buyerArranges ? 'text-green-800' : 'text-text-tertiary'}`}>
-                      Buyer Arranges
-                    </p>
-                    <p className="text-caption text-text-secondary mt-1">
-                      {listing.shippingOptions.buyerArranges ? 'Available' : 'Not Available'}
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            {/* Right Column - Sticky Sidebar */}
-            <div className="space-y-6">
-              <div className="sticky top-24">
-                {/* Price Card */}
-                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 mb-6">
-                  {/* Badges */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <span className="badge-primary">{CATEGORY_LABELS[listing.category]}</span>
-                    <span className="badge-secondary">{CONDITION_LABELS[listing.condition]}</span>
-                  </div>
-
-                  {/* Title */}
-                  <h1 className="heading-lg mb-4">{listing.title}</h1>
-
-                  {/* Price */}
-                  <div className="mb-6">
-                    <p className="text-display-sm font-bold text-rail-orange">
-                      {formatPrice(listing.price)}
-                    </p>
-                    {listing.price.type === 'negotiable' && (
-                      <p className="text-body-sm text-text-secondary mt-1">Negotiable</p>
-                    )}
-                    {listing.quantity > 1 && (
-                      <p className="text-body-sm text-text-secondary mt-1">
-                        Qty: {listing.quantity} {listing.quantityUnit}
-                      </p>
-                    )}
-                    {/* BUYER AUDIT: Days on market indicator */}
-                    {listing.daysOnMarket !== undefined && (
-                      <p className={`text-body-sm mt-1 ${listing.daysOnMarket <= 7 ? 'text-green-600 font-medium' : 'text-text-secondary'}`}>
-                        {listing.daysOnMarket <= 1 ? 'New listing today!' : `Listed ${listing.daysOnMarket} days ago`}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Location */}
-                  <div className="flex items-center gap-2 text-body-md text-text-secondary mb-6">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    {listing.location.city}, {listing.location.state}
-                  </div>
-
-                  {/* CTA Buttons */}
-                  <div className="space-y-3">
-                    <ContactSellerForm 
-                      listingId={listing._id} 
-                      listingTitle={listing.title}
-                      sellerName={listing.sellerId.name}
-                      isVerifiedSeller={listing.sellerId.isVerifiedSeller}
-                    />
-                    <button className="btn-outline w-full py-4">
-                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
-                      Save Listing
-                    </button>
-                  </div>
-
-                  {/* Spec Sheet */}
-                  {listing.premiumAddOns.specSheet?.generated && listing.premiumAddOns.specSheet?.url && (
-                    <a
-                      href={listing.premiumAddOns.specSheet.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 mt-4 text-body-sm font-medium text-rail-orange hover:text-rail-orange-dark"
+            {/* Thumbnail Strip */}
+            {images.length > 1 && (
+              <div className="p-3 border-t border-surface-border">
+                <div className="flex gap-2 overflow-x-auto">
+                  {images.slice(0, 6).map((img, index) => (
+                    <div
+                      key={index}
+                      className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 ${
+                        img.isPrimary ? 'border-rail-orange' : 'border-surface-border'
+                      }`}
                     >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                      </svg>
-                      Download Spec Sheet (PDF)
-                    </a>
-                  )}
-                </div>
-
-                {/* Seller Card */}
-                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
-                  <h3 className="heading-sm mb-4">Seller Information</h3>
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 bg-surface-secondary rounded-full flex items-center justify-center overflow-hidden">
-                      {listing.sellerId.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={listing.sellerId.image}
-                          alt={listing.sellerId.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-xl font-bold text-text-tertiary">
-                          {listing.sellerId.name?.charAt(0) || 'S'}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-body-md font-semibold text-navy-900">
-                        {listing.sellerId.name}
-                      </p>
-                      <p className="text-caption text-text-secondary capitalize">
-                        {listing.sellerType}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Verified Seller Badge */}
-                  {listing.sellerId.isVerifiedSeller && (
-                    <div className="mb-4">
-                      <VerifiedSellerBadgeWithLabel size="sm" showDisclaimer={true} />
-                    </div>
-                  )}
-                  
-                  <a
-                    href={`mailto:${listing.sellerId.email}`}
-                    className="text-body-sm font-medium text-rail-orange hover:text-rail-orange-dark"
-                  >
-                    View Seller Profile →
-                  </a>
-                  
-                  {/* PayPal Invoice Option */}
-                  {listing.sellerId.paypalEmail && listing.sellerId.paypalVerified && (
-                    <div className="mt-4 pt-4 border-t border-surface-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 bg-[#003087] rounded flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">PP</span>
-                        </div>
-                        <span className="text-body-sm font-medium text-navy-900">
-                          Pay with PayPal (Invoice Only)
-                        </span>
-                      </div>
-                      <p className="text-xs text-text-tertiary mb-3">
-                        This PayPal email is provided directly by the seller. 
-                        The Rail Exchange does not handle or guarantee payments.
-                      </p>
-                      <ContactSellerForm 
-                        listingId={listing._id} 
-                        listingTitle={listing.title}
-                        sellerName={listing.sellerId.name}
-                        isPaypalRequest={true}
-                        paypalEmail={listing.sellerId.paypalEmail}
-                        isVerifiedSeller={listing.sellerId.isVerifiedSeller}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getImageUrl(img.url)}
+                        alt={`${listing.title} ${index + 1}`}
+                        className="w-full h-full object-cover"
                       />
                     </div>
+                  ))}
+                  {images.length > 6 && (
+                    <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-surface-secondary flex items-center justify-center text-sm font-medium text-text-secondary">
+                      +{images.length - 6}
+                    </div>
                   )}
                 </div>
+              </div>
+            )}
+          </div>
 
-                {/* Relevant Contractors - Matched by Equipment Category */}
-                <RelevantContractors 
-                  equipmentCategory={listing.category} 
-                  className="mt-6"
-                  maxContractors={3}
-                />
+          {/* 2. CORE INFO + SELLER */}
+          <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 mb-6">
+            {/* Category & Condition */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              <span className="badge-primary">{CATEGORY_LABELS[listing.category]}</span>
+              <span className="badge-secondary">{CONDITION_LABELS[listing.condition]}</span>
+            </div>
+            {/* S-2.4: Condition disclaimer */}
+            <p className="text-[10px] text-text-tertiary mb-3 leading-tight">
+              Condition is provided by the seller unless accompanied by inspection documentation.
+            </p>
 
-                {/* Stats */}
-                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 mt-6">
-                  <h3 className="heading-sm mb-4">Listing Stats</h3>
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className="text-heading-lg font-bold text-navy-900">
-                        {listing.viewCount.toLocaleString()}
-                      </p>
-                      <p className="text-caption text-text-secondary">Views</p>
-                    </div>
-                    <div>
-                      <p className="text-heading-lg font-bold text-navy-900">
-                        {listing.inquiryCount}
-                      </p>
-                      <p className="text-caption text-text-secondary">Inquiries</p>
-                    </div>
-                    <div>
-                      <p className="text-heading-lg font-bold text-navy-900">
-                        {listing.saveCount}
-                      </p>
-                      <p className="text-caption text-text-secondary">Saves</p>
-                    </div>
-                  </div>
-                  <p className="text-caption text-text-tertiary text-center mt-4">
-                    Listed on {formatDate(listing.createdAt)}
-                  </p>
-                </div>
+            {/* BATCH E-4: Premium Badge Disclosure */}
+            {badge && (badge === 'ELITE' || badge === 'PREMIUM' || badge === 'FEATURED') && (
+              <p className="text-[10px] text-text-tertiary mb-3">
+                Featured placement reflects paid visibility options and does not indicate quality, condition, or endorsement.
+              </p>
+            )}
 
-                {/* Tags */}
-                {listing.tags && listing.tags.length > 0 && (
-                  <div className="mt-6">
-                    <p className="text-caption text-text-secondary mb-2">Tags</p>
-                    <div className="flex flex-wrap gap-2">
-                      {listing.tags.map((tag) => (
-                        <Link
-                          key={tag}
-                          href={`/listings?search=${encodeURIComponent(tag)}`}
-                          className="px-3 py-1 bg-surface-secondary rounded-full text-caption text-text-secondary hover:bg-navy-100 transition-colors"
-                        >
-                          {tag}
-                        </Link>
-                      ))}
-                    </div>
+            {/* Title */}
+            <h1 className="text-xl md:text-2xl font-bold text-navy-900 mb-3">{listing.title}</h1>
+
+            {/* Price */}
+            <p className="text-2xl md:text-3xl font-bold text-rail-orange mb-4">
+              {formatPrice(listing.price)}
+            </p>
+
+            {/* Location */}
+            <div className="flex items-center gap-2 text-text-secondary mb-4">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              {listing.location.city}, {listing.location.state}
+            </div>
+
+            {/* Seller Inline */}
+            <div className="flex items-center gap-3 pt-4 border-t border-surface-border">
+              <div className="w-10 h-10 bg-surface-secondary rounded-full flex items-center justify-center overflow-hidden">
+                {listing.sellerId.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={listing.sellerId.image} alt={listing.sellerId.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-lg font-bold text-text-tertiary">{listing.sellerId.name?.charAt(0) || 'S'}</span>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-navy-900">{listing.sellerId.name}</p>
+                {listing.sellerId.isVerifiedSeller && (
+                  <div>
+                    <span className="inline-flex items-center gap-1 text-xs text-green-700">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                      Verified Seller
+                    </span>
+                    {/* BATCH E-4: Verification Disclosure (visible, not tooltip only) */}
+                    <p className="text-[10px] text-text-tertiary mt-0.5 leading-tight">
+                      Verification reflects document submission and review. The Rail Exchange does not verify ownership, authority to sell, transaction validity, or item condition.
+                    </p>
                   </div>
                 )}
               </div>
             </div>
           </div>
+
+          {/* 3. DESCRIPTION */}
+          <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 mb-6">
+            <h2 className="font-semibold text-navy-900 mb-3">Description</h2>
+            <div className="text-text-primary whitespace-pre-wrap">
+              {listing.description}
+            </div>
+          </div>
+
+          {/* 4. COLLAPSED SECTIONS */}
+          
+          {/* Specifications (Collapsed) */}
+          {hasSpecs && (
+            <details className="bg-white rounded-2xl shadow-card border border-surface-border mb-4 group">
+              <summary className="p-4 font-semibold text-navy-900 cursor-pointer list-none flex items-center justify-between">
+                Specifications
+                <svg className="w-5 h-5 text-text-tertiary group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <div className="p-4 pt-0 border-t border-surface-border">
+                <div className="grid sm:grid-cols-2 gap-3 mt-4">
+                  {listing.specifications?.map((spec, index) => (
+                    <div key={index} className="flex justify-between p-3 bg-surface-secondary rounded-lg">
+                      <span className="text-sm text-text-secondary">{spec.label}</span>
+                      <span className="text-sm font-medium text-navy-900">{spec.value}{spec.unit && ` ${spec.unit}`}</span>
+                    </div>
+                  ))}
+                  {listing.equipment?.manufacturer && (
+                    <div className="flex justify-between p-3 bg-surface-secondary rounded-lg">
+                      <span className="text-sm text-text-secondary">Manufacturer</span>
+                      <span className="text-sm font-medium text-navy-900">{listing.equipment.manufacturer}</span>
+                    </div>
+                  )}
+                  {listing.equipment?.model && (
+                    <div className="flex justify-between p-3 bg-surface-secondary rounded-lg">
+                      <span className="text-sm text-text-secondary">Model</span>
+                      <span className="text-sm font-medium text-navy-900">{listing.equipment.model}</span>
+                    </div>
+                  )}
+                  {listing.equipment?.yearBuilt && (
+                    <div className="flex justify-between p-3 bg-surface-secondary rounded-lg">
+                      <span className="text-sm text-text-secondary">Year Built</span>
+                      <span className="text-sm font-medium text-navy-900">{listing.equipment.yearBuilt}</span>
+                    </div>
+                  )}
+                  {listing.equipment?.horsepower && (
+                    <div className="flex justify-between p-3 bg-surface-secondary rounded-lg">
+                      <span className="text-sm text-text-secondary">Horsepower</span>
+                      <span className="text-sm font-medium text-navy-900">{listing.equipment.horsepower.toLocaleString()} HP</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </details>
+          )}
+
+          {/* Shipping (Collapsed) */}
+          {hasShipping && (
+            <details className="bg-white rounded-2xl shadow-card border border-surface-border mb-4 group">
+              <summary className="p-4 font-semibold text-navy-900 cursor-pointer list-none flex items-center justify-between">
+                Shipping & Pickup
+                <svg className="w-5 h-5 text-text-tertiary group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <div className="p-4 pt-0 border-t border-surface-border">
+                <div className="grid sm:grid-cols-3 gap-3 mt-4">
+                  <div className={`p-3 rounded-lg text-center ${listing.shippingOptions.localPickup ? 'bg-green-50 text-green-800' : 'bg-surface-secondary text-text-tertiary'}`}>
+                    <p className="text-sm font-medium">Local Pickup</p>
+                    <p className="text-xs">{listing.shippingOptions.localPickup ? 'Available' : 'Not Available'}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg text-center ${listing.shippingOptions.sellerShips ? 'bg-green-50 text-green-800' : 'bg-surface-secondary text-text-tertiary'}`}>
+                    <p className="text-sm font-medium">Seller Ships</p>
+                    <p className="text-xs">{listing.shippingOptions.sellerShips ? 'Available' : 'Not Available'}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg text-center ${listing.shippingOptions.buyerArranges ? 'bg-green-50 text-green-800' : 'bg-surface-secondary text-text-tertiary'}`}>
+                    <p className="text-sm font-medium">Buyer Arranges</p>
+                    <p className="text-xs">{listing.shippingOptions.buyerArranges ? 'Available' : 'Not Available'}</p>
+                  </div>
+                </div>
+              </div>
+            </details>
+          )}
+
+          {/* Compliance (Collapsed) */}
+          {hasCompliance && (
+            <details className="bg-white rounded-2xl shadow-card border border-surface-border mb-4 group">
+              <summary className="p-4 font-semibold text-navy-900 cursor-pointer list-none flex items-center justify-between">
+                Compliance & Certifications
+                <svg className="w-5 h-5 text-text-tertiary group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <div className="p-4 pt-0 border-t border-surface-border">
+                <div className="grid sm:grid-cols-3 gap-3 mt-4">
+                  <div className={`p-3 rounded-lg text-center ${listing.equipment?.fraCompliant ? 'bg-green-50 text-green-800' : 'bg-surface-secondary text-text-tertiary'}`}>
+                    <p className="text-sm font-medium">FRA Compliant</p>
+                    <p className="text-xs">{listing.equipment?.fraCompliant ? 'Yes' : 'No'}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg text-center ${listing.equipment?.dotCompliant ? 'bg-green-50 text-green-800' : 'bg-surface-secondary text-text-tertiary'}`}>
+                    <p className="text-sm font-medium">DOT Compliant</p>
+                    <p className="text-xs">{listing.equipment?.dotCompliant ? 'Yes' : 'No'}</p>
+                  </div>
+                  <div className={`p-3 rounded-lg text-center ${listing.equipment?.hazmatCertified ? 'bg-green-50 text-green-800' : 'bg-surface-secondary text-text-tertiary'}`}>
+                    <p className="text-sm font-medium">Hazmat Certified</p>
+                    <p className="text-xs">{listing.equipment?.hazmatCertified ? 'Yes' : 'No'}</p>
+                  </div>
+                </div>
+              </div>
+            </details>
+          )}
+
+          {/* Price History (Collapsed) - Show count only, not actual prices */}
+          {hasPriceHistory && (
+            <details className="bg-white rounded-2xl shadow-card border border-surface-border mb-4 group">
+              <summary className="p-4 font-semibold text-navy-900 cursor-pointer list-none flex items-center justify-between">
+                Price History
+                <svg className="w-5 h-5 text-text-tertiary group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <div className="p-4 pt-0 border-t border-surface-border">
+                <div className="mt-4 p-4 bg-surface-secondary rounded-lg text-center">
+                  <p className="text-sm text-text-secondary">
+                    Price updated <span className="font-medium text-navy-900">{listing.priceHistory?.length || 0}</span> time{(listing.priceHistory?.length || 0) !== 1 ? 's' : ''}
+                  </p>
+                  <p className="text-xs text-text-tertiary mt-1">
+                    Historical price values are not disclosed.
+                  </p>
+                </div>
+              </div>
+            </details>
+          )}
+
+          {/* Report Listing - BATCH E-3 */}
+          <div className="flex justify-end mb-4">
+            <ReportListingButton 
+              listingId={listing._id} 
+              listingTitle={listing.title}
+            />
+          </div>
+
+          {/* Mobile Contact Form (visible on mobile, anchor target from sticky CTA) */}
+          <div className="md:hidden bg-white rounded-2xl shadow-card border border-surface-border p-6 mb-6" id="contact-form-mobile">
+            <ContactSellerForm 
+              listingId={listing._id} 
+              listingTitle={listing.title}
+              sellerName={listing.sellerId.name}
+              sellerLocation={`${listing.location.city}, ${listing.location.state}`}
+              isVerifiedSeller={listing.sellerId.isVerifiedSeller}
+            />
+          </div>
+
+          {/* Relevant Contractors */}
+          <RelevantContractors 
+            equipmentCategory={listing.category} 
+            className="mb-6"
+            maxContractors={3}
+          />
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-navy-900 text-white py-8">
-        <div className="container-rail text-center">
-          <p className="text-body-sm text-white/60">
-            © {new Date().getFullYear()} The Rail Exchange™. All rights reserved.
-          </p>
+      {/* STICKY CONTACT CTA - Mobile shows button, Desktop shows inline form */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-surface-border shadow-lg z-40">
+        <div className="container-rail py-4">
+          {/* Mobile: Simple CTA button that scrolls to form */}
+          <div className="md:hidden">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-navy-900 text-lg truncate">{formatPrice(listing.price)}</p>
+                <p className="text-sm text-text-secondary truncate">{listing.title}</p>
+              </div>
+              <a 
+                href="#contact-form-mobile"
+                className="btn-primary px-6 py-3 flex-shrink-0"
+              >
+                Contact Seller
+              </a>
+            </div>
+          </div>
+          {/* Desktop: Inline contact form */}
+          <div className="hidden md:block">
+            <ContactSellerForm 
+              listingId={listing._id} 
+              listingTitle={listing.title}
+              sellerName={listing.sellerId.name}
+              sellerLocation={`${listing.location.city}, ${listing.location.state}`}
+              isVerifiedSeller={listing.sellerId.isVerifiedSeller}
+            />
+          </div>
         </div>
-      </footer>
+      </div>
     </>
   );
 }

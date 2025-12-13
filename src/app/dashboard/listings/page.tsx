@@ -391,6 +391,18 @@ export default function MyListingsPage() {
 
                   {/* Actions */}
                   <div className="lg:col-span-2 flex items-center justify-end gap-2">
+                    {/* Boost Button - Only show for active listings without Elite */}
+                    {listing.status === 'active' && !listing.premiumAddOns?.elite?.active && (
+                      <Link
+                        href={`/dashboard/listings/${listing._id}/boost`}
+                        className="p-2 rounded-lg text-rail-orange hover:text-white hover:bg-rail-orange transition-colors"
+                        title="Boost Listing"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </Link>
+                    )}
                     <Link
                       href={`/dashboard/listings/${listing._id}/edit`}
                       className="p-2 rounded-lg text-text-secondary hover:text-navy-900 hover:bg-surface-secondary transition-colors"

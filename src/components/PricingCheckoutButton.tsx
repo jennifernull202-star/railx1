@@ -2,6 +2,11 @@
  * THE RAIL EXCHANGE™ — Pricing Checkout Button
  * 
  * Client component for initiating Stripe checkout for subscriptions.
+ * 
+ * GLOBAL UI ENFORCEMENT:
+ * - CTA blocked states with helper text
+ * - Inline, non-alarmist error feedback
+ * - Skeleton loaders (no spinners)
  */
 
 'use client';
@@ -9,6 +14,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { SellerTier, ContractorTier } from '@/config/pricing';
+import { getErrorMessage } from '@/lib/ui';
 
 interface PricingCheckoutButtonProps {
   tier: SellerTier | ContractorTier;
@@ -28,10 +34,12 @@ export default function PricingCheckoutButton({
   className = '',
 }: PricingCheckoutButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   async function handleCheckout() {
     setLoading(true);
+    setError(null);
     
     try {
       const response = await fetch('/api/subscriptions', {
@@ -50,6 +58,14 @@ export default function PricingCheckoutButton({
       const data = await response.json();
 
       if (!response.ok) {
+        // Use standardized error messages for common API errors
+        if (response.status === 429) {
+          throw new Error(getErrorMessage('rate_limited'));
+        } else if (response.status === 403) {
+          throw new Error(getErrorMessage('forbidden'));
+        } else if (data.code === 'verification_required') {
+          throw new Error(getErrorMessage('verification_required'));
+        }
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
@@ -63,31 +79,35 @@ export default function PricingCheckoutButton({
       if (data.url) {
         window.location.href = data.url;
       }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      alert(error instanceof Error ? error.message : 'Failed to start checkout');
+    } catch (err) {
+      console.error('Checkout error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to start checkout');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <button
-      onClick={handleCheckout}
-      disabled={loading}
-      className={`${className} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-    >
-      {loading ? (
-        <span className="flex items-center justify-center gap-2">
-          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
-          Processing...
-        </span>
-      ) : (
-        children
+    <div className="flex flex-col">
+      <button
+        onClick={handleCheckout}
+        disabled={loading}
+        className={`${className} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      >
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            {/* Skeleton pulse loader instead of spinner */}
+            <span className="w-4 h-4 bg-current opacity-30 rounded-full animate-pulse" />
+            Processing...
+          </span>
+        ) : (
+          children
+        )}
+      </button>
+      {/* Inline error feedback - non-alarmist copy */}
+      {error && (
+        <p className="mt-2 text-sm text-status-error text-center">{error}</p>
       )}
-    </button>
+    </div>
   );
 }
