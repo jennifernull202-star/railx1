@@ -228,7 +228,7 @@ export default function ContactSellerForm({
     );
   }
 
-  // Success state
+  // Success state - S-4.8: Clear UI confirmation for leads
   if (success) {
     return (
       <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
@@ -242,11 +242,18 @@ export default function ContactSellerForm({
           <p className="text-body-md text-text-secondary mb-4">
             Your inquiry has been sent to {sellerName}. They&apos;ll respond to your message soon.
           </p>
+          {/* S-4.8: Clear indication of where replies arrive */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-left">
+            <p className="text-sm text-blue-800">
+              <strong>📬 Where to find replies:</strong><br/>
+              Check your <Link href="/dashboard/messages" className="font-semibold underline hover:text-blue-600">Messages inbox</Link> or your email for seller responses.
+            </p>
+          </div>
           <Link
             href="/dashboard/messages"
-            className="text-body-sm font-medium text-rail-orange hover:text-rail-orange-dark"
+            className="btn-primary inline-flex items-center gap-2"
           >
-            View in Messages →
+            View Messages →
           </Link>
         </div>
       </div>

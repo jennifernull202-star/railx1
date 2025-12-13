@@ -15,6 +15,7 @@ import { Types } from 'mongoose';
 
 import WelcomeMessage from '@/components/dashboard/WelcomeMessage';
 import SessionRefresher from '@/components/dashboard/SessionRefresher';
+import TrialBanner from '@/components/dashboard/TrialBanner';
 
 export const metadata: Metadata = {
   title: 'Dashboard | The Rail Exchange',
@@ -132,31 +133,9 @@ export default async function DashboardPage() {
         isContractor={isContractor} 
       />
 
-      {/* Trial Countdown Banner */}
+      {/* S-4.7: Trial Countdown Banner - dismissible, once per session */}
       {subscriptionStatus === 'trialing' && daysRemaining !== null && (
-        <div className="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
-                <span className="text-2xl font-bold">{daysRemaining}</span>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">
-                  {daysRemaining === 0 ? 'Trial Ends Today!' : daysRemaining === 1 ? '1 Day Left in Your Trial' : `${daysRemaining} Days Left in Your Trial`}
-                </h3>
-                <p className="text-white/80 text-sm">
-                  Enjoy full Seller Pro features. {daysRemaining <= 7 ? 'Subscribe now to keep your benefits!' : 'Your trial is active.'}
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/dashboard/billing"
-              className="inline-flex items-center px-5 py-2.5 bg-white text-blue-600 font-semibold rounded-xl hover:bg-blue-50 transition-colors"
-            >
-              Upgrade Now
-            </Link>
-          </div>
-        </div>
+        <TrialBanner daysRemaining={daysRemaining} userId={session.user.id} />
       )}
 
       {/* Welcome Message for New Users */}

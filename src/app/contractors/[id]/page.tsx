@@ -291,18 +291,24 @@ export default async function ContractorProfilePage({ params }: PageProps) {
         </div>
       </main>
 
-      {/* STICKY CONTACT CTA */}
+      {/* S-4.8: STICKY CONTACT CTA - Enhanced with reply clarity */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-surface-border p-4 z-40">
         <div className="container-rail">
-          <a
-            href={`mailto:${contractor.businessEmail}`}
-            className="btn-primary w-full py-3 flex items-center justify-center"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            Contact {contractor.businessName}
-          </a>
+          <div className="flex flex-col gap-2">
+            <a
+              href={`mailto:${contractor.businessEmail}?subject=Service Inquiry via The Rail Exchange`}
+              className="btn-primary w-full py-3 flex items-center justify-center"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Contact {contractor.businessName}
+            </a>
+            {/* S-4.8: Clear confirmation of where replies go */}
+            <p className="text-xs text-center text-text-tertiary">
+              📧 Replies will arrive in your email inbox
+            </p>
+          </div>
         </div>
       </div>
     </>

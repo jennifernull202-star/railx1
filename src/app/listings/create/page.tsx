@@ -101,12 +101,11 @@ interface ListingFormData {
   tags: string[];
 }
 
+// S-4.1: Compressed 3-step flow (was 5 steps)
 const STEPS = [
-  { id: 1, name: 'Basic Info', description: 'Title, category, and condition' },
-  { id: 2, name: 'Equipment Data', description: 'Structured equipment details' },
-  { id: 3, name: 'Pricing & Location', description: 'Price, location, and quantity' },
-  { id: 4, name: 'Photos', description: 'Add images and documents' },
-  { id: 5, name: 'Review', description: 'Review and publish' },
+  { id: 1, name: 'Core Info', description: 'Title, category, equipment basics' },
+  { id: 2, name: 'Pricing & Location', description: 'Price, location, and quantity' },
+  { id: 3, name: 'Media & Publish', description: 'Add photos and publish' },
 ];
 
 interface VerificationStatus {
@@ -294,11 +293,13 @@ export default function CreateListingPage() {
     updateFormData({ tags: formData.tags.filter(t => t !== tag) });
   };
 
+  // S-4.1 + S-4.5: Combined validation for 3-step flow with relaxed field requirements
   const validateStep = (step: number): boolean => {
     setError('');
 
     switch (step) {
       case 1:
+        // Core Info: Title, category, condition, description + equipment basics
         if (!formData.title.trim()) {
           setError('Title is required');
           return false;
@@ -315,10 +316,7 @@ export default function CreateListingPage() {
           setError('Description is required');
           return false;
         }
-        return true;
-
-      case 2:
-        // Equipment data validation for rolling stock categories
+        // S-4.5: Equipment data validation - relaxed, only require essential fields
         if (requiresEquipmentData(formData.category)) {
           if (!equipmentData.manufacturer.trim()) {
             setError('Manufacturer is required');
@@ -328,50 +326,19 @@ export default function CreateListingPage() {
             setError('Model is required');
             return false;
           }
-          if (!equipmentData.yearBuilt || parseInt(equipmentData.yearBuilt) < 1900 || parseInt(equipmentData.yearBuilt) > new Date().getFullYear() + 1) {
-            setError('Please enter a valid year built (1900 - present)');
+          // S-4.5: Year built optional if unknown
+          // S-4.5: Locomotive horsepower, engine hours, mileage - all optional (unknown allowed)
+          // S-4.5: FRA compliance - optional (needs assessment allowed)
+          // S-4.5: Railcar AAR type, load limit, axle count - only AAR type required
+          if (isRailcarCategory(formData.category) && !equipmentData.aarCarType) {
+            setError('AAR car type is required for railcars');
             return false;
-          }
-          if (!equipmentData.availability) {
-            setError('Availability status is required');
-            return false;
-          }
-          
-          // Locomotive-specific validation
-          if (isLocomotiveCategory(formData.category)) {
-            if (!equipmentData.horsepower || parseInt(equipmentData.horsepower) < 100) {
-              setError('Horsepower is required for locomotives (minimum 100)');
-              return false;
-            }
-            if (!equipmentData.fraCompliant) {
-              setError('FRA compliance status is required for locomotives');
-              return false;
-            }
-            if (!equipmentData.engineHours && !equipmentData.mileage) {
-              setError('Either engine hours or mileage is required for locomotives');
-              return false;
-            }
-          }
-          
-          // Railcar-specific validation
-          if (isRailcarCategory(formData.category)) {
-            if (!equipmentData.aarCarType) {
-              setError('AAR car type is required for railcars');
-              return false;
-            }
-            if (!equipmentData.loadLimit || parseInt(equipmentData.loadLimit) < 1000) {
-              setError('Load limit is required for railcars (minimum 1,000 lbs)');
-              return false;
-            }
-            if (!equipmentData.axleCount) {
-              setError('Axle count is required for railcars');
-              return false;
-            }
           }
         }
         return true;
 
-      case 3:
+      case 2:
+        // Pricing & Location
         if (formData.priceType === 'fixed' && !formData.priceAmount) {
           setError('Please enter a price or select "Contact for Price"');
           return false;
@@ -386,8 +353,8 @@ export default function CreateListingPage() {
         }
         return true;
 
-      case 4:
-        // Photos are optional but recommended
+      case 3:
+        // Media & Publish - photos optional
         return true;
 
       default:
@@ -405,13 +372,15 @@ export default function CreateListingPage() {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  // Opens upsell modal before publishing
-  const handlePublishClick = () => {
+  // S-4.4: Direct publish - no blocking upsell modal
+  // Upsells are shown AFTER successful publish on the listing page
+  const handlePublishClick = async () => {
     if (!validateStep(currentStep)) return;
-    setShowUpsellModal(true);
+    await handleSubmit(false);
   };
 
-  // Publish with selected add-ons (redirects to checkout)
+  // S-4.4: Post-publish upsell flow (called from listing page, not here)
+  // Keep this for backwards compatibility but it's no longer triggered from create page
   const handlePublishWithAddons = async (selectedAddons: string[]) => {
     if (!validateStep(currentStep)) return;
 
@@ -586,104 +555,9 @@ export default function CreateListingPage() {
     return null;
   }
 
-  // Check if seller verification is required
-  if (verificationStatus && !verificationStatus.isVerified) {
-    const isExpired = verificationStatus.status === 'expired';
-    
-    return (
-      <>
-        {/* Navigation */}
-        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-surface-border/50">
-          <nav className="container-rail">
-            <div className="flex items-center justify-between py-4">
-              <Link href="/" className="flex items-center">
-                <span className="text-heading-lg font-bold text-navy-900">The Rail</span>
-                <span className="text-heading-lg font-bold text-rail-orange ml-1">Exchange</span>
-                <span className="text-rail-orange text-sm font-medium ml-0.5">™</span>
-              </Link>
-              <div className="flex items-center gap-4">
-                <Link href="/dashboard" className="text-body-md font-medium text-text-secondary hover:text-navy-900">
-                  ← Back to Dashboard
-                </Link>
-              </div>
-            </div>
-          </nav>
-        </header>
-
-        <main className="flex-1 bg-surface-secondary py-16">
-          <div className="container-rail max-w-2xl">
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center">
-              <div className={`w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-6 ${
-                isExpired ? 'bg-red-100' : 'bg-amber-100'
-              }`}>
-                <svg 
-                  className={`w-10 h-10 ${isExpired ? 'text-red-600' : 'text-amber-600'}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" 
-                  />
-                </svg>
-              </div>
-              
-              <h1 className="text-2xl font-bold text-navy-900 mb-3">
-                {isExpired ? 'Verification Expired' : 'Verification Required'}
-              </h1>
-              
-              <p className="text-slate-500 mb-8 max-w-md mx-auto">
-                {isExpired 
-                  ? 'Your seller verification has expired. Please renew to continue creating and managing listings.'
-                  : 'Seller verification is required to create listings on The Rail Exchange. Complete verification to start selling.'
-                }
-              </p>
-              
-              <div className="space-y-4">
-                <Link
-                  href="/dashboard/verification/seller"
-                  className={`inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-xl transition-colors ${
-                    isExpired 
-                      ? 'bg-red-600 text-white hover:bg-red-700' 
-                      : 'bg-rail-orange text-white hover:bg-[#e55f15]'
-                  }`}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  {isExpired ? 'Renew Verification' : 'Get Verified — From $29'}
-                </Link>
-                
-                <div className="flex items-center justify-center gap-6 text-sm text-slate-500">
-                  <span className="flex items-center gap-1.5">
-                    <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    AI Identity Check
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Valid for 1 Year
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <svg className="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Unlimited Listings
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </main>
-      </>
-    );
-  }
+  // S-4.3: Check if verification is needed - show inline notice, don't block
+  const needsVerification = verificationStatus && !verificationStatus.isVerified;
+  const isExpired = verificationStatus?.status === 'expired';
 
   return (
     <>
@@ -714,6 +588,40 @@ export default function CreateListingPage() {
               List your rail equipment, materials, or services for sale.
             </p>
           </div>
+
+          {/* S-4.3: Verification Notice - inline, not blocking */}
+          {needsVerification && (
+            <div className={`mb-6 p-4 rounded-xl border flex items-start gap-4 ${
+              isExpired ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'
+            }`}>
+              <svg 
+                className={`w-6 h-6 flex-shrink-0 ${isExpired ? 'text-red-600' : 'text-amber-600'}`}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1">
+                <p className={`font-medium ${isExpired ? 'text-red-800' : 'text-amber-800'}`}>
+                  {isExpired ? 'Verification Expired' : 'Seller verification is required to publish listings.'}
+                </p>
+                <p className={`text-sm mt-1 ${isExpired ? 'text-red-700' : 'text-amber-700'}`}>
+                  You can draft listings before verifying. Verification is only required at publish.
+                </p>
+              </div>
+              <Link
+                href="/dashboard/verification/seller"
+                className={`flex-shrink-0 px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                  isExpired 
+                    ? 'bg-red-600 text-white hover:bg-red-700' 
+                    : 'bg-amber-600 text-white hover:bg-amber-700'
+                }`}
+              >
+                {isExpired ? 'Renew' : 'Get Verified'}
+              </Link>
+            </div>
+          )}
 
           {/* #8 fix: Draft Restored Banner */}
           {draftRestored && (
@@ -886,24 +794,18 @@ export default function CreateListingPage() {
                     {formData.description.length}/10,000 characters
                   </p>
                 </div>
-              </div>
-            )}
 
-            {/* Step 2: Equipment Data (for rolling stock categories) */}
-            {currentStep === 2 && (
-              <div className="space-y-6">
-                <h2 className="heading-lg mb-2">Equipment Details</h2>
-                
-                {requiresEquipmentData(formData.category) ? (
-                  <>
+                {/* S-4.1: Equipment Data merged into Step 1 for rolling stock categories */}
+                {requiresEquipmentData(formData.category) && (
+                  <div className="border-t border-surface-border pt-6 mt-6">
+                    <h3 className="heading-md mb-4">Equipment Details</h3>
                     <p className="text-body-md text-text-secondary mb-6">
-                      Provide structured equipment data to help buyers find and evaluate your listing.
-                      These fields are required for {formData.category === 'locomotives' ? 'locomotives' : 'railcars'}.
+                      Add equipment specifics to help buyers find and evaluate your listing.
                     </p>
 
                     {/* Core Equipment Fields */}
                     <div className="bg-surface-secondary rounded-xl p-6 space-y-4">
-                      <h3 className="text-lg font-semibold text-navy-900">Core Identification</h3>
+                      <h4 className="text-lg font-semibold text-navy-900">Core Identification</h4>
                       
                       <div className="grid sm:grid-cols-2 gap-4">
                         <div>
@@ -933,32 +835,32 @@ export default function CreateListingPage() {
 
                       <div className="grid sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="form-label">Year Built *</label>
+                          {/* S-4.5: Year Built optional */}
+                          <label className="form-label">Year Built <span className="text-text-tertiary">(optional)</span></label>
                           <input
                             type="number"
                             value={equipmentData.yearBuilt}
                             onChange={(e) => updateEquipmentData({ yearBuilt: e.target.value })}
-                            placeholder="e.g., 2015"
+                            placeholder="e.g., 2015 or leave blank if unknown"
                             min="1900"
                             max={new Date().getFullYear() + 1}
                             className="form-input"
                           />
                         </div>
                         <div>
-                          <label className="form-label">Reporting Marks</label>
+                          <label className="form-label">Reporting Marks <span className="text-text-tertiary">(optional)</span></label>
                           <input
                             type="text"
                             value={equipmentData.reportingMarks}
                             onChange={(e) => updateEquipmentData({ reportingMarks: e.target.value.toUpperCase() })}
-                            placeholder="e.g., BNSF 1234, UP 5678"
+                            placeholder="e.g., BNSF 1234"
                             className="form-input uppercase"
                           />
-                          <p className="text-xs text-text-tertiary mt-1">Railroad reporting marks (letters + numbers)</p>
                         </div>
                       </div>
 
                       <div>
-                        <label className="form-label">Availability Status *</label>
+                        <label className="form-label">Availability Status <span className="text-text-tertiary">(optional)</span></label>
                         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                           {AVAILABILITY_OPTIONS.map((option) => (
                             <button
@@ -979,32 +881,32 @@ export default function CreateListingPage() {
                       </div>
                     </div>
 
-                    {/* Locomotive-Specific Fields */}
+                    {/* Locomotive-Specific Fields - S-4.5: All optional */}
                     {isLocomotiveCategory(formData.category) && (
-                      <div className="bg-blue-50 rounded-xl p-6 space-y-4">
-                        <h3 className="text-lg font-semibold text-navy-900">Locomotive Specifications</h3>
+                      <div className="bg-blue-50 rounded-xl p-6 space-y-4 mt-4">
+                        <h4 className="text-lg font-semibold text-navy-900">Locomotive Specifications <span className="text-sm font-normal text-text-tertiary">(optional)</span></h4>
                         
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="form-label">Horsepower *</label>
+                            <label className="form-label">Horsepower</label>
                             <input
                               type="number"
                               value={equipmentData.horsepower}
                               onChange={(e) => updateEquipmentData({ horsepower: e.target.value })}
-                              placeholder="e.g., 4400"
+                              placeholder="e.g., 4400 or leave blank"
                               min="100"
                               className="form-input"
                             />
-                            <p className="text-xs text-text-tertiary mt-1">Rated horsepower</p>
                           </div>
                           <div>
-                            <label className="form-label">FRA Compliance *</label>
+                            {/* S-4.5: FRA compliance with "Needs assessment" option */}
+                            <label className="form-label">FRA Compliance</label>
                             <select
                               value={equipmentData.fraCompliant}
                               onChange={(e) => updateEquipmentData({ fraCompliant: e.target.value as EquipmentFormData['fraCompliant'] })}
                               className="form-input"
                             >
-                              <option value="">Select status</option>
+                              <option value="">Unknown / Needs assessment</option>
                               <option value="yes">Yes - FRA Compliant</option>
                               <option value="no">No - Not FRA Compliant</option>
                               <option value="unknown">Unknown</option>
@@ -1014,7 +916,8 @@ export default function CreateListingPage() {
 
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="form-label">Engine Hours</label>
+                            {/* S-4.5: Engine hours optional */}
+                            <label className="form-label">Engine Hours <span className="text-text-tertiary">(if known)</span></label>
                             <input
                               type="number"
                               value={equipmentData.engineHours}
@@ -1023,10 +926,10 @@ export default function CreateListingPage() {
                               min="0"
                               className="form-input"
                             />
-                            <p className="text-xs text-text-tertiary mt-1">Total engine hours (if known)</p>
                           </div>
                           <div>
-                            <label className="form-label">Mileage</label>
+                            {/* S-4.5: Mileage optional */}
+                            <label className="form-label">Mileage <span className="text-text-tertiary">(if known)</span></label>
                             <input
                               type="number"
                               value={equipmentData.mileage}
@@ -1035,20 +938,15 @@ export default function CreateListingPage() {
                               min="0"
                               className="form-input"
                             />
-                            <p className="text-xs text-text-tertiary mt-1">Total mileage (if known)</p>
                           </div>
                         </div>
-                        
-                        <p className="text-sm text-blue-800 bg-blue-100 p-3 rounded-lg">
-                          <strong>Note:</strong> Either engine hours or mileage is required.
-                        </p>
                       </div>
                     )}
 
-                    {/* Railcar-Specific Fields */}
+                    {/* Railcar-Specific Fields - S-4.5: Only AAR type required */}
                     {isRailcarCategory(formData.category) && (
-                      <div className="bg-amber-50 rounded-xl p-6 space-y-4">
-                        <h3 className="text-lg font-semibold text-navy-900">Railcar Specifications</h3>
+                      <div className="bg-amber-50 rounded-xl p-6 space-y-4 mt-4">
+                        <h4 className="text-lg font-semibold text-navy-900">Railcar Specifications</h4>
                         
                         <div>
                           <label className="form-label">AAR Car Type *</label>
@@ -1066,7 +964,8 @@ export default function CreateListingPage() {
 
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="form-label">Load Limit (lbs) *</label>
+                            {/* S-4.5: Load limit optional */}
+                            <label className="form-label">Load Limit (lbs) <span className="text-text-tertiary">(optional)</span></label>
                             <input
                               type="number"
                               value={equipmentData.loadLimit}
@@ -1075,16 +974,16 @@ export default function CreateListingPage() {
                               min="1000"
                               className="form-input"
                             />
-                            <p className="text-xs text-text-tertiary mt-1">Maximum load capacity in pounds</p>
                           </div>
                           <div>
-                            <label className="form-label">Axle Count *</label>
+                            {/* S-4.5: Axle count optional */}
+                            <label className="form-label">Axle Count <span className="text-text-tertiary">(optional)</span></label>
                             <select
                               value={equipmentData.axleCount}
                               onChange={(e) => updateEquipmentData({ axleCount: e.target.value })}
                               className="form-input"
                             >
-                              <option value="">Select axle count</option>
+                              <option value="">Unknown / Select if known</option>
                               <option value="4">4 axles (2 trucks)</option>
                               <option value="6">6 axles (3 trucks)</option>
                               <option value="8">8 axles (4 trucks)</option>
@@ -1093,26 +992,27 @@ export default function CreateListingPage() {
                         </div>
                       </div>
                     )}
-                  </>
-                ) : (
-                  <div className="bg-surface-secondary rounded-xl p-8 text-center">
-                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-medium text-navy-900 mb-2">No Equipment Data Required</h3>
-                    <p className="text-text-secondary">
-                      The category &quot;{CATEGORY_LABELS[formData.category]?.label || formData.category}&quot; does not require structured equipment data.
-                      <br />You can proceed to the next step.
-                    </p>
                   </div>
                 )}
+
+                {/* S-4.2: Photo Upload Available Early - Mini uploader in Step 1 */}
+                <div className="border-t border-surface-border pt-6 mt-6">
+                  <h3 className="heading-md mb-2">Photos <span className="text-text-tertiary text-sm font-normal">(optional - can add more in step 3)</span></h3>
+                  <p className="text-body-sm text-text-secondary mb-4">
+                    Start uploading photos now - they&apos;ll be saved as you continue.
+                  </p>
+                  <BulkPhotoUpload
+                    images={media}
+                    onChange={setMedia}
+                    folder="listings"
+                    maxImages={20}
+                  />
+                </div>
               </div>
             )}
 
-            {/* Step 3: Pricing & Location */}
-            {currentStep === 3 && (
+            {/* Step 2: Pricing & Location (S-4.1: was Step 3) */}
+            {currentStep === 2 && (
               <div className="space-y-6">
                 <h2 className="heading-lg mb-6">Pricing & Location</h2>
 
@@ -1184,7 +1084,7 @@ export default function CreateListingPage() {
                   </p>
                 </div>
 
-                {/* Manual city/state inputs as fallback */}
+                {/* S-4.6: Free-text city/state with optional autocomplete */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="form-label">City *</label>
@@ -1198,18 +1098,20 @@ export default function CreateListingPage() {
                   </div>
                   <div>
                     <label className="form-label">State *</label>
-                    <select
+                    <input
+                      type="text"
+                      list="us-states-list"
                       value={formData.state}
                       onChange={(e) => updateFormData({ state: e.target.value })}
+                      placeholder="e.g., Illinois"
                       className="form-input"
-                    >
-                      <option value="">Select state</option>
+                    />
+                    <datalist id="us-states-list">
                       {US_STATES.map((state) => (
-                        <option key={state} value={state}>
-                          {state}
-                        </option>
+                        <option key={state} value={state} />
                       ))}
-                    </select>
+                    </datalist>
+                    <p className="text-xs text-text-tertiary mt-1">Type or select from suggestions</p>
                   </div>
                 </div>
 
@@ -1275,51 +1177,47 @@ export default function CreateListingPage() {
               </div>
             )}
 
-            {/* Step 4: Photos */}
-            {currentStep === 4 && (
+            {/* Step 3: Media & Publish (S-4.1: combines old Steps 4+5) */}
+            {currentStep === 3 && (
               <div className="space-y-6">
-                <h2 className="heading-lg mb-2">Photos & Documents</h2>
+                <h2 className="heading-lg mb-2">Media & Publish</h2>
                 <p className="text-body-md text-text-secondary mb-6">
-                  Add high-quality photos to showcase your equipment. Listings with 5+ photos get 2x more inquiries.
+                  Review your photos and publish your listing.
                 </p>
 
-                <BulkPhotoUpload
-                  images={media}
-                  onChange={setMedia}
-                  folder="listings"
-                  maxImages={20}
-                  maxFileSize={10}
-                />
-
-                {media.length === 0 && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-                    <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <div>
-                      <p className="text-sm font-medium text-amber-800">No photos yet</p>
-                      <p className="text-sm text-amber-700">Listings with photos get 5x more views!</p>
+                {/* Photo Management */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-navy-900">Photos & Documents</h3>
+                  <BulkPhotoUpload
+                    images={media}
+                    onChange={setMedia}
+                    folder="listings"
+                    maxImages={20}
+                    maxFileSize={10}
+                  />
+                  {media.length === 0 && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                      <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <div>
+                        <p className="text-sm font-medium text-amber-800">No photos yet</p>
+                        <p className="text-sm text-amber-700">Listings with photos get 5x more views!</p>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Step 5: Review */}
-            {currentStep === 5 && (
-              <div className="space-y-6">
-                <h2 className="heading-lg mb-6">Review Your Listing</h2>
-
-                {/* Preview Card */}
-                <div className="border border-surface-border rounded-xl overflow-hidden">
-                  {media.length > 0 && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={getImageUrl(media.find(m => m.isPrimary)?.url || media[0].url)}
-                      alt={formData.title}
-                      className="w-full h-64 object-cover"
-                    />
                   )}
+                  {media.length > 0 && (
+                    <p className="text-sm text-green-700 bg-green-50 p-3 rounded-lg">
+                      ✓ {media.length} photo{media.length !== 1 ? 's' : ''} uploaded
+                    </p>
+                  )}
+                </div>
+
+                {/* Quick Preview Card */}
+                <div className="border border-surface-border rounded-xl overflow-hidden">
+                  <div className="bg-surface-secondary px-4 py-2 border-b border-surface-border">
+                    <span className="text-sm font-medium text-text-secondary">Preview</span>
+                  </div>
                   <div className="p-6">
                     <div className="flex gap-2 mb-3">
                       <span className="badge-primary">{CATEGORY_LABELS[formData.category]?.label}</span>
@@ -1345,128 +1243,14 @@ export default function CreateListingPage() {
                     <p className="text-body-md text-text-secondary mb-4">
                       {formData.city}, {formData.state}
                     </p>
-                    <p className="text-body-md line-clamp-3">{formData.description}</p>
                   </div>
                 </div>
 
-                {/* Equipment Data Summary */}
-                {requiresEquipmentData(formData.category) && (
-                  <div className="p-4 bg-surface-secondary rounded-xl">
-                    <h4 className="heading-sm mb-3">Equipment Data</h4>
-                    <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-body-sm">
-                      <div className="flex justify-between">
-                        <dt className="text-text-secondary">Manufacturer</dt>
-                        <dd className="font-medium">{equipmentData.manufacturer || '-'}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-text-secondary">Model</dt>
-                        <dd className="font-medium">{equipmentData.model || '-'}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-text-secondary">Year Built</dt>
-                        <dd className="font-medium">{equipmentData.yearBuilt || '-'}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-text-secondary">Reporting Marks</dt>
-                        <dd className="font-medium">{equipmentData.reportingMarks || '-'}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-text-secondary">Availability</dt>
-                        <dd className="font-medium">{AVAILABILITY_OPTIONS.find(o => o.value === equipmentData.availability)?.label || '-'}</dd>
-                      </div>
-                      
-                      {isLocomotiveCategory(formData.category) && (
-                        <>
-                          <div className="flex justify-between">
-                            <dt className="text-text-secondary">Horsepower</dt>
-                            <dd className="font-medium">{equipmentData.horsepower ? `${parseInt(equipmentData.horsepower).toLocaleString()} HP` : '-'}</dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt className="text-text-secondary">FRA Compliant</dt>
-                            <dd className="font-medium">{equipmentData.fraCompliant === 'yes' ? 'Yes' : equipmentData.fraCompliant === 'no' ? 'No' : 'Unknown'}</dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt className="text-text-secondary">Engine Hours</dt>
-                            <dd className="font-medium">{equipmentData.engineHours ? parseInt(equipmentData.engineHours).toLocaleString() : '-'}</dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt className="text-text-secondary">Mileage</dt>
-                            <dd className="font-medium">{equipmentData.mileage ? parseInt(equipmentData.mileage).toLocaleString() : '-'}</dd>
-                          </div>
-                        </>
-                      )}
-                      
-                      {isRailcarCategory(formData.category) && (
-                        <>
-                          <div className="flex justify-between">
-                            <dt className="text-text-secondary">AAR Car Type</dt>
-                            <dd className="font-medium">{AAR_CAR_TYPES.find(t => t.value === equipmentData.aarCarType)?.label || '-'}</dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt className="text-text-secondary">Load Limit</dt>
-                            <dd className="font-medium">{equipmentData.loadLimit ? `${parseInt(equipmentData.loadLimit).toLocaleString()} lbs` : '-'}</dd>
-                          </div>
-                          <div className="flex justify-between">
-                            <dt className="text-text-secondary">Axle Count</dt>
-                            <dd className="font-medium">{equipmentData.axleCount || '-'}</dd>
-                          </div>
-                        </>
-                      )}
-                    </dl>
-                  </div>
-                )}
-
-                {/* Summary */}
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="p-4 bg-surface-secondary rounded-xl">
-                    <h4 className="heading-sm mb-3">Details</h4>
-                    <dl className="space-y-2 text-body-sm">
-                      <div className="flex justify-between">
-                        <dt className="text-text-secondary">Quantity</dt>
-                        <dd className="font-medium">{formData.quantity} {formData.quantityUnit}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-text-secondary">Photos</dt>
-                        <dd className="font-medium">{media.length}</dd>
-                      </div>
-                    </dl>
-                  </div>
-
-                  <div className="p-4 bg-surface-secondary rounded-xl">
-                    <h4 className="heading-sm mb-3">Shipping</h4>
-                    <ul className="space-y-2 text-body-sm">
-                      {formData.localPickup && (
-                        <li className="flex items-center gap-2">
-                          <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          Local Pickup
-                        </li>
-                      )}
-                      {formData.sellerShips && (
-                        <li className="flex items-center gap-2">
-                          <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          Seller Ships
-                        </li>
-                      )}
-                      {formData.buyerArranges && (
-                        <li className="flex items-center gap-2">
-                          <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          Buyer Arranges
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Logged in user info */}
+                {/* Ready to publish notice */}
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
                   <p className="text-body-sm text-blue-800">
-                    <strong>Seller:</strong> {session?.user?.name || session?.user?.email}
+                    <strong>Seller:</strong> {session?.user?.name || session?.user?.email}<br/>
+                    <span className="text-blue-600">Your listing is ready to publish!</span>
                   </p>
                 </div>
               </div>
