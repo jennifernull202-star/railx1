@@ -61,7 +61,8 @@ function LoginForm() {
         ...(captchaToken && { captchaToken }),
       });
 
-      if (result?.error) {
+      // Check for error OR unsuccessful result
+      if (result?.error || !result?.ok) {
         // S-15.3: Track failed attempts for CAPTCHA threshold
         incrementAttempts();
         
@@ -70,9 +71,9 @@ function LoginForm() {
           CredentialsSignin: 'Email or password is incorrect. Please try again.',
           SessionRequired: 'Please sign in to continue.',
           RateLimited: getRateLimitMessage(60), // S-15.1: Rate limit message
-          Default: 'Something went wrong. Please try again.',
+          Default: 'Email or password is incorrect. Please try again.',
         };
-        setError(errorMessages[result.error] || errorMessages.Default);
+        setError(errorMessages[result?.error || 'Default'] || errorMessages.Default);
         setIsLoading(false);
         return;
       }
