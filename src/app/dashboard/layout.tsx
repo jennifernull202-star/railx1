@@ -73,7 +73,11 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
     }
   }, [status, router]);
 
-  // Fetch unread notification count
+  // CASCADE KILL: All fetching disabled for stabilization
+  // Counts remain at 0 - this is acceptable during incident response
+
+  /*
+  // DISABLED: Fetch unread notification count
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
@@ -94,11 +98,10 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
     }
   }, [session]);
 
-  // Fetch unread messages count from inquiries
+  // DISABLED: Fetch unread messages count from inquiries
   useEffect(() => {
     const fetchUnreadMessages = async () => {
       try {
-        // Fetch both as seller and buyer to get total unread
         const [sellerRes, buyerRes] = await Promise.all([
           fetch("/api/inquiries?role=seller&status=all"),
           fetch("/api/inquiries?role=buyer&status=all"),
@@ -128,6 +131,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
       return () => clearInterval(interval);
     }
   }, [session]);
+  */
 
   if (status === "loading") {
     return (

@@ -48,52 +48,20 @@ interface SubscriptionProviderProps {
 }
 
 export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
-  const { data: session, status, update } = useSession();
-  const [subscription, setSubscription] = React.useState<SubscriptionData | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const { status } = useSession();
+  // CASCADE KILL: Use static defaults, no fetching
+  const [subscription] = React.useState<SubscriptionData | null>(null);
+  const [loading] = React.useState(false);
+  const [error] = React.useState<string | null>(null);
 
+  // CASCADE KILL: fetchSubscription disabled
   const fetchSubscription = React.useCallback(async () => {
-    if (status !== 'authenticated') {
-      setLoading(false);
-      return;
-    }
+    // DISABLED FOR STABILIZATION
+    return;
+  }, []);
 
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await fetch('/api/subscriptions');
-      if (!response.ok) {
-        // Don't throw - just set error state and use defaults
-        console.warn('Subscription API returned non-ok status:', response.status);
-        setError('Subscription unavailable');
-        setSubscription(null);
-        return;
-      }
-      
-      const data = await response.json();
-      setSubscription(data);
-
-      // Sync session with database (in case they differ)
-      if (session?.user && data.sellerTier !== session.user.subscriptionTier) {
-        update({
-          subscriptionTier: data.sellerTier !== 'buyer' ? data.sellerTier : undefined,
-          isVerifiedContractor: data.contractorTier === 'verified',
-        });
-      }
-    } catch (err) {
-      console.error('Error fetching subscription:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load subscription');
-    } finally {
-      setLoading(false);
-    }
-  }, [status, session, update]);
-
-  // Fetch on mount and when session changes
-  React.useEffect(() => {
-    fetchSubscription();
-  }, [fetchSubscription]);
+  // CASCADE KILL: No useEffect fetching
+  // React.useEffect disabled
 
   // Computed properties
   const hasSellerSubscription = subscription?.sellerTier !== 'buyer' && subscription?.sellerTier !== undefined;

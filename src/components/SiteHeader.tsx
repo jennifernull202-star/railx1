@@ -70,7 +70,9 @@ export default function SiteHeader({
   // Hide inline search on search page and homepage
   const shouldShowSearch = showSearch && pathname !== '/search' && pathname !== '/';
   
-  // BUYER AUDIT: Fetch watchlist and notification counts
+  // CASCADE KILL: All fetching disabled for stabilization
+  // Counts remain at 0
+  /*
   const fetchCounts = useCallback(async () => {
     if (!session?.user) return;
     try {
@@ -80,22 +82,21 @@ export default function SiteHeader({
       ]);
       if (watchlistRes.ok) {
         const data = await watchlistRes.json();
-        // Handle both { count } and { data: { count } } formats
         setWatchlistCount(data?.data?.count ?? data?.count ?? 0);
       }
       if (notifRes.ok) {
         const data = await notifRes.json();
-        // Handle both { count } and { data: { count } } formats
         setNotificationCount(data?.data?.count ?? data?.data?.unreadCount ?? data?.count ?? 0);
       }
     } catch {
-      // Silently fail - counts are nice-to-have
+      // Silently fail
     }
   }, [session?.user]);
   
   useEffect(() => {
     fetchCounts();
   }, [fetchCounts]);
+  */
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

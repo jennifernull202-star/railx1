@@ -49,7 +49,14 @@ export default function AddOnIndicator({
   const isSeller = session?.user?.subscriptionTier && 
     ['basic', 'plus', 'pro', 'enterprise'].includes(session.user.subscriptionTier);
 
-  // Fetch add-on stats from database
+  // CASCADE KILL: All fetching disabled
+  useEffect(() => {
+    setLoading(false);
+    // No fetching - stats remain at 0
+  }, []);
+
+  /*
+  // DISABLED: Fetch add-on stats from database
   useEffect(() => {
     async function fetchStats() {
       if (!session?.user || !isSeller) {
@@ -77,10 +84,10 @@ export default function AddOnIndicator({
 
     fetchStats();
 
-    // Poll for updates every 30 seconds
     const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
   }, [session, isSeller]);
+  */
 
   // Don't render if not a seller
   if (!isSeller) {

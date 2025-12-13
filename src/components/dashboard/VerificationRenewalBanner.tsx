@@ -34,6 +34,10 @@ export default function VerificationRenewalBanner({
   dismissible = true,
   compact = false,
 }: VerificationRenewalBannerProps) {
+  // CASCADE KILL: Component disabled for stabilization
+  return null;
+  
+  /*
   const { data: session } = useSession();
   const [userData, setUserData] = useState<UserVerificationData | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -55,7 +59,6 @@ export default function VerificationRenewalBanner({
     };
 
     if (session?.user?.id) {
-      // Check if banner was dismissed in this session
       const dismissedKey = `verification-renewal-dismissed-${session.user.id}`;
       const wasDismissed = sessionStorage.getItem(dismissedKey);
       if (wasDismissed) {
@@ -68,6 +71,7 @@ export default function VerificationRenewalBanner({
       setLoading(false);
     }
   }, [session?.user?.id]);
+  */
 
   const handleDismiss = () => {
     if (session?.user?.id) {
