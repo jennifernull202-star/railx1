@@ -71,7 +71,7 @@ function AdminLayoutInner({
     contractors: 0,
   });
 
-  // Redirect non-admins
+  // Redirect non-admins (client-side, non-blocking)
   useEffect(() => {
     if (status === "authenticated" && !session?.user?.isAdmin) {
       router.push("/dashboard");
@@ -80,7 +80,9 @@ function AdminLayoutInner({
     }
   }, [status, session, router]);
 
-  // Fetch pending counts for badges
+  // CASCADE KILL: Pending count fetching disabled for stabilization
+  // Badges will show 0 - this is acceptable
+  /*
   useEffect(() => {
     const fetchPendingCounts = async () => {
       try {
@@ -98,26 +100,24 @@ function AdminLayoutInner({
           setPendingCounts((prev) => ({ ...prev, contractors: data.count || 0 }));
         }
       } catch (error) {
-        // Silently fail - badges just won't show
+        // Silently fail
       }
     };
 
     if (session?.user?.isAdmin) {
       fetchPendingCounts();
-      const interval = setInterval(fetchPendingCounts, 60000); // Refresh every minute
+      const interval = setInterval(fetchPendingCounts, 60000);
       return () => clearInterval(interval);
     }
   }, [session]);
+  */
 
-  if (status === "loading") {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" />
-      </div>
-    );
-  }
+  // ROLE RECOVERY: No loading gates - render immediately
+  // If not admin, useEffect handles redirect (non-blocking)
 
   if (!session?.user || !session.user.isAdmin) {
+    // Not authenticated or not admin - render empty shell
+    // useEffect handles redirect
     return null;
   }
 

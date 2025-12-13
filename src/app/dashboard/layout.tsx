@@ -133,15 +133,13 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
   }, [session]);
   */
 
-  if (status === "loading") {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600" />
-      </div>
-    );
-  }
+  // ROLE RECOVERY: No loading gates - render immediately
+  // If unauthenticated, redirect via useEffect (non-blocking)
+  // If loading, render empty shell
 
   if (!session?.user) {
+    // Not authenticated or still loading - render nothing
+    // useEffect will handle redirect to login if unauthenticated
     return null;
   }
 
