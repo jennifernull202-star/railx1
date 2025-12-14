@@ -36,6 +36,7 @@ import {
   Credentials,
   VerificationBlock,
 } from '@/components/contractor/ContractorFactBlocks';
+import ContractorOutboundLinks from '@/components/contractor/ContractorOutboundLinks';
 import { CONTRACTOR_DISPLAY_LIMITS } from '@/lib/abuse-prevention';
 import { PageViewTracker } from '@/lib/hooks/useAnalyticsEvent';
 
@@ -120,12 +121,12 @@ export default async function ContractorProfilePage({ params }: PageProps) {
       </header>
 
       <main className="flex-1 bg-surface-secondary pb-32">
-        {/* COMPACT HEADER - MAX 160px */}
+        {/* HERO / IDENTITY BLOCK - OPUS COMPLIANT */}
         <div className="bg-white border-b border-surface-border">
-          <div className="container-rail py-4">
-            <div className="flex items-center gap-4" style={{ maxHeight: '160px' }}>
+          <div className="container-rail py-6">
+            <div className="flex items-start gap-4">
               {/* Logo */}
-              <div className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 bg-surface-secondary rounded-xl border border-surface-border flex items-center justify-center overflow-hidden">
+              <div className="flex-shrink-0 w-20 h-20 md:w-24 md:h-24 bg-surface-secondary rounded-xl border border-surface-border flex items-center justify-center overflow-hidden">
                 {contractor.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -134,7 +135,7 @@ export default async function ContractorProfilePage({ params }: PageProps) {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-2xl font-bold text-text-tertiary">
+                  <span className="text-3xl font-bold text-text-tertiary">
                     {contractor.businessName.charAt(0)}
                   </span>
                 )}
@@ -142,37 +143,66 @@ export default async function ContractorProfilePage({ params }: PageProps) {
 
               {/* Name + Meta */}
               <div className="flex-1 min-w-0">
-                <h1 className="text-lg md:text-xl font-bold text-navy-900 truncate">
-                  {contractor.businessName}
-                </h1>
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <h1 className="text-xl md:text-2xl font-bold text-navy-900">
+                    {contractor.businessName}
+                  </h1>
+                  
+                  {/* Entity Type Label */}
+                  <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs font-medium">
+                    Contractor
+                  </span>
+                  
+                  {/* Verification Badge */}
+                  {contractor.verificationStatus === 'verified' && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200">
+                      ID Verified
+                    </span>
+                  )}
+                  
+                  {/* Professional Verified Badge (if applicable) */}
+                  {contractor.verifiedBadgePurchased && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-xs font-medium rounded border border-emerald-200">
+                      Professional Verified
+                    </span>
+                  )}
+                </div>
                 
-                {/* X Years • ID Verified • Region */}
+                {/* Years + Region */}
                 <p className="text-sm text-text-secondary mt-1">
                   <span className="group relative inline">
-                    {contractor.yearsInBusiness} years <span className="text-text-tertiary">(Self-reported)</span>
-                    {/* BATCH E-3: Years in Business Tooltip */}
-                    <span className="invisible group-hover:visible absolute bottom-full left-0 mb-1 px-2 py-1 bg-navy-900 text-white text-xs rounded whitespace-nowrap z-10">
-                      Self-reported by contractor
-                    </span>
+                    {contractor.yearsInBusiness} years
+                    <span className="text-text-tertiary"> (Self-reported)</span>
                   </span>
-                  {contractor.verificationStatus === 'verified' && (
-                    <span className="text-blue-600"> • ID Verified</span>
-                  )}
                   {primaryRegion && <span> • {primaryRegion}</span>}
                 </p>
-                {/* BATCH E-4: Self-reported Disclosure (visible without scrolling) */}
-                <p className="text-[10px] text-text-tertiary mt-0.5">
-                  Certain business details are self-reported by contractors and have not been independently verified.
-                </p>
 
-                {/* Top 3 Services (text only) - BATCH E-3: Overclaim visibility control */}
+                {/* Top 3 Services (text only) */}
                 <p className="text-sm text-text-tertiary mt-1 truncate">
                   {top3Services.join(' • ')}
                   {displayLabels.length > 3 && (
                     <span className="text-text-tertiary"> +{displayLabels.length - 3} more</span>
                   )}
                 </p>
+                
+                {/* Primary CTA Buttons + Outbound Links */}
+                <div className="flex flex-wrap items-center gap-3 mt-4">
+                  <ContractorOutboundLinks
+                    contractorId={contractor._id.toString()}
+                    website={contractor.website}
+                    linkedIn={contractor.socialLinks?.linkedin}
+                    email={contractor.businessEmail}
+                  />
+                </div>
               </div>
+            </div>
+            
+            {/* MANDATORY DISCLOSURE - Always visible */}
+            <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <p className="text-xs text-slate-600">
+                Verification reflects document submission and review only. It does not guarantee 
+                performance, authority, compliance, or transaction outcomes.
+              </p>
             </div>
           </div>
         </div>
