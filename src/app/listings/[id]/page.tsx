@@ -529,28 +529,36 @@ export default async function ListingDetailPage({ params }: PageProps) {
             </details>
           )}
 
-          {/* Compliance (Collapsed) */}
+          {/* Compliance (Collapsed) - Self-reported by seller, NOT platform verified */}
           {hasCompliance && (
             <details className="bg-white rounded-2xl shadow-card border border-surface-border mb-4 group">
               <summary className="p-4 font-semibold text-navy-900 cursor-pointer list-none flex items-center justify-between">
-                Compliance & Certifications
+                <span>
+                  Compliance & Certifications
+                  <span className="text-xs font-normal text-text-tertiary ml-2">(Self-reported by seller)</span>
+                </span>
                 <svg className="w-5 h-5 text-text-tertiary group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </summary>
               <div className="p-4 pt-0 border-t border-surface-border">
-                <div className="grid sm:grid-cols-3 gap-3 mt-4">
-                  <div className={`p-3 rounded-lg text-center ${listing.equipment?.fraCompliant ? 'bg-green-50 text-green-800' : 'bg-surface-secondary text-text-tertiary'}`}>
+                {/* Regulatory Disclaimer */}
+                <p className="text-xs text-text-tertiary italic mt-3 mb-4">
+                  Not verified or endorsed by The Rail Exchange or any regulatory authority.
+                </p>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {/* Neutral styling - no green/approval colors for regulatory claims */}
+                  <div className={`p-3 rounded-lg text-center ${listing.equipment?.fraCompliant ? 'bg-slate-100 text-slate-700 border border-slate-200' : 'bg-surface-secondary text-text-tertiary'}`}>
                     <p className="text-sm font-medium">FRA Compliant</p>
-                    <p className="text-xs">{listing.equipment?.fraCompliant ? 'Yes' : 'No'}</p>
+                    <p className="text-xs">{listing.equipment?.fraCompliant ? 'Seller reports: Yes' : 'Not reported'}</p>
                   </div>
-                  <div className={`p-3 rounded-lg text-center ${listing.equipment?.dotCompliant ? 'bg-green-50 text-green-800' : 'bg-surface-secondary text-text-tertiary'}`}>
+                  <div className={`p-3 rounded-lg text-center ${listing.equipment?.dotCompliant ? 'bg-slate-100 text-slate-700 border border-slate-200' : 'bg-surface-secondary text-text-tertiary'}`}>
                     <p className="text-sm font-medium">DOT Compliant</p>
-                    <p className="text-xs">{listing.equipment?.dotCompliant ? 'Yes' : 'No'}</p>
+                    <p className="text-xs">{listing.equipment?.dotCompliant ? 'Seller reports: Yes' : 'Not reported'}</p>
                   </div>
-                  <div className={`p-3 rounded-lg text-center ${listing.equipment?.hazmatCertified ? 'bg-green-50 text-green-800' : 'bg-surface-secondary text-text-tertiary'}`}>
+                  <div className={`p-3 rounded-lg text-center ${listing.equipment?.hazmatCertified ? 'bg-slate-100 text-slate-700 border border-slate-200' : 'bg-surface-secondary text-text-tertiary'}`}>
                     <p className="text-sm font-medium">Hazmat Certified</p>
-                    <p className="text-xs">{listing.equipment?.hazmatCertified ? 'Yes' : 'No'}</p>
+                    <p className="text-xs">{listing.equipment?.hazmatCertified ? 'Seller reports: Yes' : 'Not reported'}</p>
                   </div>
                 </div>
               </div>

@@ -1,8 +1,14 @@
 /**
  * THE RAIL EXCHANGE™ — Listings Map Component
  * 
- * Interactive map showing all listing locations.
+ * Interactive map showing listing locations.
  * Used on search page and marketplace pages.
+ * 
+ * 📍 MAP VISIBILITY RULES (LOCKED):
+ * ⚠️ Sellers: ONLY shown if Elite Placement is active
+ * ❌ Non-Elite listings: NOT shown on map
+ * 
+ * See /src/lib/map-visibility.ts for full rules.
  */
 
 'use client';
@@ -13,6 +19,7 @@ import { MapWrapper } from './MapWrapper';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { filterListingsForMap, SELLER_MAP_DISCLOSURE } from '@/lib/map-visibility';
 
 export interface ListingMapItem {
   id: string;
@@ -82,6 +89,14 @@ export const ListingsMap: React.FC<ListingsMapProps> = ({
   const markersRef = React.useRef<google.maps.Marker[]>([]);
   const infoWindowRef = React.useRef<google.maps.InfoWindow | null>(null);
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MAP VISIBILITY FILTER (LOCKED RULES)
+  // Sellers: ONLY with Elite Placement active
+  // ═══════════════════════════════════════════════════════════════════════════
+  const mapEligibleListings = React.useMemo(() => {
+    return filterListingsForMap(listings);
+  }, [listings]);
+
   // Update map markers
   React.useEffect(() => {
     if (!map) return;
@@ -97,11 +112,11 @@ export const ListingsMap: React.FC<ListingsMapProps> = ({
     // Create info window
     infoWindowRef.current = new google.maps.InfoWindow();
 
-    // Add new markers
+    // Add new markers — ONLY for Elite listings (enforced visibility rules)
     const bounds = new google.maps.LatLngBounds();
     let hasValidLocations = false;
 
-    listings.forEach((listing) => {
+    mapEligibleListings.forEach((listing) => {
       if (listing.location.lat && listing.location.lng) {
         hasValidLocations = true;
 
@@ -182,42 +197,45 @@ export const ListingsMap: React.FC<ListingsMapProps> = ({
         google.maps.event.removeListener(listener);
       });
     }
-  }, [map, listings, onListingSelect]);
+  }, [map, mapEligibleListings, onListingSelect]);
 
   // Handle map load
   const handleMapLoad = React.useCallback((mapInstance: google.maps.Map) => {
     setMap(mapInstance);
   }, []);
 
+  // Show disclosure when no Elite listings
+  const showEmptyMessage = mapEligibleListings.length === 0 && listings.length > 0;
+
   return (
     <div className={cn('relative rounded-xl overflow-hidden border border-border-default', className)}>
-      {/* Map Legend */}
+      {/* Map Visibility Disclosure for Sellers */}
+      {showEmptyMessage && (
+        <div className="absolute top-4 left-4 right-20 z-10 bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <p className="text-xs text-amber-800">
+            <strong>Note:</strong> {SELLER_MAP_DISCLOSURE} Only Elite listings appear on the map.
+          </p>
+        </div>
+      )}
+      
+      {/* Map Legend - Only show Elite since only Elite is visible */}
       <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-3">
-        <p className="text-xs font-semibold text-navy-900 mb-2">Legend</p>
+        <p className="text-xs font-semibold text-navy-900 mb-2">Map Legend</p>
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-amber-500" />
-            <span className="text-xs text-text-secondary">Elite</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-purple-500" />
-            <span className="text-xs text-text-secondary">Premium</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-rail-orange" />
-            <span className="text-xs text-text-secondary">Featured</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-navy-900" />
-            <span className="text-xs text-text-secondary">Standard</span>
+            <span className="text-xs text-text-secondary">Elite Placement</span>
           </div>
         </div>
+        <p className="text-[10px] text-text-tertiary mt-2 max-w-[140px]">
+          Only Elite listings appear on map
+        </p>
       </div>
 
-      {/* Listing Count */}
+      {/* Listing Count - Show Elite count */}
       <div className="absolute top-4 left-4 z-10">
         <Badge className="bg-white text-navy-900 shadow-lg border-0">
-          {listings.length} listing{listings.length !== 1 ? 's' : ''} on map
+          {mapEligibleListings.length} Elite listing{mapEligibleListings.length !== 1 ? 's' : ''} on map
         </Badge>
       </div>
 

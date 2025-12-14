@@ -110,18 +110,7 @@ export async function POST(request: NextRequest) {
     const type = purchase.type as AddOnType;
     const addons = listing.premiumAddOns || {};
     
-    if (type === ADD_ON_TYPES.FEATURED && addons.featured?.active) {
-      return NextResponse.json(
-        { error: 'This listing already has Featured placement active' },
-        { status: 400 }
-      );
-    }
-    if (type === ADD_ON_TYPES.PREMIUM && addons.premium?.active) {
-      return NextResponse.json(
-        { error: 'This listing already has Premium placement active' },
-        { status: 400 }
-      );
-    }
+    // Elite is the ONLY placement tier (no Premium/Featured tiers)
     if (type === ADD_ON_TYPES.ELITE && addons.elite?.active) {
       return NextResponse.json(
         { error: 'This listing already has Elite placement active' },
@@ -138,31 +127,15 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const expiresAt = purchase.expiresAt;
 
-    if (type === ADD_ON_TYPES.FEATURED) {
-      updateData['premiumAddOns.featured'] = {
-        active: true,
-        expiresAt: expiresAt,
-        purchasedAt: now,
-      };
-    } else if (type === ADD_ON_TYPES.PREMIUM) {
-      // Premium includes featured
-      updateData['premiumAddOns.premium'] = {
-        active: true,
-        expiresAt: expiresAt,
-        purchasedAt: now,
-      };
-      updateData['premiumAddOns.featured'] = {
-        active: true,
-        expiresAt: expiresAt,
-        purchasedAt: now,
-      };
-    } else if (type === ADD_ON_TYPES.ELITE) {
-      // Elite includes premium and featured
+    // Elite is the ONLY placement tier - sets all legacy flags for backwards compat
+    if (type === ADD_ON_TYPES.ELITE) {
+      // Elite sets all placement flags for backward compatibility
       updateData['premiumAddOns.elite'] = {
         active: true,
         expiresAt: expiresAt,
         purchasedAt: now,
       };
+      // Also set legacy premium/featured flags for backward compatibility
       updateData['premiumAddOns.premium'] = {
         active: true,
         expiresAt: expiresAt,

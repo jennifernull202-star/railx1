@@ -124,7 +124,7 @@ export default function GetVerifiedPage() {
           Get Verified as a Contractor
         </h1>
         <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-          Increase trust, visibility, and ranking by completing identity and insurance verification.
+          Complete document review to display a verification badge on your profile.
         </p>
       </div>
 
@@ -147,7 +147,7 @@ export default function GetVerifiedPage() {
         <BenefitCard
           icon={Users}
           title="Enhanced Visibility"
-          description="Document-reviewed contractors get enhanced visibility and more inquiries."
+          description="Document-reviewed contractors may receive enhanced visibility in search results."
           iconBg="bg-purple-100"
           iconColor="text-purple-600"
         />
@@ -168,17 +168,20 @@ export default function GetVerifiedPage() {
         </div>
       </div>
 
-      {/* Pricing Box */}
+      {/* Pricing Box - $2,500/year Professional Plan */}
       <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-8 text-center text-white mb-10">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/20 rounded-full text-sm font-medium mb-4">
           <Star className="w-4 h-4" />
-          Most Popular
+          Professional Verified Plan
         </div>
-        <h3 className="text-2xl font-bold mb-2">Verified Contractor Badge</h3>
-        <div className="flex items-baseline justify-center gap-1 mb-6">
-          <span className="text-5xl font-bold">$149</span>
+        <h3 className="text-2xl font-bold mb-2">Professional Verified Plan</h3>
+        <div className="flex items-baseline justify-center gap-1 mb-4">
+          <span className="text-5xl font-bold">$2,500</span>
           <span className="text-xl text-blue-200">/year</span>
         </div>
+        <p className="text-blue-200 text-sm mb-6">
+          All-in annual plan: verification, analytics, directory listing, and all platform features included.
+        </p>
         <Link
           href="/dashboard/contractor/verify/start"
           className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-colors font-bold text-lg"
@@ -186,9 +189,27 @@ export default function GetVerifiedPage() {
           Begin Verification
           <ArrowRight className="w-5 h-5" />
         </Link>
-        <p className="text-blue-200 text-sm mt-4">
-          30-day money-back guarantee if not approved
+        <p className="text-blue-200 text-xs mt-4">
+          Verification reflects document submission and review only. Does not guarantee transactions or outcomes.
         </p>
+      </div>
+
+      {/* AI Disclosure Notice */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-10">
+        <div className="flex gap-3">
+          <div className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="text-sm">
+            <p className="font-medium text-amber-800 mb-1">AI-Assisted Verification</p>
+            <p className="text-amber-700">
+              Verification is assisted by automated systems and human review. It does not constitute 
+              endorsement, certification, or approval of any contractor, business, or service quality.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* FAQ / Process Steps */}

@@ -2,6 +2,20 @@
  * THE RAIL EXCHANGE™ — Admin Contractor Verification Review
  * 
  * Admin page to review and approve/reject contractor verifications.
+ * 
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │ ARCHITECTURAL NOTE: Does NOT consume /api/verification              │
+ * │                                                                      │
+ * │ This page uses /api/admin/contractors/verify because it needs:      │
+ * │ - Admin-only access (role gated)                                    │
+ * │ - Full verification documents for review                            │
+ * │ - AI confidence scores and flag details                             │
+ * │ - Approve/reject action endpoints                                   │
+ * │ - Audit trail and admin notes                                       │
+ * │                                                                      │
+ * │ The public /api/verification endpoint returns badge status only.    │
+ * │ It cannot serve admin review needs. This separation is correct.     │
+ * └─────────────────────────────────────────────────────────────────────┘
  */
 
 'use client';

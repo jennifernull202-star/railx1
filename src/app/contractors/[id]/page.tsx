@@ -1,15 +1,22 @@
 /**
  * THE RAIL EXCHANGE™ — Contractor Profile Page
  * ============================================
- * BATCH 11 REQUIREMENTS:
- * - Cover height ~160px max ✓
- * - Above-the-fold: Logo, Company name, Credibility line, Top 3 services, ONE Contact CTA ✓
- * - Single contact location (sticky footer only)
- * - Merged regions + company details in expandable card
- * - Photos and equipment below primary info ✓
- * - OMIT: Profile completeness %, duplicate CTAs, separate regions card
+ * PUBLIC PROFILE PAGES REQUIREMENTS:
  * 
- * Displays a contractor's full profile with services, contact info, and photos.
+ * REQUIRED FACT SECTIONS:
+ * 1. Contractor Type (Multi-Select) - Clickable chips → filtered search
+ * 2. Services Offered - Structured list, clickable, search-filterable
+ * 3. Service Locations - States/regions, capped with "+X more"
+ * 4. Availability - Optional (24/7, Emergency, Scheduled Only)
+ * 5. Credentials & Certifications - Self-reported, mandatory disclaimer
+ * 
+ * COMPLIANCE:
+ * - All regulatory claims labeled "Self-reported"
+ * - Neutral styling (NO green checks)
+ * - Mandatory disclaimers for certifications
+ * - AI verification disclosure
+ * 
+ * NO: Analytics, SEO tools, contractor taxonomy, regulatory claims without disclaimers
  */
 
 import { Metadata } from 'next';
@@ -20,10 +27,17 @@ import connectDB from '@/lib/db';
 import ContractorProfile from '@/models/ContractorProfile';
 import { SERVICE_CATEGORIES } from '@/lib/constants';
 import { CONTRACTOR_TYPE_CONFIG, type ContractorType } from '@/config/contractor-types';
-import ContractorTypeDisplay from '@/components/contractor/ContractorTypeDisplay';
 import PhoneDisplay from '@/components/contractor/PhoneDisplay';
 import ContractorContactCTA from '@/components/contractor/ContractorContactCTA';
-import { CONTRACTOR_DISPLAY_LIMITS, BADGE_TOOLTIP } from '@/lib/abuse-prevention';
+import {
+  ContractorTypeChips,
+  ServicesOffered,
+  ServiceLocations,
+  Credentials,
+  VerificationBlock,
+} from '@/components/contractor/ContractorFactBlocks';
+import { CONTRACTOR_DISPLAY_LIMITS } from '@/lib/abuse-prevention';
+import { PageViewTracker } from '@/lib/hooks/useAnalyticsEvent';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -86,6 +100,9 @@ export default async function ContractorProfilePage({ params }: PageProps) {
 
   return (
     <>
+      {/* Analytics: Track page views for contractor profiles */}
+      <PageViewTracker targetType="contractor" targetId={contractor._id.toString()} />
+      
       {/* Navigation */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-surface-border/50">
         <nav className="container-rail">
@@ -161,153 +178,191 @@ export default async function ContractorProfilePage({ params }: PageProps) {
         </div>
 
         <div className="container-rail py-6">
-          {/* About */}
-          <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 mb-6">
-            <h2 className="font-semibold text-navy-900 mb-3">About</h2>
-            <p className="text-text-primary whitespace-pre-wrap">{contractor.businessDescription}</p>
-            {contractor.serviceDescription && (
-              <div className="mt-4 pt-4 border-t border-surface-border">
-                <h3 className="font-medium text-navy-900 mb-2">Service Details</h3>
-                <p className="text-text-secondary">{contractor.serviceDescription}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Company Details (expandable - merges contact + regions) */}
-          <details className="bg-white rounded-2xl shadow-card border border-surface-border mb-6 group">
-            <summary className="p-6 flex items-center justify-between cursor-pointer list-none">
-              <h2 className="font-semibold text-navy-900">Company Details</h2>
-              <svg className="w-5 h-5 text-text-tertiary transform transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <div className="px-6 pb-6 -mt-2">
-              {/* Contact Info */}
-              <div className="grid sm:grid-cols-2 gap-4 mb-4">
-                {/* S-3.2: Phone visibility with auth check */}
-                <PhoneDisplay phone={contractor.businessPhone} />
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span className="text-navy-900">{contractor.address.city}, {contractor.address.state}</span>
-                </div>
-                {contractor.website && (
-                  <div className="flex items-center gap-3 sm:col-span-2">
-                    <svg className="w-5 h-5 text-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                    </svg>
-                    <a href={contractor.website} target="_blank" rel="noopener noreferrer" className="text-rail-orange break-all">
-                      {contractor.website.replace(/^https?:\/\//, '')}
-                    </a>
+          {/* Main Content - Two Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Main Info */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* About */}
+              <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
+                <h2 className="font-semibold text-navy-900 mb-3">About</h2>
+                <p className="text-text-primary whitespace-pre-wrap">{contractor.businessDescription}</p>
+                {contractor.serviceDescription && (
+                  <div className="mt-4 pt-4 border-t border-surface-border">
+                    <h3 className="font-medium text-navy-900 mb-2">Service Details</h3>
+                    <p className="text-text-secondary">{contractor.serviceDescription}</p>
                   </div>
                 )}
               </div>
 
-              {/* Regions Served */}
-              {contractor.regionsServed && contractor.regionsServed.length > 0 && (
-                <div className="pt-4 border-t border-surface-border">
-                  <h3 className="font-medium text-navy-900 mb-2 text-sm">Regions Served</h3>
+              {/* FACT BLOCK: Contractor Type (Clickable chips) */}
+              {hasContractorTypes && (
+                <ContractorTypeChips contractorTypes={contractor.contractorTypes} />
+              )}
+
+              {/* FACT BLOCK: Services Offered (Clickable list) */}
+              {hasContractorTypes && contractor.subServices && (
+                <ServicesOffered
+                  contractorTypes={contractor.contractorTypes}
+                  subServices={contractor.subServices}
+                />
+              )}
+
+              {/* Legacy Services (if no new contractor types) */}
+              {!hasContractorTypes && contractor.services && contractor.services.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
+                  <h2 className="font-semibold text-navy-900 mb-4">Services</h2>
                   <div className="flex flex-wrap gap-2">
-                    {contractor.regionsServed.slice(0, CONTRACTOR_DISPLAY_LIMITS.MAX_REGIONS_DISPLAYED).map((region: string) => (
-                      <span key={region} className="px-3 py-1.5 bg-surface-secondary rounded-lg text-sm text-navy-900">
-                        {region}
+                    {contractor.services.map((serviceId: string) => {
+                      const service = SERVICE_CATEGORIES.find((s) => s.id === serviceId);
+                      return (
+                        <Link
+                          key={serviceId}
+                          href={`/contractors?service=${encodeURIComponent(serviceId)}`}
+                          className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-200 hover:bg-blue-100 transition-colors"
+                        >
+                          {service?.label || serviceId}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-text-tertiary mt-3">(Self-reported)</p>
+                </div>
+              )}
+
+              {/* Equipment */}
+              {contractor.equipmentOwned && contractor.equipmentOwned.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
+                  <h2 className="font-semibold text-navy-900 mb-4">Equipment</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {contractor.equipmentOwned.map((item: string, index: number) => (
+                      <span key={index} className="px-3 py-1.5 bg-surface-secondary rounded-lg text-sm text-navy-900">
+                        {item}
                       </span>
                     ))}
-                    {contractor.regionsServed.length > CONTRACTOR_DISPLAY_LIMITS.MAX_REGIONS_DISPLAYED && (
-                      <span className="px-3 py-1.5 bg-surface-secondary rounded-lg text-sm text-text-tertiary">
-                        +{contractor.regionsServed.length - CONTRACTOR_DISPLAY_LIMITS.MAX_REGIONS_DISPLAYED} more regions
-                      </span>
-                    )}
                   </div>
-                  {/* S-1.5: Self-reported claims disclaimer */}
-                  <p className="text-xs text-text-tertiary mt-2 italic">
-                    Service areas and capabilities are self-reported by the contractor.
-                  </p>
+                  <p className="text-xs text-text-tertiary mt-3">(Self-reported)</p>
+                </div>
+              )}
+
+              {/* Photos */}
+              {contractor.photos && contractor.photos.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
+                  <h2 className="font-semibold text-navy-900 mb-4">Photos</h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {contractor.photos.map((photo: string, index: number) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        key={index}
+                        src={photo}
+                        alt={`${contractor.businessName} photo ${index + 1}`}
+                        className="w-full aspect-square object-cover rounded-xl"
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
-          </details>
 
-          {/* Services/Specializations */}
-          {hasContractorTypes && (
-            <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 mb-6">
-              <h2 className="font-semibold text-navy-900 mb-4">Specializations</h2>
-              <ContractorTypeDisplay
-                contractorTypes={contractor.contractorTypes}
-                subServices={contractor.subServices}
-                otherTypeInfo={contractor.otherTypeInfo}
-                variant="full"
+            {/* Right Column - Sidebar */}
+            <div className="space-y-6">
+              {/* FACT BLOCK: Verification Status */}
+              <VerificationBlock
+                verificationStatus={contractor.verificationStatus}
+                verifiedBadgeExpiresAt={contractor.verifiedBadgeExpiresAt}
               />
-            </div>
-          )}
 
-          {!hasContractorTypes && contractor.services && contractor.services.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 mb-6">
-              <h2 className="font-semibold text-navy-900 mb-4">Services</h2>
-              <div className="flex flex-wrap gap-2">
-                {contractor.services.map((serviceId: string) => {
-                  const service = SERVICE_CATEGORIES.find((s) => s.id === serviceId);
-                  return (
-                    <span key={serviceId} className="px-3 py-1.5 bg-surface-secondary rounded-lg text-sm text-navy-900">
-                      {service?.label || serviceId}
-                    </span>
-                  );
-                })}
+              {/* Company Details */}
+              <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
+                <h2 className="font-semibold text-navy-900 mb-4">Company Details</h2>
+                <div className="space-y-3">
+                  <PhoneDisplay phone={contractor.businessPhone} />
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="text-navy-900">{contractor.address.city}, {contractor.address.state}</span>
+                  </div>
+                  {contractor.website && (
+                    <div className="flex items-center gap-3">
+                      <svg className="w-5 h-5 text-text-tertiary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                      </svg>
+                      <a href={contractor.website} target="_blank" rel="noopener noreferrer" className="text-rail-orange break-all hover:underline">
+                        {contractor.website.replace(/^https?:\/\//, '')}
+                      </a>
+                    </div>
+                  )}
+                  <p className="text-xs text-text-tertiary mt-2">
+                    {contractor.yearsInBusiness} years in business (Self-reported)
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Equipment */}
-          {contractor.equipmentOwned && contractor.equipmentOwned.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 mb-6">
-              <h2 className="font-semibold text-navy-900 mb-4">Equipment</h2>
-              <div className="flex flex-wrap gap-2">
-                {contractor.equipmentOwned.map((item: string, index: number) => (
-                  <span key={index} className="px-3 py-1.5 bg-surface-secondary rounded-lg text-sm text-navy-900">
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+              {/* FACT BLOCK: Service Locations */}
+              <ServiceLocations
+                regions={contractor.regionsServed || []}
+                maxDisplay={CONTRACTOR_DISPLAY_LIMITS.MAX_REGIONS_DISPLAYED}
+              />
 
-          {/* Photos (MOVED BELOW PRIMARY INFO) */}
-          {contractor.photos && contractor.photos.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6 mb-6">
-              <h2 className="font-semibold text-navy-900 mb-4">Photos</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {contractor.photos.map((photo: string, index: number) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    key={index}
-                    src={photo}
-                    alt={`${contractor.businessName} photo ${index + 1}`}
-                    className="w-full aspect-square object-cover rounded-xl"
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+              {/* Availability Status (if available) - uses model's status field */}
+              {contractor.availability && (
+                <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <svg className="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h2 className="font-semibold text-navy-900">Availability</h2>
+                    <span className="text-xs text-text-tertiary">(Self-reported)</span>
+                  </div>
+                  
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border ${
+                    contractor.availability.status === 'available' 
+                      ? 'bg-green-50 text-green-700 border-green-200'
+                      : contractor.availability.status === 'limited'
+                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : 'bg-red-50 text-red-700 border-red-200'
+                  }`}>
+                    <span className={`w-2 h-2 rounded-full ${
+                      contractor.availability.status === 'available' 
+                        ? 'bg-green-500'
+                        : contractor.availability.status === 'limited'
+                          ? 'bg-amber-500'
+                          : 'bg-red-500'
+                    }`} />
+                    {contractor.availability.status === 'available' && 'Available'}
+                    {contractor.availability.status === 'limited' && 'Limited Availability'}
+                    {contractor.availability.status === 'booked' && 'Currently Booked'}
+                  </div>
+                  
+                  {contractor.availability.notes && (
+                    <p className="text-sm text-text-secondary mt-3">{contractor.availability.notes}</p>
+                  )}
+                </div>
+              )}
 
-          {/* S-6.2: Report Contractor Link */}
-          <div className="text-center mb-6">
+              {/* FACT BLOCK: Credentials & Certifications */}
+              <Credentials certifications={contractor.certifications} />
+            </div>
+          </div>
+
+          {/* Report Contractor Link */}
+          <div className="text-center mt-8 mb-6">
             <Link
               href={`/contact?category=contractor&subject=${encodeURIComponent(`Report: ${contractor.businessName}`)}`}
               className="text-sm text-text-tertiary hover:text-text-secondary underline"
             >
               Report this contractor
             </Link>
-            {/* S-10.2: Report Contractor Clarity */}
             <p className="text-xs text-text-tertiary mt-1">
               Reports are for fraud, misrepresentation, or policy violations — not disputes or pricing disagreements.
             </p>
           </div>
 
-          {/* S-10.4: Contractor Claim Limitation Notice */}
+          {/* Platform Disclaimer */}
           <p className="text-xs text-text-tertiary text-center mb-6">
             Business details are provided by the contractor. Verification confirms submitted documents, not service quality or outcomes.
+            The Rail Exchange connects buyers and contractors. We do not participate in or guarantee transactions.
           </p>
         </div>
       </main>

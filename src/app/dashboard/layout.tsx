@@ -51,6 +51,7 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   badge?: string;
+  locked?: boolean;
 }
 
 // Inner component that uses subscription context
@@ -167,6 +168,32 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
   const displayTier = subscription?.sellerTier !== 'buyer' ? subscription?.sellerTier : user.subscriptionTier;
   const subscriptionStatus = subscription?.sellerStatus;
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ANALYTICS ENTITLEMENT CHECK (LOCKED ARCHITECTURE)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // - Buyers: NEVER
+  // - Sellers: Locked by default, must purchase analytics add-on
+  // - Professionals (Contractor = Company): ALWAYS included ($2,500/year)
+  //   ❌ No analytics upsells for professionals
+  // ═══════════════════════════════════════════════════════════════════════════
+  const isContractor = user.isContractor === true;
+  const sessionSellerTier = (user as { subscriptionTier?: string }).subscriptionTier;
+  const isCompany = sessionSellerTier === 'enterprise';
+  
+  // Professional = contractor tier 'professional', 'platform', 'priority' OR enterprise seller
+  const isProfessional = subscription?.contractorTier === 'professional' || 
+                         subscription?.contractorTier === 'platform' || 
+                         subscription?.contractorTier === 'priority' ||
+                         isCompany;
+  
+  // Professionals (Contractor = Company) ALWAYS have analytics
+  const professionalHasAnalytics = (isContractor || isCompany) && isProfessional;
+  // Sellers: analytics is a paid add-on (not yet implemented in subscription data)
+  const sellerHasAnalyticsPurchase = false; // TODO: Add sellerAnalyticsEntitled to subscription
+  
+  const hasAnalyticsAccess = professionalHasAnalytics || sellerHasAnalyticsPurchase;
+  const analyticsLocked = !hasAnalyticsAccess;
+
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) =>
       prev.includes(sectionId)
@@ -194,6 +221,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
         { label: "Create Listing", href: "/listings/create", icon: FileText },
         { label: "Manage Listings", href: "/dashboard/listings", icon: Package },
         { label: "My Inquiries", href: "/dashboard/inquiries", icon: MessageSquare },
+        { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, locked: analyticsLocked },
       ],
     },
     {
@@ -342,7 +370,7 @@ function DashboardLayoutInner({ children }: DashboardLayoutProps) {
                 href={item.href}
                 icon={item.icon}
                 badge={item.badge}
-                locked={isLocked}
+                locked={isLocked || item.locked}
               >
                 {item.label}
               </SidebarLink>

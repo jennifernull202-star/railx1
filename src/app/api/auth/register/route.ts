@@ -4,6 +4,11 @@
  * POST /api/auth/register
  * Creates a new user account with email/password.
  * 
+ * REGISTRATION & VERIFICATION UX:
+ * - Buyer: Browse free, $1 lifetime verification for actions
+ * - Seller: Dashboard + listings, $29/year verification  
+ * - Professional (Contractor): Full platform, $2,500/year
+ * 
  * SECURITY CONTROLS:
  * - Rate limiting to prevent automated account creation
  * - Input validation and sanitization
@@ -14,13 +19,13 @@ import connectDB from '@/lib/db';
 import User, { UserRole } from '@/models/User';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { rateLimitRequest } from '@/lib/redis-rate-limit';
-import { sanitizeString } from '@/lib/sanitize';
 
 interface RegisterRequestBody {
   name: string;
   email: string;
   password: string;
   role?: UserRole;
+  isProfessional?: boolean;
 }
 
 export async function POST(request: NextRequest) {
@@ -38,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body: RegisterRequestBody = await request.json();
-    const { name, email, password, role = 'buyer' } = body;
+    const { name, email, password, role = 'buyer', isProfessional = false } = body;
 
     // Validation
     if (!name || !email || !password) {
@@ -102,16 +107,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new user
+    // Note: isProfessional flag is stored for Professional Plan subscribers
+    // Contractor role is used for both individual contractors AND companies
     const user = new User({
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password,
       role,
+      // If registering as Professional, mark for Professional Plan upgrade flow
+      ...(isProfessional && { pendingProfessionalUpgrade: true }),
     });
 
     await user.save();
 
     // Return success response (without password)
+    // Note: For Professional registrations, user needs to complete payment
+    // before entitlements unlock (verification, analytics, etc.)
     return NextResponse.json(
       {
         success: true,
@@ -121,7 +132,10 @@ export async function POST(request: NextRequest) {
           name: user.name,
           email: user.email,
           role: user.role,
+          isProfessional,
         },
+        // Redirect hint for frontend
+        nextStep: isProfessional ? '/dashboard/contractor/verify' : '/dashboard',
       },
       { status: 201 }
     );

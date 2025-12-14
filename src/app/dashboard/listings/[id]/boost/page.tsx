@@ -70,10 +70,11 @@ interface BoostTier {
   popular?: boolean;
 }
 
+// Elite is the ONLY placement tier (no Premium/Featured tiers)
 const BOOST_TIERS: BoostTier[] = [
   {
     id: 'elite',
-    name: 'Elite',
+    name: 'Elite Placement',
     price: ADD_ON_PRICING.elite / 100,
     duration: `${ADD_ON_DURATION.elite} days`,
     icon: Crown,
@@ -85,40 +86,10 @@ const BOOST_TIERS: BoostTier[] = [
       'Priority in all search results',
       'Elite badge on listing',
       'Maximum buyer visibility',
-      '10x more views on average',
-    ],
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: ADD_ON_PRICING.premium / 100,
-    duration: `${ADD_ON_DURATION.premium} days`,
-    icon: TrendingUp,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-300',
-    benefits: [
-      'Top of category pages',
-      'Search result priority',
-      'Premium badge on listing',
-      '5x more views on average',
+      'Map visibility included',
+      '"Sponsored" disclosure',
     ],
     popular: true,
-  },
-  {
-    id: 'featured',
-    name: 'Featured',
-    price: ADD_ON_PRICING.featured / 100,
-    duration: `${ADD_ON_DURATION.featured} days`,
-    icon: Star,
-    color: 'text-amber-600',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-300',
-    benefits: [
-      'Featured badge on listing',
-      'Improved search placement',
-      '2x more views on average',
-    ],
   },
 ];
 
@@ -131,7 +102,7 @@ export default function BoostListingPage() {
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTier, setSelectedTier] = useState<string>('premium');
+  const [selectedTier, setSelectedTier] = useState<string>('elite');
   const [checkingOut, setCheckingOut] = useState(false);
 
   // Fetch listing details

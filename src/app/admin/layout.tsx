@@ -138,7 +138,6 @@ function AdminLayoutInner({
       icon: Home,
       items: [
         { label: "Admin Dashboard", href: "/admin", icon: Home },
-        { label: "Platform Analytics", href: "/admin/analytics", icon: BarChart3 },
         { label: "Settings", href: "/admin/settings", icon: Settings },
       ],
     },
@@ -156,6 +155,7 @@ function AdminLayoutInner({
       title: "Revenue & Billing",
       icon: DollarSign,
       items: [
+        { label: "Monetization (Reference)", href: "/admin/monetization", icon: DollarSign },
         { label: "Add-On Analytics", href: "/admin/addons", icon: Tag },
         { label: "Stripe Monitoring", href: "/admin/stripe", icon: CreditCard },
         { label: "Subscription Reports", href: "/admin/subscriptions", icon: Crown },
@@ -163,11 +163,18 @@ function AdminLayoutInner({
       ],
     },
     {
+      title: "Analytics",
+      icon: BarChart3,
+      items: [
+        { label: "Platform Analytics", href: "/admin/analytics", icon: BarChart3 },
+        { label: "AI Analytics", href: "/admin/ai-analytics", icon: Bot },
+        { label: "System Metrics", href: "/admin/metrics", icon: TrendingUp },
+      ],
+    },
+    {
       title: "Platform Health",
       icon: Activity,
       items: [
-        { label: "AI Analytics", href: "/admin/ai-analytics", icon: Bot },
-        { label: "System Metrics", href: "/admin/metrics", icon: TrendingUp },
         { label: "Error Logs", href: "/admin/errors", icon: AlertTriangle },
       ],
     },

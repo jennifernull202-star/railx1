@@ -60,9 +60,8 @@ interface Listing {
   status: string;
 }
 
+// Elite is the ONLY placement tier (no Premium/Featured tiers)
 const addonIcons: Record<string, typeof Star> = {
-  [ADD_ON_TYPES.FEATURED]: Star,
-  [ADD_ON_TYPES.PREMIUM]: TrendingUp,
   [ADD_ON_TYPES.ELITE]: Crown,
   [ADD_ON_TYPES.AI_ENHANCEMENT]: Sparkles,
   [ADD_ON_TYPES.SPEC_SHEET]: FileText,
@@ -127,9 +126,8 @@ function UpgradePageContent() {
     SELLER_TIER_CONFIG[SELLER_TIERS.PRO],
   ];
 
+  // Elite is the ONLY placement tier (no Premium/Featured tiers)
   const addons = [
-    { type: ADD_ON_TYPES.FEATURED, ...ADD_ON_METADATA[ADD_ON_TYPES.FEATURED], price: ADD_ON_PRICING[ADD_ON_TYPES.FEATURED] },
-    { type: ADD_ON_TYPES.PREMIUM, ...ADD_ON_METADATA[ADD_ON_TYPES.PREMIUM], price: ADD_ON_PRICING[ADD_ON_TYPES.PREMIUM] },
     { type: ADD_ON_TYPES.ELITE, ...ADD_ON_METADATA[ADD_ON_TYPES.ELITE], price: ADD_ON_PRICING[ADD_ON_TYPES.ELITE] },
     { type: ADD_ON_TYPES.AI_ENHANCEMENT, ...ADD_ON_METADATA[ADD_ON_TYPES.AI_ENHANCEMENT], price: ADD_ON_PRICING[ADD_ON_TYPES.AI_ENHANCEMENT] },
     { type: ADD_ON_TYPES.SPEC_SHEET, ...ADD_ON_METADATA[ADD_ON_TYPES.SPEC_SHEET], price: ADD_ON_PRICING[ADD_ON_TYPES.SPEC_SHEET] },

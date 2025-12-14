@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Process the event
-    let processingError: string | null = null;
+    const processingError: string | null = null;
 
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -181,6 +181,13 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   // Handle add-on purchases
   if (purchaseType === 'addon' && purchaseId) {
     await handleAddonCheckoutComplete(session, purchaseId, addonType, listingId, contractorId);
+    return;
+  }
+
+  // Handle user-level add-on purchases (e.g., seller analytics)
+  // These create the AddOnPurchase record on webhook completion
+  if (addonType === ADD_ON_TYPES.SELLER_ANALYTICS && userId) {
+    await handleSellerAnalyticsCheckout(session, userId);
     return;
   }
 
@@ -425,27 +432,13 @@ async function handleAddonCheckoutComplete(
   if (targetListingId && (!isVisibilityAddon || purchase.listingId)) {
     const updateData: Record<string, unknown> = {};
     
-    if (type === ADD_ON_TYPES.FEATURED) {
-      updateData['premiumAddOns.featured'] = {
-        active: true,
-        expiresAt: expiresAt,
-      };
-    } else if (type === ADD_ON_TYPES.PREMIUM) {
-      updateData['premiumAddOns.premium'] = {
-        active: true,
-        expiresAt: expiresAt,
-      };
-      // Premium also gets featured
-      updateData['premiumAddOns.featured'] = {
-        active: true,
-        expiresAt: expiresAt,
-      };
-    } else if (type === ADD_ON_TYPES.ELITE) {
+    // Elite is the ONLY placement tier (no Premium/Featured tiers)
+    if (type === ADD_ON_TYPES.ELITE) {
       updateData['premiumAddOns.elite'] = {
         active: true,
         expiresAt: expiresAt,
       };
-      // Elite gets premium and featured
+      // Also set legacy premium/featured flags for backward compatibility
       updateData['premiumAddOns.premium'] = {
         active: true,
         expiresAt: expiresAt,
@@ -466,6 +459,62 @@ async function handleAddonCheckoutComplete(
   }
 
   console.log(`Add-on activated: ${type} for purchase ${purchaseId}`);
+}
+
+/**
+ * Handle seller analytics add-on purchase completion
+ * Creates the AddOnPurchase record on successful payment
+ * Duration: 1 year (365 days)
+ */
+async function handleSellerAnalyticsCheckout(
+  session: Stripe.Checkout.Session,
+  userId: string
+) {
+  const user = await User.findById(userId);
+  if (!user) {
+    console.error(`User not found for analytics checkout: ${userId}`);
+    return;
+  }
+
+  // Check if user already has active analytics (idempotency)
+  const existingPurchase = await AddOnPurchase.findOne({
+    userId: user._id,
+    type: ADD_ON_TYPES.SELLER_ANALYTICS,
+    status: 'active',
+    expiresAt: { $gt: new Date() },
+  });
+
+  if (existingPurchase) {
+    console.log(`Analytics add-on already active for user ${userId}, skipping`);
+    return;
+  }
+
+  // Calculate expiration (1 year)
+  const now = new Date();
+  const expiresAt = new Date(now);
+  expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+  // Create the AddOnPurchase record
+  const purchase = await AddOnPurchase.create({
+    userId: user._id,
+    type: ADD_ON_TYPES.SELLER_ANALYTICS,
+    status: 'active',
+    amount: session.amount_total || 4900, // $49 in cents
+    startedAt: now,
+    expiresAt: expiresAt,
+    stripeSessionId: session.id,
+    stripePaymentId: session.payment_intent as string,
+    // No listingId - this is a user-level add-on
+  });
+
+  // Update user's Stripe customer ID if not set
+  if (!user.stripeCustomerId && session.customer) {
+    await User.findByIdAndUpdate(userId, { 
+      stripeCustomerId: session.customer as string 
+    });
+  }
+
+  console.log(`Seller Analytics activated for user ${userId} - purchase ${purchase._id} - expires ${expiresAt.toISOString()}`);
 }
 
 async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {

@@ -62,14 +62,11 @@ function AddOnBadge({ addOn }: { addOn: AddOnStatus }) {
   if (!addOn.active) return null;
 
   // Determine badge style based on type
+  // Elite is the ONLY placement tier (no Premium/Featured)
   const getBadgeStyle = () => {
     switch (addOn.type) {
       case ADD_ON_TYPES.ELITE:
         return 'bg-gradient-to-r from-amber-500 to-orange-600 text-white';
-      case ADD_ON_TYPES.PREMIUM:
-        return 'bg-purple-600 text-white';
-      case ADD_ON_TYPES.FEATURED:
-        return 'bg-amber-500 text-white';
       case ADD_ON_TYPES.AI_ENHANCEMENT:
         return 'bg-blue-600 text-white';
       case ADD_ON_TYPES.VERIFIED_BADGE:
@@ -122,13 +119,10 @@ function AddOnCard({
   const remaining = useCountdown(expiresDate);
 
   // Get card accent color
+  // Elite is the ONLY placement tier (no Premium/Featured)
   const getAccentColor = () => {
     switch (type) {
       case ADD_ON_TYPES.ELITE:
-        return 'border-l-amber-500';
-      case ADD_ON_TYPES.PREMIUM:
-        return 'border-l-purple-600';
-      case ADD_ON_TYPES.FEATURED:
         return 'border-l-amber-500';
       case ADD_ON_TYPES.AI_ENHANCEMENT:
         return 'border-l-blue-600';
@@ -313,14 +307,11 @@ export function AddOnBadgeSimple({ type, size = 'sm' }: { type: AddOnType; size?
     md: 'px-2.5 py-1 text-sm',
   };
 
+  // Elite is the ONLY placement tier (no Premium/Featured)
   const getBadgeStyle = () => {
     switch (type) {
       case ADD_ON_TYPES.ELITE:
         return 'bg-gradient-to-r from-amber-500 to-orange-600 text-white';
-      case ADD_ON_TYPES.PREMIUM:
-        return 'bg-purple-600 text-white';
-      case ADD_ON_TYPES.FEATURED:
-        return 'bg-amber-500 text-white';
       case ADD_ON_TYPES.AI_ENHANCEMENT:
         return 'bg-blue-600 text-white';
       case ADD_ON_TYPES.SPEC_SHEET:

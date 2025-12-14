@@ -3,6 +3,23 @@
  * 
  * Comprehensive analytics for sellers to track performance,
  * views, inquiries, and trends over time.
+ * 
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │ ENTITLEMENT RULES (ENFORCED)                                            │
+ * │                                                                          │
+ * │ ❌ Buyers: Never see analytics                                          │
+ * │ ❌ Unverified entities: Never see analytics                             │
+ * │                                                                          │
+ * │ ✅ Verified Contractors: Full analytics (included in $150/year)         │
+ * │ ✅ Verified Companies: Full analytics (included in $150/year)           │
+ * │                                                                          │
+ * │ ⚠️ Verified Sellers: Analytics LOCKED by default                        │
+ * │    - Must purchase analytics add-on separately                          │
+ * │    - Uses existing billing flow                                         │
+ * │    - Check: user.sellerAnalyticsEntitled === true                       │
+ * │                                                                          │
+ * │ No bypass paths. Entitlements checked server-side.                      │
+ * └─────────────────────────────────────────────────────────────────────────┘
  */
 
 import { Metadata } from 'next';
@@ -11,7 +28,13 @@ import Link from 'next/link';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/db';
 import Listing from '@/models/Listing';
+import User from '@/models/User';
+import AddOnPurchase from '@/models/AddOnPurchase';
+import { ADD_ON_TYPES } from '@/config/pricing';
 import { Types } from 'mongoose';
+import { ExpandedAnalyticsSection } from '@/components/dashboard/ExpandedAnalyticsSection';
+import { SEOStatusSection } from '@/components/dashboard/SEOStatusSection';
+import { AnalyticsPurchaseButton } from '@/components/dashboard/AnalyticsPurchaseButton';
 
 export const metadata: Metadata = {
   title: 'Analytics | The Rail Exchange',
@@ -160,6 +183,244 @@ export default async function AnalyticsPage() {
   if (!session?.user?.id) {
     return null;
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ENTITLEMENT CHECK (LOCKED ARCHITECTURE)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // - Buyers: NEVER
+  // - Sellers: Locked by default, must purchase analytics add-on
+  // - Professionals (Contractor = Company): ALWAYS included ($2,500/year)
+  //   ❌ No analytics upsells for professionals
+  // ═══════════════════════════════════════════════════════════════════════════
+  await connectDB();
+  
+  // Query user and check for active analytics add-on in parallel
+  const [user, analyticsAddOn] = await Promise.all([
+    User.findById(session.user.id).lean(),
+    AddOnPurchase.findOne({
+      userId: new Types.ObjectId(session.user.id),
+      type: ADD_ON_TYPES.SELLER_ANALYTICS,
+      status: 'active',
+      $or: [
+        { expiresAt: { $gt: new Date() } },
+        { expiresAt: null },
+      ],
+    }).lean(),
+  ]);
+  
+  if (!user) {
+    return null;
+  }
+
+  // Determine user type and analytics entitlement
+  const isContractor = user.isContractor === true;
+  // Company = enterprise tier with company name
+  const isCompany = !!user.company && user.sellerTier === 'enterprise';
+  const isVerifiedSeller = user.isVerifiedSeller === true;
+  const isBuyer = !isContractor && !isCompany && !isVerifiedSeller && user.sellerTier === 'buyer';
+  
+  // Professional = contractor tier 'professional', 'platform', 'priority' OR enterprise seller
+  const isProfessional = user.contractorTier === 'professional' || 
+                         user.contractorTier === 'platform' || 
+                         user.contractorTier === 'priority' ||
+                         isCompany;
+  
+  // Analytics entitlement rules (LOCKED):
+  // - Professionals (Contractor = Company): ALWAYS included ($2,500/year)
+  // - Sellers: Must purchase analytics add-on ($49/year)
+  // - Buyers: NEVER
+  
+  const sellerHasAnalytics = isVerifiedSeller && !!analyticsAddOn;
+  const professionalHasAnalytics = (isContractor || isCompany) && isProfessional;
+  
+  const hasAnalyticsAccess = professionalHasAnalytics || sellerHasAnalytics;
+  
+  // Buyers NEVER see analytics
+  if (isBuyer) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-2xl border border-surface-border p-12 text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-navy-900 mb-2">Analytics Not Available</h2>
+          <p className="text-slate-500 mb-6">
+            Analytics are available for verified sellers and professionals (contractors/companies).
+          </p>
+          <Link
+            href="/dashboard/verification/seller"
+            className="inline-flex items-center gap-2 bg-rail-orange hover:bg-rail-orange-dark text-white font-medium py-3 px-6 rounded-xl transition-colors"
+          >
+            Become a Verified Seller
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Contractors/Companies without Professional plan see upsell
+  if ((isContractor || isCompany) && !isProfessional) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <h1 className="heading-xl mb-2">Analytics</h1>
+          <p className="text-body-md text-text-secondary">
+            Track your performance and marketplace insights.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-surface-border p-12 text-center">
+          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-navy-900 mb-2">Unlock Full Analytics</h2>
+          <p className="text-slate-500 mb-4">
+            Subscribe to the Professional Verified Plan to access full analytics and all platform features.
+          </p>
+          <div className="bg-slate-50 rounded-lg p-4 mb-6 text-left max-w-md mx-auto">
+            <p className="text-sm font-medium text-navy-900 mb-2">Professional Verified Plan — $2,500/year</p>
+            <ul className="text-sm text-slate-600 space-y-1">
+              <li>✓ Full analytics suite</li>
+              <li>✓ Performance dashboards</li>
+              <li>✓ Lead intelligence</li>
+              <li>✓ Business verification included</li>
+              <li>✓ Contractor directory listing</li>
+            </ul>
+          </div>
+          <Link
+            href="/dashboard/billing"
+            className="inline-flex items-center gap-2 bg-rail-orange hover:bg-rail-orange-dark text-white font-medium py-3 px-6 rounded-xl transition-colors"
+          >
+            Subscribe to Professional Plan
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Sellers without analytics entitlement see locked state with upsell
+  if (isVerifiedSeller && !sellerHasAnalytics) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <h1 className="heading-xl mb-2">Analytics</h1>
+          <p className="text-body-md text-text-secondary">
+            Track your listing performance and marketplace insights.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-surface-border p-12 text-center">
+          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-navy-900 mb-2">Unlock Analytics</h2>
+          <p className="text-slate-500 mb-4">
+            Get detailed insights into your listing performance, view trends, inquiry tracking, and conversion metrics.
+          </p>
+          <ul className="text-left max-w-md mx-auto mb-6 space-y-2">
+            <li className="flex items-center gap-2 text-slate-600">
+              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Total views & inquiry tracking
+            </li>
+            <li className="flex items-center gap-2 text-slate-600">
+              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Top performing listings
+            </li>
+            <li className="flex items-center gap-2 text-slate-600">
+              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Category performance breakdown
+            </li>
+            <li className="flex items-center gap-2 text-slate-600">
+              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Conversion rate analysis
+            </li>
+            <li className="flex items-center gap-2 text-slate-600">
+              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Outbound click tracking (website, email, phone)
+            </li>
+          </ul>
+          <AnalyticsPurchaseButton />
+          <p className="text-xs text-slate-400 mt-4">
+            Analytics also included with Professional Plan ($2,500/year) for contractors and companies.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Unverified users see locked state
+  if (!hasAnalyticsAccess) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <h1 className="heading-xl mb-2">Analytics</h1>
+          <p className="text-body-md text-text-secondary">
+            Track your listing performance and marketplace insights.
+          </p>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-surface-border p-12 text-center">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-navy-900 mb-2">Analytics Access Required</h2>
+          <p className="text-slate-500 mb-6">
+            Analytics are available based on your account type:
+          </p>
+          <div className="text-left max-w-md mx-auto mb-6 space-y-3">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="font-medium text-navy-900 text-sm">Sellers</p>
+              <p className="text-xs text-slate-500">Purchase analytics add-on</p>
+            </div>
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="font-medium text-navy-900 text-sm">Contractors</p>
+              <p className="text-xs text-slate-500">Verification ($150/yr) + Platform Plan ($349/mo)</p>
+            </div>
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="font-medium text-navy-900 text-sm">Companies</p>
+              <p className="text-xs text-slate-500">Included with Company Plan ($2,500/year)</p>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/dashboard/verification/seller"
+              className="inline-flex items-center justify-center gap-2 bg-rail-orange hover:bg-rail-orange-dark text-white font-medium py-3 px-6 rounded-xl transition-colors"
+            >
+              Seller Verification
+            </Link>
+            <Link
+              href="/dashboard/contractor/verify"
+              className="inline-flex items-center justify-center gap-2 bg-navy-900 hover:bg-navy-800 text-white font-medium py-3 px-6 rounded-xl transition-colors"
+            >
+              Contractor Verification
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // USER HAS ANALYTICS ACCESS - Show full dashboard
+  // ═══════════════════════════════════════════════════════════════════════════
 
   const data = await getAnalyticsData(session.user.id);
 
@@ -392,6 +653,29 @@ export default async function AnalyticsPage() {
         )}
       </div>
 
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {/* EXPANDED ANALYTICS SECTION (POST-PROFILES)                              */}
+      {/* Outbound clicks, source attribution, map metrics, time range controls   */}
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      <div className="mt-8">
+        <ExpandedAnalyticsSection
+          targetType={isContractor ? 'contractor' : isCompany ? 'company' : 'seller'}
+          targetId={session.user.id}
+          hasMapVisibility={isContractor || isCompany}
+        />
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {/* SEO VISIBILITY SECTION (READ-ONLY)                                      */}
+      {/* Shows how profile appears to search engines - no editing allowed        */}
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      <div className="mt-8">
+        <SEOStatusSection
+          targetType={isContractor ? 'contractor' : isCompany ? 'company' : 'seller'}
+          targetId={session.user.id}
+        />
+      </div>
+
       {/* Tips Card */}
       <div className="mt-8 bg-gradient-to-r from-navy-900 to-navy-800 rounded-2xl p-8 text-white">
         <div className="flex flex-col md:flex-row md:items-center gap-6">
@@ -403,7 +687,7 @@ export default async function AnalyticsPage() {
           <div className="flex-1">
             <h3 className="heading-md mb-2">Boost Your Performance</h3>
             <p className="text-body-md text-white/80">
-              Listings with high-quality photos get 3x more views. Feature your top listings to increase visibility and get more inquiries from serious buyers.
+              Listings with high-quality photos tend to perform better. Feature your top listings to increase visibility.
             </p>
           </div>
           <Link
@@ -414,6 +698,11 @@ export default async function AnalyticsPage() {
           </Link>
         </div>
       </div>
+
+      {/* Analytics Disclaimer Footer */}
+      <p className="mt-8 text-center text-xs text-text-tertiary italic">
+        Analytics are provided for informational purposes only and do not guarantee leads, sales, or outcomes.
+      </p>
     </div>
   );
 }

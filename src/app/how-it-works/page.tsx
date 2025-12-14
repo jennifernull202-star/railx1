@@ -180,7 +180,7 @@ export default function HowItWorksPage() {
                 {
                   step: '3',
                   title: 'Boost Visibility',
-                  desc: 'Use add-ons like Featured or Premium placement for more views.',
+                  desc: 'Use add-ons like Featured or Premium placement to increase visibility.',
                   icon: TrendingUp,
                 },
                 {

@@ -214,7 +214,7 @@ export default function VerificationPaymentPage() {
             { icon: BadgeCheck, text: 'Verified badge on your profile' },
             { icon: TrendingUp, text: 'Priority search placement' },
             { icon: Star, text: 'Featured in directory' },
-            { icon: Users, text: 'Increased buyer trust' },
+            { icon: Users, text: 'Document review completed' },
             { icon: Shield, text: 'Document verification seal' },
             { icon: Clock, text: 'Analytics dashboard access' },
           ].map((benefit, idx) => (

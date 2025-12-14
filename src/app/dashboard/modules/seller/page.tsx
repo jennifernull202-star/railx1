@@ -319,7 +319,7 @@ export default function SellerDashboard() {
               </div>
               <div>
                 <h4 className="font-medium text-navy-900 text-sm">Add More Photos</h4>
-                <p className="text-xs text-text-secondary">Listings with 5+ photos get 3x more views</p>
+                <p className="text-xs text-text-secondary">Listings with more photos tend to perform better</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-4 bg-surface-secondary rounded-lg">
@@ -341,7 +341,7 @@ export default function SellerDashboard() {
               </div>
               <div>
                 <h4 className="font-medium text-navy-900 text-sm">Respond Quickly</h4>
-                <p className="text-xs text-text-secondary">Fast responses lead to 2x more sales</p>
+                <p className="text-xs text-text-secondary">Timely responses improve buyer experience</p>
               </div>
             </div>
           </div>

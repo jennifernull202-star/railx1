@@ -1,19 +1,13 @@
 /**
  * THE RAIL EXCHANGE™ — Admin Settings
  * 
- * Platform configuration and settings.
+ * Platform configuration only.
+ * ADMIN IA GOVERNANCE: Pricing moved to /admin/monetization (reference)
  */
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { redirect } from 'next/navigation';
-import { 
-  SELLER_TIER_CONFIG, 
-  CONTRACTOR_TIER_CONFIG,
-  ADD_ON_PRICING,
-  ADD_ON_METADATA,
-  formatPrice 
-} from '@/config/pricing';
+import { Settings, Info } from 'lucide-react';
 
 export default async function AdminSettingsPage() {
   let session;
@@ -32,119 +26,63 @@ export default async function AdminSettingsPage() {
       <div className="mb-8">
         <h1 className="text-display-sm font-bold text-navy-900">Settings</h1>
         <p className="text-body-md text-text-secondary mt-1">
-          Platform configuration and pricing overview
+          Platform configuration and environment status
         </p>
       </div>
 
       <div className="grid gap-8">
-        {/* Seller Tiers */}
-        <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
-          <h2 className="text-heading-md font-bold text-navy-900 mb-4">Seller Subscription Tiers</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-surface-secondary">
-                <tr>
-                  <th className="px-4 py-3 text-left text-body-sm font-semibold">Tier</th>
-                  <th className="px-4 py-3 text-left text-body-sm font-semibold">Price</th>
-                  <th className="px-4 py-3 text-left text-body-sm font-semibold">Listing Limit</th>
-                  <th className="px-4 py-3 text-left text-body-sm font-semibold">Features</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-border">
-                {Object.entries(SELLER_TIER_CONFIG).map(([tier, config]) => (
-                  <tr key={tier}>
-                    <td className="px-4 py-3 font-medium">{config.name}</td>
-                    <td className="px-4 py-3">{formatPrice(config.priceMonthly)}/mo</td>
-                    <td className="px-4 py-3">
-                      {config.listingLimit === -1 ? 'Unlimited' : config.listingLimit}
-                    </td>
-                    <td className="px-4 py-3 text-body-sm text-text-secondary">
-                      {config.features.slice(0, 2).join(', ')}
-                      {config.features.length > 2 && '...'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Contractor Tiers */}
-        <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
-          <h2 className="text-heading-md font-bold text-navy-900 mb-4">Contractor Subscription Tiers</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-surface-secondary">
-                <tr>
-                  <th className="px-4 py-3 text-left text-body-sm font-semibold">Tier</th>
-                  <th className="px-4 py-3 text-left text-body-sm font-semibold">Price</th>
-                  <th className="px-4 py-3 text-left text-body-sm font-semibold">Features</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-border">
-                {Object.entries(CONTRACTOR_TIER_CONFIG).map(([tier, config]) => (
-                  <tr key={tier}>
-                    <td className="px-4 py-3 font-medium">{config.name}</td>
-                    <td className="px-4 py-3">{formatPrice(config.priceMonthly)}/mo</td>
-                    <td className="px-4 py-3 text-body-sm text-text-secondary">
-                      {config.features.slice(0, 3).join(', ')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Add-On Pricing */}
-        <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
-          <h2 className="text-heading-md font-bold text-navy-900 mb-4">Add-On Pricing</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-surface-secondary">
-                <tr>
-                  <th className="px-4 py-3 text-left text-body-sm font-semibold">Add-On</th>
-                  <th className="px-4 py-3 text-left text-body-sm font-semibold">Price</th>
-                  <th className="px-4 py-3 text-left text-body-sm font-semibold">Description</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-border">
-                {Object.entries(ADD_ON_PRICING).map(([type, price]) => {
-                  const metadata = ADD_ON_METADATA[type as keyof typeof ADD_ON_METADATA];
-                  return (
-                    <tr key={type}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span>{metadata?.icon}</span>
-                          <span className="font-medium">{metadata?.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">{formatPrice(price as number)}</td>
-                      <td className="px-4 py-3 text-body-sm text-text-secondary">
-                        {metadata?.shortDescription}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
         {/* Environment Info */}
         <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
-          <h2 className="text-heading-md font-bold text-navy-900 mb-4">Environment</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
+          <h2 className="text-heading-md font-bold text-navy-900 mb-4 flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Environment
+          </h2>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="p-4 bg-surface-secondary rounded-lg">
               <p className="text-body-sm text-text-secondary">Stripe Mode</p>
-              <p className="font-medium">
+              <p className="font-medium text-lg">
                 {process.env.STRIPE_SECRET_KEY?.startsWith('sk_live') ? '🟢 Live' : '🟡 Test'}
               </p>
             </div>
-            <div>
+            <div className="p-4 bg-surface-secondary rounded-lg">
               <p className="text-body-sm text-text-secondary">Database</p>
-              <p className="font-medium">MongoDB Atlas</p>
+              <p className="font-medium text-lg">MongoDB Atlas</p>
             </div>
+            <div className="p-4 bg-surface-secondary rounded-lg">
+              <p className="text-body-sm text-text-secondary">Environment</p>
+              <p className="font-medium text-lg">
+                {process.env.NODE_ENV === 'production' ? '🟢 Production' : '🟡 Development'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Platform Limits - Placeholder */}
+        <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
+          <h2 className="text-heading-md font-bold text-navy-900 mb-4">Platform Limits</h2>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+            <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-body-sm text-blue-800">
+                Platform limits and configuration flags are managed via environment variables and code constants.
+              </p>
+              <p className="text-body-sm text-blue-700 mt-1">
+                For pricing reference, see <strong>Admin → Monetization (Reference)</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Feature Flags - Placeholder */}
+        <div className="bg-white rounded-2xl shadow-card border border-surface-border p-6">
+          <h2 className="text-heading-md font-bold text-navy-900 mb-4">Feature Configuration</h2>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+            <p className="text-text-secondary">
+              No configurable feature flags available.
+            </p>
+            <p className="text-body-sm text-text-tertiary mt-1">
+              Feature toggles are managed via deployment configuration.
+            </p>
           </div>
         </div>
       </div>

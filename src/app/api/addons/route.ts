@@ -329,27 +329,13 @@ export async function POST(request: NextRequest) {
 async function updateListingAddOns(listingId: string, type: AddOnType, expiresAt: Date | null) {
   const updateData: Record<string, unknown> = {};
   
-  if (type === ADD_ON_TYPES.FEATURED) {
-    updateData['premiumAddOns.featured'] = {
-      active: true,
-      expiresAt: expiresAt,
-    };
-  } else if (type === ADD_ON_TYPES.PREMIUM) {
-    updateData['premiumAddOns.premium'] = {
-      active: true,
-      expiresAt: expiresAt,
-    };
-    // Premium also gets featured
-    updateData['premiumAddOns.featured'] = {
-      active: true,
-      expiresAt: expiresAt,
-    };
-  } else if (type === ADD_ON_TYPES.ELITE) {
+  // Elite is the ONLY placement tier (no Premium/Featured tiers)
+  if (type === ADD_ON_TYPES.ELITE) {
     updateData['premiumAddOns.elite'] = {
       active: true,
       expiresAt: expiresAt,
     };
-    // Elite gets premium and featured
+    // Also set legacy premium/featured flags for backward compatibility
     updateData['premiumAddOns.premium'] = {
       active: true,
       expiresAt: expiresAt,

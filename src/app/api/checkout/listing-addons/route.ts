@@ -72,9 +72,8 @@ export async function POST(request: Request) {
         // Fallback to price_data for add-ons without Stripe price IDs
         const price = ADD_ON_PRICING[addonId as keyof typeof ADD_ON_PRICING];
         if (price) {
+          // Elite is the ONLY placement tier (no Premium/Featured tiers)
           const addonNames: Record<string, string> = {
-            [ADD_ON_TYPES.FEATURED]: 'Featured Listing (30 days)',
-            [ADD_ON_TYPES.PREMIUM]: 'Premium Placement (30 days)',
             [ADD_ON_TYPES.ELITE]: 'Elite Placement (30 days)',
             [ADD_ON_TYPES.AI_ENHANCEMENT]: 'AI Listing Enhancement',
             [ADD_ON_TYPES.SPEC_SHEET]: 'Spec Sheet PDF',

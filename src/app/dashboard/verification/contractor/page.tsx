@@ -8,6 +8,19 @@
  * - Submit for verification (AI + Admin review)
  * - Complete subscription payment after approval
  * - Manage verified contractor badge
+ * 
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │ ARCHITECTURAL NOTE: Does NOT consume /api/verification              │
+ * │                                                                      │
+ * │ This page uses /api/contractors/verification/status because:        │
+ * │ - Auth-gated access to contractor's own verification                │
+ * │ - Profile-specific verification documents                           │
+ * │ - Badge purchase and subscription status                            │
+ * │ - Submission and payment workflow data                              │
+ * │                                                                      │
+ * │ The public /api/verification endpoint returns badge status only.    │
+ * │ It cannot serve management UI needs. This separation is correct.    │
+ * └─────────────────────────────────────────────────────────────────────┘
  */
 
 'use client';
@@ -307,7 +320,7 @@ export default function ContractorVerificationPage() {
               <div className="bg-slate-50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-navy-900">Verified Contractor Badge</span>
-                  <span className="text-lg font-bold text-navy-900">$29.99/mo</span>
+                  <span className="text-lg font-bold text-navy-900">$150/year</span>
                 </div>
                 <ul className="text-sm text-slate-600 space-y-1 mb-4">
                   <li className="flex items-center gap-2">
@@ -321,6 +334,10 @@ export default function ContractorVerificationPage() {
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
                     Trust indicator for clients
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    Full analytics dashboard included
                   </li>
                 </ul>
                 <Button
@@ -336,7 +353,7 @@ export default function ContractorVerificationPage() {
                   ) : (
                     <>
                       <CreditCard className="w-4 h-4 mr-2" />
-                      Activate Badge - $29.99/mo
+                      Activate Badge - $150/year
                     </>
                   )}
                 </Button>
@@ -413,7 +430,7 @@ export default function ContractorVerificationPage() {
                 )}
               </Button>
               <p className="text-xs text-slate-500 text-center">
-                $29.99/month after approval. Cancel anytime.
+                $150/year after approval. Analytics included. Cancel anytime.
               </p>
             </div>
           )}

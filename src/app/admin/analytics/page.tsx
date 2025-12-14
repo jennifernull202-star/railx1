@@ -78,6 +78,10 @@ export default function AdminAnalyticsPage() {
 
   return (
     <div className="space-y-6">
+      {/* WIRING COMPLETE: Analytics now backed by real /api/admin/analytics data */}
+      {/* API provides: totalUsers, totalListings, totalContractors, totalInquiries, totalRevenue */}
+      {/* Plus: listingsByCategory, listingsByStatus, topLocations, userGrowth, recentActivity */}
+
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-[#0A1A2F]">Analytics Dashboard</h1>
         <div className="flex gap-2">

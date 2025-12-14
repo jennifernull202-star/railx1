@@ -31,12 +31,12 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { escapeRegex, validateManufacturer } from '@/lib/sanitize';
 
 // Add-on ranking weights for scoring (based on tier system)
-// Each tier = ~250 base points, multiplied by ranking boost from config
+// Elite is the ONLY placement tier - no Premium/Featured tiers
 const BASE_TIER_POINTS = 250;
 const RANKING_WEIGHTS = {
   elite: BASE_TIER_POINTS * ADD_ON_RANKING_BOOST[ADD_ON_TYPES.ELITE],      // +3 tier = 750
-  premium: BASE_TIER_POINTS * ADD_ON_RANKING_BOOST[ADD_ON_TYPES.PREMIUM],  // +2 tier = 500
-  featured: BASE_TIER_POINTS * ADD_ON_RANKING_BOOST[ADD_ON_TYPES.FEATURED], // +1 tier = 250
+  premium: BASE_TIER_POINTS * 2, // Legacy support: map to elite/2 = 500
+  featured: BASE_TIER_POINTS * 1, // Legacy support: map to elite/3 = 250
   aiEnhanced: 25, // Small bonus for AI-enhanced content
   specSheet: 10,  // Small bonus for having spec sheet
 };

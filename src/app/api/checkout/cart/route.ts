@@ -37,10 +37,9 @@ function getStripePriceId(type: 'seller' | 'contractor', tier: string, period: s
 }
 
 // Get add-on Stripe price ID
+// Elite is the ONLY placement tier (no Premium/Featured tiers)
 function getAddonPriceId(addonType: string): string {
   const addonMap: Record<string, string> = {
-    [ADD_ON_TYPES.FEATURED]: process.env.STRIPE_PRICE_ADDON_FEATURED || '',
-    [ADD_ON_TYPES.PREMIUM]: process.env.STRIPE_PRICE_ADDON_PREMIUM || '',
     [ADD_ON_TYPES.ELITE]: process.env.STRIPE_PRICE_ADDON_ELITE || '',
     [ADD_ON_TYPES.AI_ENHANCEMENT]: process.env.STRIPE_PRICE_ADDON_AI || '',
     [ADD_ON_TYPES.SPEC_SHEET]: process.env.STRIPE_PRICE_ADDON_SPEC || '',

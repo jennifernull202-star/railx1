@@ -3,6 +3,12 @@
  * 
  * Interactive map showing contractor locations with filters and cards.
  * Features markers, clustering, and sidebar contractor list.
+ * 
+ * 📍 MAP VISIBILITY RULES (LOCKED):
+ * ✅ Verified Contractors/Companies: ALWAYS shown (Professional Plan)
+ * ❌ Buyers: NEVER shown
+ * 
+ * See /src/lib/map-visibility.ts for full rules.
  */
 
 'use client';
@@ -20,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { filterContractorsForMap } from '@/lib/map-visibility';
 
 export interface ContractorMapItem {
   id: string;
@@ -30,9 +37,11 @@ export interface ContractorMapItem {
   contractorTypes?: string[];
   regionsServed: string[];
   verificationStatus: 'pending' | 'verified' | 'rejected' | 'expired';
-  visibilityTier?: 'none' | 'verified' | 'featured' | 'priority';
+  visibilityTier?: 'none' | 'verified' | 'featured' | 'priority' | 'professional';
   verifiedBadgePurchased?: boolean;
   yearsInBusiness?: number;
+  isActive?: boolean;
+  isPublished?: boolean;
   location: {
     city?: string;
     state?: string;
@@ -69,7 +78,7 @@ const ContractorMap: React.FC<ContractorMapProps> = ({
   const [viewMode, setViewMode] = React.useState<'split' | 'map' | 'list'>('split');
   const markersRef = React.useRef<google.maps.Marker[]>([]);
 
-  // Filter contractors
+  // Filter contractors for display
   const filteredContractors = React.useMemo(() => {
     return contractors.filter((contractor) => {
       // Filter by legacy service
@@ -93,7 +102,16 @@ const ContractorMap: React.FC<ContractorMapProps> = ({
     });
   }, [contractors, filters]);
 
-  // Update map markers
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MAP VISIBILITY FILTER (LOCKED RULES)
+  // Contractors/Companies: Must be verified + Professional Plan
+  // ═══════════════════════════════════════════════════════════════════════════
+  const mapEligibleContractors = React.useMemo(() => {
+    // Apply user filters first, then map visibility rules
+    return filterContractorsForMap(filteredContractors);
+  }, [filteredContractors]);
+
+  // Update map markers — ONLY for map-eligible contractors
   React.useEffect(() => {
     if (!map) return;
 
@@ -101,11 +119,11 @@ const ContractorMap: React.FC<ContractorMapProps> = ({
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
 
-    // Add new markers
+    // Add new markers — ONLY for map-eligible contractors (visibility rules enforced)
     const bounds = new google.maps.LatLngBounds();
     let hasValidLocations = false;
 
-    filteredContractors.forEach((contractor) => {
+    mapEligibleContractors.forEach((contractor) => {
       if (contractor.location.lat && contractor.location.lng) {
         hasValidLocations = true;
         const position = {
@@ -149,7 +167,7 @@ const ContractorMap: React.FC<ContractorMapProps> = ({
     if (hasValidLocations && markersRef.current.length > 1) {
       map.fitBounds(bounds, 50);
     }
-  }, [map, filteredContractors, onContractorSelect]);
+  }, [map, mapEligibleContractors, onContractorSelect]);
 
   const handleFilterChange = (key: string, value: string | boolean) => {
     const newFilters = { ...filters, [key]: value };

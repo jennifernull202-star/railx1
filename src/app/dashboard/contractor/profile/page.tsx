@@ -635,7 +635,7 @@ export default function ContractorProfilePage() {
               Want More Visibility?
             </h3>
             <p className="text-blue-100 text-sm mb-4">
-              Get verified to increase trust, rank higher in search, and attract more leads.
+              Complete document review to display a verification badge on your profile.
             </p>
             <Link
               href="/dashboard/contractor/verify"

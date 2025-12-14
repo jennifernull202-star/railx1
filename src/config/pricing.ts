@@ -3,6 +3,27 @@
  * 
  * SINGLE SOURCE OF TRUTH for all pricing, subscriptions, and add-ons.
  * 
+ * LOCKED ARCHITECTURE — CONTEXT ALIGNED
+ * 
+ * VERIFICATION TYPES & PRICING:
+ * - Buyer: $1 one-time (lifetime) - "Identity Confirmed" badge
+ * - Seller: $29/year - "Identity Verified" badge
+ * - Professional (Contractor = Company): $2,500/year ALL-IN
+ *   ❌ No contractor-only tiers
+ *   ❌ No company-only tiers
+ *   ❌ No analytics upsells for professionals
+ *   ❌ No monthly plans
+ * 
+ * ADD-ONS:
+ * - Elite Placement ONLY: $99/30 days (no Premium/Featured tiers)
+ * - AI Enhancement: $10/use
+ * - Spec Sheet: $25 one-time
+ * 
+ * ANALYTICS ENTITLEMENTS:
+ * - Buyers: NEVER
+ * - Sellers: Locked by default, must purchase add-on
+ * - Professionals (Contractor/Company): ALWAYS included ($2,500/year)
+ * 
  * IMPORTANT: 
  * - All pricing must be managed here. Do not hardcode prices anywhere else.
  * - Stripe Price IDs are loaded from environment variables.
@@ -10,15 +31,61 @@
  */
 
 // ============================================================================
-// SELLER SUBSCRIPTION TIERS
+// BUYER VERIFICATION (Required for buyer actions - NOT browsing)
+// ============================================================================
+
+export const BUYER_VERIFICATION = {
+  price: 100, // $1.00 one-time
+  lifetime: true,
+  badge: 'Identity Confirmed',
+  stripePriceId: process.env.STRIPE_PRICE_BUYER_VERIFICATION || '',
+  requiredFor: [
+    'Send inquiries',
+    'Message sellers/contractors',
+    'Leave reviews',
+    'Indicate purchase intent',
+  ],
+  notRequiredFor: [
+    'Browse listings',
+    'Search',
+    'View profiles',
+    'Read reviews',
+  ],
+  disclaimer: 'Identity confirmation verifies the account belongs to a real person. It does not imply purchasing authority or endorsement.',
+} as const;
+
+// ============================================================================
+// VERIFIED BUYER ACTIVITY BADGE (Optional, FREE, earned)
+// ============================================================================
+
+export const VERIFIED_BUYER_ACTIVITY = {
+  price: 0, // FREE - earned badge
+  badge: 'Verified Buyer (Activity)',
+  requirements: {
+    identityVerified: true,
+    minCompletedPurchases: 3,
+    minAccountAgeDays: 30,
+    noAbuseFlags: true,
+  },
+  disclaimer: 'Verified Buyer (Activity) reflects completed marketplace transactions. It does not imply financial capability, purchasing authority, or endorsement.',
+  styling: {
+    colors: 'neutral', // gray/slate only
+    noGreen: true,
+    noShields: true,
+    noCheckmarks: true,
+  },
+} as const;
+
+// ============================================================================
+// SELLER SUBSCRIPTION TIERS (Legacy - sellers only need verification now)
 // ============================================================================
 
 export const SELLER_TIERS = {
   BUYER: 'buyer',           // Free tier (browse only, no listings)
-  BASIC: 'basic',           // $29/mo - 3 listings
-  PLUS: 'plus',             // $59/mo - 10 listings
-  PRO: 'pro',               // $100/mo - unlimited
-  ENTERPRISE: 'enterprise', // Custom pricing
+  BASIC: 'basic',           // Legacy - kept for backward compatibility
+  PLUS: 'plus',             // Legacy - kept for backward compatibility
+  PRO: 'pro',               // Legacy - kept for backward compatibility
+  ENTERPRISE: 'enterprise', // Legacy - kept for backward compatibility
 } as const;
 
 export type SellerTier = typeof SELLER_TIERS[keyof typeof SELLER_TIERS];
@@ -154,9 +221,9 @@ export interface SellerVerificationTierConfig {
 export const SELLER_VERIFICATION_CONFIG: Record<SellerVerificationTier, SellerVerificationTierConfig> = {
   [SELLER_VERIFICATION_TIERS.STANDARD]: {
     id: SELLER_VERIFICATION_TIERS.STANDARD,
-    name: 'Standard Verification',
-    description: 'Required verification to create listings',
-    price: 2900, // $29.00
+    name: 'Seller Identity Verification',
+    description: 'Annual identity verification to create listings',
+    price: 2900, // $29.00/year
     features: [
       'Business document submission',
       'Document review',
@@ -167,42 +234,43 @@ export const SELLER_VERIFICATION_CONFIG: Record<SellerVerificationTier, SellerVe
     ],
     stripePriceId: process.env.STRIPE_PRICE_SELLER_VERIFIED || '',
     slaHours: 24,
-    popular: false,
+    popular: true, // Default option
   },
   [SELLER_VERIFICATION_TIERS.PRIORITY]: {
     id: SELLER_VERIFICATION_TIERS.PRIORITY,
-    name: 'Priority Verification',
-    description: 'Fast-track verification with visibility benefits',
-    price: 4900, // $49.00
+    name: 'Priority Seller Verification',
+    description: 'Fast-track identity verification',
+    price: 4900, // $49.00/year
     features: [
       'Priority document review',
       'Business document submission',
       'Document review',
       'Admin review process',
       'Identity Verified badge',
-      '3-day ranking boost for first listing',
-      'Priority review queue',
+      'Same-day processing',
       'Valid for 1 year',
     ],
     stripePriceId: process.env.STRIPE_PRICE_PREMIUM_SELLER_VERIFIED || '',
     slaHours: 0, // Instant
-    badge: 'Priority Verified Seller',
-    rankingBoostDays: 3,
-    popular: true,
+    popular: false,
   },
 };
 
 // ============================================================================
-// CONTRACTOR TIERS — PAID VISIBILITY ONLY
+// CONTRACTOR TIERS — LEGACY (Now unified under Professional Plan)
 // ============================================================================
-// No free tier. Contractors MUST be verified AND subscribed to appear anywhere.
-// Verification is a one-time annual payment. Visibility tiers are monthly.
+// NOTE: Contractors and Companies are NOW the SAME commercial class.
+// All professionals use PROFESSIONAL_PLAN at $2,500/year ALL-IN.
+// These tiers are LEGACY - kept only for backwards compatibility with existing data.
 
 export const CONTRACTOR_TIERS = {
-  NONE: 'none',               // Default - NOT visible anywhere (must verify + subscribe)
-  VERIFIED: 'verified',       // Base tier - paid verification, appears in search/maps
-  FEATURED: 'featured',       // Priority placement, highlighted on maps
-  PRIORITY: 'priority',       // Top placement, limited slots, premium badge
+  NONE: 'none',               // Default - NOT visible (must subscribe to Professional)
+  VERIFIED: 'verified',       // Legacy - maps to Professional
+  PLATFORM: 'platform',       // Legacy - maps to Professional
+  PROFESSIONAL: 'professional', // Current: $2,500/year ALL-IN
+  // Legacy tiers - kept for backwards compatibility with existing data
+  FEATURED: 'featured',       // Legacy - maps to Professional
+  PRIORITY: 'priority',       // Legacy - maps to Professional
 } as const;
 
 export type ContractorTier = typeof CONTRACTOR_TIERS[keyof typeof CONTRACTOR_TIERS];
@@ -211,7 +279,7 @@ export interface ContractorTierConfig {
   id: ContractorTier;
   name: string;
   description: string;
-  priceMonthly: number;  // in cents (0 for base after verification)
+  priceMonthly: number;  // in cents (0 for verification-only)
   priceYearly?: number;  // in cents
   features: string[];
   stripePriceIdMonthly?: string;
@@ -219,7 +287,8 @@ export interface ContractorTierConfig {
   searchRankBoost: number;      // Multiplier for search ranking
   mapHighlight: boolean;        // Highlighted on maps
   listingPlacement: boolean;    // Appears on equipment listings
-  limitedSlots?: number;        // Per region/category limit (undefined = unlimited)
+  analytics: boolean;           // Access to analytics
+  leadIntelligence: boolean;    // Access to lead intelligence
   badge?: string;               // Badge text
   isHidden?: boolean;           // Not shown on pricing page
 }
@@ -239,13 +308,15 @@ export const CONTRACTOR_TIER_CONFIG: Record<ContractorTier, ContractorTierConfig
     searchRankBoost: 0,
     mapHighlight: false,
     listingPlacement: false,
+    analytics: false,
+    leadIntelligence: false,
     isHidden: true, // Don't show on pricing page
   },
   [CONTRACTOR_TIERS.VERIFIED]: {
     id: CONTRACTOR_TIERS.VERIFIED,
     name: 'Verified Contractor',
-    description: 'Verified and visible in contractor directory',
-    priceMonthly: 0, // Included with verification
+    description: 'Business verification to appear in directory',
+    priceMonthly: 0, // Verification is separate ($150/year)
     features: [
       'Appears in contractor search',
       'Visible on contractor map',
@@ -257,65 +328,118 @@ export const CONTRACTOR_TIER_CONFIG: Record<ContractorTier, ContractorTierConfig
     searchRankBoost: 1.0,
     mapHighlight: false,
     listingPlacement: false,
+    analytics: false, // Analytics requires Platform plan
+    leadIntelligence: false,
   },
-  [CONTRACTOR_TIERS.FEATURED]: {
-    id: CONTRACTOR_TIERS.FEATURED,
-    name: 'Featured Contractor',
-    description: 'Priority placement with enhanced visibility',
-    priceMonthly: 9900, // $99.00/month
-    priceYearly: 99000, // $990/year (2 months free)
+  [CONTRACTOR_TIERS.PLATFORM]: {
+    id: CONTRACTOR_TIERS.PLATFORM,
+    name: 'Contractor Platform',
+    description: 'Full platform access with analytics and lead intelligence',
+    priceMonthly: 34900, // $349.00/month
     features: [
       'Everything in Verified',
-      'Priority placement in search results',
-      'Highlighted on contractor map',
-      'Appears on relevant equipment listings',
-      'Featured badge on profile',
-      '2x search ranking boost',
+      'Full analytics suite',
+      'Performance dashboards',
+      'Lead intelligence',
+      'Ranking participation',
+      'Profile prominence',
+      'Priority support',
     ],
-    stripePriceIdMonthly: process.env.STRIPE_PRICE_CONTRACTOR_FEATURED_MONTHLY || '',
-    stripePriceIdYearly: process.env.STRIPE_PRICE_CONTRACTOR_FEATURED_YEARLY || '',
+    stripePriceIdMonthly: process.env.STRIPE_PRICE_CONTRACTOR_PLATFORM_MONTHLY || '',
     searchRankBoost: 2.0,
     mapHighlight: true,
     listingPlacement: true,
-    badge: 'Featured',
+    analytics: true,
+    leadIntelligence: true,
+    badge: 'Platform',
   },
+  // Legacy tier - maps to VERIFIED
+  [CONTRACTOR_TIERS.FEATURED]: {
+    id: CONTRACTOR_TIERS.FEATURED,
+    name: 'Featured Contractor (Legacy)',
+    description: 'Legacy tier - equivalent to Professional',
+    priceMonthly: 0,
+    features: ['Legacy - see Professional tier'],
+    searchRankBoost: 1.0,
+    mapHighlight: false,
+    listingPlacement: false,
+    analytics: false,
+    leadIntelligence: false,
+    isHidden: true,
+  },
+  // Legacy tier - maps to PROFESSIONAL
   [CONTRACTOR_TIERS.PRIORITY]: {
     id: CONTRACTOR_TIERS.PRIORITY,
-    name: 'Priority Contractor',
-    description: 'Top placement with exclusive positioning',
-    priceMonthly: 19900, // $199.00/month
-    priceYearly: 199000, // $1990/year (2 months free)
-    features: [
-      'Everything in Featured',
-      'Always first in search results',
-      'Premium highlighted badge',
-      'First on equipment listing pages',
-      'Limited slots per region (5 max)',
-      '3x search ranking boost',
-      'Priority support',
-    ],
-    stripePriceIdMonthly: process.env.STRIPE_PRICE_CONTRACTOR_PRIORITY_MONTHLY || '',
-    stripePriceIdYearly: process.env.STRIPE_PRICE_CONTRACTOR_PRIORITY_YEARLY || '',
-    searchRankBoost: 3.0,
+    name: 'Priority Contractor (Legacy)',
+    description: 'Legacy tier - equivalent to Professional',
+    priceMonthly: 0, // No monthly - annual only
+    priceYearly: 250000, // $2,500/year
+    features: ['Legacy - see Professional tier'],
+    searchRankBoost: 2.0,
     mapHighlight: true,
     listingPlacement: true,
-    limitedSlots: 5, // Per region
-    badge: 'Priority',
+    analytics: true,
+    leadIntelligence: true,
+    isHidden: true,
+  },
+  // Current tier: Professional Verified Plan
+  [CONTRACTOR_TIERS.PROFESSIONAL]: {
+    id: CONTRACTOR_TIERS.PROFESSIONAL,
+    name: 'Professional Verified',
+    description: 'All-in annual plan for contractors and companies',
+    priceMonthly: 0, // No monthly option
+    priceYearly: 250000, // $2,500.00/year
+    features: [
+      'Business verification included',
+      'Unlimited product listings',
+      'Public business profile',
+      'Full analytics suite',
+      'Performance dashboards',
+      'Lead intelligence',
+      'Ranking participation',
+      'Profile prominence',
+      'Full dashboard access',
+      'Contractor directory listing',
+      'Map visibility',
+      'Priority support',
+    ],
+    stripePriceIdYearly: process.env.STRIPE_PRICE_PROFESSIONAL_ANNUAL || '',
+    searchRankBoost: 2.0,
+    mapHighlight: true,
+    listingPlacement: true,
+    analytics: true, // ALWAYS included
+    leadIntelligence: true,
+    badge: 'Professional',
   },
 };
 
 // ============================================================================
-// CONTRACTOR VERIFICATION (Required BEFORE any visibility)
+// CONTRACTOR VERIFICATION — LEGACY (Now included in Professional Plan)
 // ============================================================================
-// One-time annual payment. Must complete:
-// - Identity verification
-// - Business verification
-// - Insurance upload
-// - Compliance confirmation
+// NOTE: Verification is now INCLUDED in the $2,500/year Professional Plan.
+// This section kept for backwards compatibility only.
 
+export const CONTRACTOR_VERIFICATION = {
+  name: 'Contractor Business Verification (Legacy)',
+  description: 'Now included in Professional Plan',
+  price: 0, // Included in Professional Plan
+  features: [
+    'Identity verification',
+    'Business verification',
+    'Insurance verification',
+    'Compliance confirmation',
+    'Verified Contractor badge',
+    '24-hour processing',
+    'Valid for 1 year',
+  ],
+  stripePriceId: '', // No longer sold separately
+  validityDays: 365,
+  includedInProfessionalPlan: true,
+} as const;
+
+// Legacy compatibility - keeping old structure for existing code
 export const CONTRACTOR_VERIFICATION_TIERS = {
   STANDARD: 'standard',
-  PRIORITY: 'priority',
 } as const;
 
 export type ContractorVerificationTier = typeof CONTRACTOR_VERIFICATION_TIERS[keyof typeof CONTRACTOR_VERIFICATION_TIERS];
@@ -334,9 +458,9 @@ export interface ContractorVerificationConfig {
 export const CONTRACTOR_VERIFICATION_CONFIG: Record<ContractorVerificationTier, ContractorVerificationConfig> = {
   [CONTRACTOR_VERIFICATION_TIERS.STANDARD]: {
     id: CONTRACTOR_VERIFICATION_TIERS.STANDARD,
-    name: 'Contractor Verification',
-    description: 'Required to appear in directory and receive inquiries',
-    price: 9900, // $99.00
+    name: 'Contractor Business Verification',
+    description: 'Required to appear in directory and access platform',
+    price: 15000, // $150.00/year
     features: [
       'Identity verification',
       'Business verification',
@@ -346,54 +470,89 @@ export const CONTRACTOR_VERIFICATION_CONFIG: Record<ContractorVerificationTier, 
       '24-hour processing',
       'Valid for 1 year',
     ],
-    stripePriceId: process.env.STRIPE_PRICE_CONTRACTOR_VERIFIED_MONTHLY || '',
+    stripePriceId: process.env.STRIPE_PRICE_CONTRACTOR_VERIFICATION || '',
     slaHours: 24,
     validityDays: 365,
   },
-  [CONTRACTOR_VERIFICATION_TIERS.PRIORITY]: {
-    id: CONTRACTOR_VERIFICATION_TIERS.PRIORITY,
-    name: 'Priority Contractor Verification',
-    description: 'Fast-track verification with immediate visibility',
-    price: 14900, // $149.00
-    features: [
-      'Everything in Standard',
-      'Instant processing',
-      'Priority badge for first 7 days',
-      '7-day Featured placement included',
-      'Valid for 1 year',
-    ],
-    stripePriceId: process.env.STRIPE_PRICE_CONTRACTOR_PRIORITY_VERIFICATION || '',
-    slaHours: 0, // Instant
-    validityDays: 365,
-  },
 };
+// ============================================================================
+// PROFESSIONAL PLAN ($2,500/year - Contractor = Company, UNIFIED)
+// ============================================================================
+// Contractors and Companies are the SAME commercial class.
+// Single annual charge includes everything. No upsells. No monthly option.
+
+export const PROFESSIONAL_PLAN = {
+  name: 'Professional Verified Plan',
+  description: 'All-in annual plan for contractors and companies',
+  price: 250000, // $2,500.00/year
+  stripePriceId: process.env.STRIPE_PRICE_PROFESSIONAL_ANNUAL || '',
+  includes: {
+    businessVerification: true, // No separate fee
+    unlimitedListings: true,
+    publicProfile: true,
+    fullAnalytics: true,        // ALWAYS included
+    performanceDashboards: true,
+    leadIntelligence: true,
+    rankingParticipation: true,
+    profileProminence: true,
+    fullDashboardAccess: true,
+    contractorDirectory: true,  // Visible in contractor search
+    mapListing: true,           // Visible on maps
+  },
+  features: [
+    'Business verification included',
+    'Unlimited product listings',
+    'Public business profile',
+    'Full analytics suite',
+    'Performance dashboards',
+    'Lead intelligence',
+    'Ranking participation',
+    'Profile prominence',
+    'Full dashboard access',
+    'Contractor directory listing',
+    'Map visibility',
+    'Priority support',
+  ],
+  noMonthlyFees: true,
+  noAnalyticsUpsells: true,
+  noListingLimits: true,
+  noSeparateVerificationFee: true,
+} as const;
+
+// Legacy alias - COMPANY_PLAN now points to PROFESSIONAL_PLAN
+export const COMPANY_PLAN = PROFESSIONAL_PLAN;
 
 // ============================================================================
-// ADD-ON TYPE DEFINITIONS
+// ADD-ON TYPE DEFINITIONS (Elite ONLY - no Premium/Featured tiers)
 // ============================================================================
 
 export const ADD_ON_TYPES = {
-  FEATURED: 'featured',
-  PREMIUM: 'premium',
-  ELITE: 'elite',
-  AI_ENHANCEMENT: 'ai-enhancement',
-  VERIFIED_BADGE: 'verified-badge',
-  SPEC_SHEET: 'spec-sheet',
+  ELITE: 'elite',                       // $99/30 days - ONLY placement tier
+  AI_ENHANCEMENT: 'ai-enhancement',     // $10/use
+  SPEC_SHEET: 'spec-sheet',             // $25 one-time
+  VERIFIED_BADGE: 'verified-badge',     // Legacy - seller attestation
+  SELLER_ANALYTICS: 'seller-analytics', // $49/year - Seller analytics access
 } as const;
 
 export type AddOnType = typeof ADD_ON_TYPES[keyof typeof ADD_ON_TYPES];
 
 // ============================================================================
-// ADD-ON PRICING CONFIGURATION (in cents) - ONE-TIME PURCHASES
+// ADD-ON PRICING CONFIGURATION (in cents)
+// ELITE is the ONLY visibility placement tier
 // ============================================================================
 
 export const ADD_ON_PRICING = {
-  [ADD_ON_TYPES.FEATURED]: 2000,        // $20.00 - Featured Listing
-  [ADD_ON_TYPES.PREMIUM]: 5000,         // $50.00 - Premium Placement
-  [ADD_ON_TYPES.ELITE]: 9900,           // $99.00 - Elite Placement
-  [ADD_ON_TYPES.AI_ENHANCEMENT]: 1000,  // $10.00 - AI Listing Enhancement
-  [ADD_ON_TYPES.VERIFIED_BADGE]: 1500,  // $15.00 - Verified Asset Badge
-  [ADD_ON_TYPES.SPEC_SHEET]: 2500,      // $25.00 - Spec Sheet Auto-Build
+  [ADD_ON_TYPES.ELITE]: 9900,               // $99.00 - Elite Placement (ONLY tier)
+  [ADD_ON_TYPES.AI_ENHANCEMENT]: 1000,      // $10.00 - AI Listing Enhancement
+  [ADD_ON_TYPES.SPEC_SHEET]: 2500,          // $25.00 - Spec Sheet Auto-Build
+  [ADD_ON_TYPES.VERIFIED_BADGE]: 1500,      // $15.00 - Verified Asset Badge (legacy)
+  [ADD_ON_TYPES.SELLER_ANALYTICS]: 4900,    // $49.00/year - Seller Analytics Access
+} as const;
+
+// Legacy compatibility - map old types to Elite
+export const LEGACY_ADD_ON_MAPPING = {
+  'featured': ADD_ON_TYPES.ELITE,
+  'premium': ADD_ON_TYPES.ELITE,
 } as const;
 
 // ============================================================================
@@ -401,12 +560,11 @@ export const ADD_ON_PRICING = {
 // ============================================================================
 
 export const ADD_ON_DURATION = {
-  [ADD_ON_TYPES.FEATURED]: 30,          // 30 days
-  [ADD_ON_TYPES.PREMIUM]: 30,           // 30 days
-  [ADD_ON_TYPES.ELITE]: 30,             // 30 days
-  [ADD_ON_TYPES.AI_ENHANCEMENT]: null,  // Permanent (one-time enhancement)
-  [ADD_ON_TYPES.VERIFIED_BADGE]: 30,    // 30 days
-  [ADD_ON_TYPES.SPEC_SHEET]: null,      // Permanent (one-time generation)
+  [ADD_ON_TYPES.ELITE]: 30,                 // 30 days
+  [ADD_ON_TYPES.AI_ENHANCEMENT]: null,      // Permanent (one-time enhancement)
+  [ADD_ON_TYPES.SPEC_SHEET]: null,          // Permanent (one-time generation)
+  [ADD_ON_TYPES.VERIFIED_BADGE]: 30,        // 30 days
+  [ADD_ON_TYPES.SELLER_ANALYTICS]: 365,     // 365 days (1 year)
 } as const;
 
 // ============================================================================
@@ -414,12 +572,11 @@ export const ADD_ON_DURATION = {
 // ============================================================================
 
 export const ADD_ON_RANKING_BOOST = {
-  [ADD_ON_TYPES.FEATURED]: 1,           // +1 tier boost
-  [ADD_ON_TYPES.PREMIUM]: 2,            // +2 tier boost
-  [ADD_ON_TYPES.ELITE]: 3,              // +3 tier boost (highest - homepage + category)
-  [ADD_ON_TYPES.AI_ENHANCEMENT]: 0,     // No ranking boost (content enhancement only)
-  [ADD_ON_TYPES.VERIFIED_BADGE]: 0,     // No ranking boost (trust signal only)
-  [ADD_ON_TYPES.SPEC_SHEET]: 0,         // No ranking boost (document generation only)
+  [ADD_ON_TYPES.ELITE]: 3,                  // +3 tier boost (highest - homepage + category)
+  [ADD_ON_TYPES.AI_ENHANCEMENT]: 0,         // No ranking boost (content enhancement only)
+  [ADD_ON_TYPES.SPEC_SHEET]: 0,             // No ranking boost (document generation only)
+  [ADD_ON_TYPES.VERIFIED_BADGE]: 0,         // No ranking boost (trust signal only)
+  [ADD_ON_TYPES.SELLER_ANALYTICS]: 0,       // No ranking boost (dashboard access only)
 } as const;
 
 // ============================================================================
@@ -427,12 +584,11 @@ export const ADD_ON_RANKING_BOOST = {
 // ============================================================================
 
 export const STRIPE_ADDON_PRICE_IDS = {
-  [ADD_ON_TYPES.FEATURED]: process.env.STRIPE_PRICE_FEATURED_LISTING || '',
-  [ADD_ON_TYPES.PREMIUM]: process.env.STRIPE_PRICE_PREMIUM_PLACEMENT || '',
   [ADD_ON_TYPES.ELITE]: process.env.STRIPE_PRICE_ELITE_PLACEMENT || '',
   [ADD_ON_TYPES.AI_ENHANCEMENT]: process.env.STRIPE_PRICE_AI_ENHANCEMENT || '',
-  [ADD_ON_TYPES.VERIFIED_BADGE]: process.env.STRIPE_PRICE_VERIFIED_BADGE || '',
   [ADD_ON_TYPES.SPEC_SHEET]: process.env.STRIPE_PRICE_SPEC_SHEET || '',
+  [ADD_ON_TYPES.VERIFIED_BADGE]: process.env.STRIPE_PRICE_VERIFIED_BADGE || '',
+  [ADD_ON_TYPES.SELLER_ANALYTICS]: process.env.STRIPE_PRICE_SELLER_ANALYTICS_ACCESS || '',
 } as const;
 
 // ============================================================================
@@ -451,50 +607,19 @@ export interface AddOnMetadata {
 }
 
 export const ADD_ON_METADATA: Record<AddOnType, AddOnMetadata> = {
-  [ADD_ON_TYPES.FEATURED]: {
-    name: 'Featured Listing',
-    shortDescription: 'Boosted visibility in search results',
-    description: 'Get 3x more visibility with featured placement in search results and category pages. Your listing appears before standard listings.',
-    features: [
-      'Featured badge on listing',
-      'Priority in search results (+1 tier)',
-      'Highlighted in category views',
-      'Included in Featured section on homepage',
-    ],
-    badge: 'Featured',
-    badgeColor: 'bg-amber-500',
-    icon: '⭐',
-    category: 'visibility',
-  },
-  [ADD_ON_TYPES.PREMIUM]: {
-    name: 'Premium Placement',
-    shortDescription: 'Top of category placement',
-    description: 'Maximum category exposure with pinned placement at the top of your category. Ideal for high-value equipment.',
-    features: [
-      'All Featured benefits',
-      'Pinned to category top (+2 tier)',
-      'Premium badge on listing',
-      'Analytics insights dashboard',
-      'Larger thumbnail in search',
-    ],
-    badge: 'Premium',
-    badgeColor: 'bg-purple-600',
-    icon: '💎',
-    category: 'visibility',
-  },
   [ADD_ON_TYPES.ELITE]: {
     name: 'Elite Placement',
     shortDescription: 'Homepage highlight + premium placement',
-    description: 'The ultimate visibility package with homepage featuring, maximum exposure, and priority support. Your listing gets the best placement possible.',
+    description: 'The visibility package with homepage featuring and maximum exposure. Your listing gets the best placement possible. Always labeled as Sponsored.',
     features: [
-      'All Premium benefits',
       'Homepage highlight section',
       'Elite badge on listing',
       'Highest ranking tier (+3)',
       'Priority customer support',
       'Social media promotion eligibility',
+      'Always labeled "Sponsored"',
     ],
-    badge: 'Elite',
+    badge: 'Sponsored',
     badgeColor: 'bg-gradient-to-r from-amber-500 to-orange-600',
     icon: '🏆',
     category: 'visibility',
@@ -515,21 +640,6 @@ export const ADD_ON_METADATA: Record<AddOnType, AddOnMetadata> = {
     icon: '🤖',
     category: 'enhancement',
   },
-  // S-5.4: Removed exaggerated claims from verified badge
-  [ADD_ON_TYPES.VERIFIED_BADGE]: {
-    name: 'Verified Asset Badge',
-    shortDescription: 'Seller attestation badge',
-    description: 'Add a seller-attested badge to your listing. Shows that the seller has confirmed equipment details. This is self-reported and not independently verified.',
-    features: [
-      'Seller-attested badge on listing',
-      'Highlighted in search results',
-      'Shows seller commitment',
-    ],
-    badge: 'Seller Attested',
-    badgeColor: 'bg-green-600',
-    icon: '✓',
-    category: 'enhancement',
-  },
   [ADD_ON_TYPES.SPEC_SHEET]: {
     name: 'Spec Sheet Auto-Build',
     shortDescription: 'Professional PDF spec sheet',
@@ -546,6 +656,38 @@ export const ADD_ON_METADATA: Record<AddOnType, AddOnMetadata> = {
     icon: '📄',
     category: 'enhancement',
   },
+  // S-5.4: Removed exaggerated claims from verified badge
+  [ADD_ON_TYPES.VERIFIED_BADGE]: {
+    name: 'Verified Asset Badge',
+    shortDescription: 'Seller attestation badge',
+    description: 'Add a seller-attested badge to your listing. Shows that the seller has confirmed equipment details. This is self-reported and not independently verified.',
+    features: [
+      'Seller-attested badge on listing',
+      'Highlighted in search results',
+      'Shows seller commitment',
+    ],
+    badge: 'Seller Attested',
+    badgeColor: 'bg-green-600',
+    icon: '✓',
+    category: 'enhancement',
+  },
+  [ADD_ON_TYPES.SELLER_ANALYTICS]: {
+    name: 'Seller Analytics Access',
+    shortDescription: 'Unlock listing analytics dashboard',
+    description: 'Get detailed insights into your listing performance, view trends, inquiry tracking, and conversion metrics. Analytics are provided for informational purposes only.',
+    features: [
+      'View & inquiry tracking',
+      'Top performing listings',
+      'Category performance breakdown',
+      'Outbound click tracking (website, email, phone)',
+      'Conversion rate analysis',
+      'Valid for 1 year',
+    ],
+    badge: 'Analytics',
+    badgeColor: 'bg-indigo-600',
+    icon: '📊',
+    category: 'enhancement',
+  },
 };
 
 // ============================================================================
@@ -553,17 +695,21 @@ export const ADD_ON_METADATA: Record<AddOnType, AddOnMetadata> = {
 // ============================================================================
 
 export const RANKING_WEIGHTS = {
-  // Tier-based ranking weights (add-on based)
+  // Tier-based ranking weights (Elite only)
   elite: 750,
-  premium: 500,
-  featured: 250,
+  sponsored: 750, // Alias for elite
   
   // Seller tier ranking bonuses
   sellerPro: 100,    // Pro sellers get a small boost
   sellerPlus: 40,    // Plus sellers get a small boost
   
-  // Contractor tier ranking bonuses  
-  verifiedContractor: 200, // Verified contractors rank higher
+  // Professional plan ranking (Contractor = Company)
+  professional: 400, // Professionals rank high
+  
+  // Legacy aliases - map to professional
+  verifiedContractor: 400, // Maps to professional
+  platformContractor: 400, // Maps to professional
+  companyPlan: 400,        // Maps to professional
   
   // Base scores
   base: 100,
@@ -774,11 +920,9 @@ export function getAllAddOnsInfo() {
 }
 
 /**
- * Visibility add-ons that affect search ranking
+ * Visibility add-ons that affect search ranking (Elite ONLY)
  */
 export const VISIBILITY_ADDONS: AddOnType[] = [
-  ADD_ON_TYPES.FEATURED,
-  ADD_ON_TYPES.PREMIUM,
   ADD_ON_TYPES.ELITE,
 ];
 
@@ -794,6 +938,69 @@ export function isRankingAddOn(type: AddOnType): boolean {
  */
 export function getMaxRankingBoost(activeAddOns: AddOnType[]): number {
   return Math.max(0, ...activeAddOns.map(type => ADD_ON_RANKING_BOOST[type]));
+}
+
+// ============================================================================
+// ANALYTICS ENTITLEMENTS (STRICT RULES)
+// ============================================================================
+// ANALYTICS ENTITLEMENTS (LOCKED ARCHITECTURE)
+// ============================================================================
+// - Buyers: NEVER
+// - Sellers: Locked by default, must purchase add-on
+// - Professionals (Contractor = Company): ALWAYS included ($2,500/year)
+//   ❌ No analytics upsells for professionals
+
+export const ANALYTICS_ENTITLEMENTS = {
+  buyer: {
+    hasAccess: false,
+    canPurchase: false,
+    reason: 'Analytics not available for buyer accounts',
+  },
+  seller: {
+    hasAccess: false,
+    canPurchase: true,
+    reason: 'Purchase analytics add-on to access',
+    addOnPrice: 4900, // $49/mo for seller analytics
+  },
+  // Professional = Contractor = Company (UNIFIED)
+  professional: {
+    hasAccess: true, // ALWAYS included
+    canPurchase: false, // Already included
+    reason: 'Included with Professional Plan ($2,500/year)',
+  },
+  // Legacy aliases - map to professional
+  contractor: {
+    hasAccess: true, // ALWAYS included (same as company)
+    canPurchase: false, // Already included
+    reason: 'Included with Professional Plan ($2,500/year)',
+  },
+  company: {
+    hasAccess: true, // ALWAYS included
+    canPurchase: false, // Already included
+    reason: 'Included with Professional Plan ($2,500/year)',
+  },
+} as const;
+
+/**
+ * Check analytics access for a user
+ * Professional plan (contractor/company) ALWAYS has analytics
+ */
+export function hasAnalyticsAccess(userType: 'buyer' | 'seller' | 'contractor' | 'company' | 'professional', options?: {
+  isProfessional?: boolean;
+  hasAnalyticsAddOn?: boolean;
+}): boolean {
+  switch (userType) {
+    case 'buyer':
+      return false; // NEVER
+    case 'seller':
+      return options?.hasAnalyticsAddOn === true;
+    case 'professional':
+    case 'contractor':
+    case 'company':
+      return options?.isProfessional === true; // ALWAYS with Professional plan
+    default:
+      return false;
+  }
 }
 
 // ============================================================================

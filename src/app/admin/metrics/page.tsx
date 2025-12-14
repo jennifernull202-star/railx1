@@ -181,6 +181,12 @@ export default function AdminMetricsPage() {
 
   return (
     <div className="space-y-8">
+      {/* Mock Data Disclosure - ADMIN IA GOVERNANCE */}
+      <div className="bg-purple-50 border border-purple-200 rounded-lg px-4 py-3 flex items-center gap-2">
+        <span className="text-purple-600 font-medium text-sm">📊</span>
+        <span className="text-purple-800 text-sm font-medium">Mock data — live wiring pending</span>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>

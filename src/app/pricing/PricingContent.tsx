@@ -60,17 +60,16 @@ export default function PricingContent() {
     SELLER_TIER_CONFIG[SELLER_TIERS.PRO],
   ];
 
-  const contractorTiers = [
-    CONTRACTOR_TIER_CONFIG[CONTRACTOR_TIERS.VERIFIED],
-    CONTRACTOR_TIER_CONFIG[CONTRACTOR_TIERS.FEATURED],
-    CONTRACTOR_TIER_CONFIG[CONTRACTOR_TIERS.PRIORITY],
+  // Professional Plan - unified for Contractors and Companies
+  const professionalTiers = [
+    CONTRACTOR_TIER_CONFIG[CONTRACTOR_TIERS.PROFESSIONAL],
   ];
 
-  // Top 3 add-ons only
+  // Elite is the ONLY placement tier (no Premium/Featured)
   const top3Addons = [
-    { type: ADD_ON_TYPES.FEATURED, ...ADD_ON_METADATA[ADD_ON_TYPES.FEATURED], price: ADD_ON_PRICING[ADD_ON_TYPES.FEATURED], icon: Star },
-    { type: ADD_ON_TYPES.PREMIUM, ...ADD_ON_METADATA[ADD_ON_TYPES.PREMIUM], price: ADD_ON_PRICING[ADD_ON_TYPES.PREMIUM], icon: TrendingUp },
     { type: ADD_ON_TYPES.ELITE, ...ADD_ON_METADATA[ADD_ON_TYPES.ELITE], price: ADD_ON_PRICING[ADD_ON_TYPES.ELITE], icon: Crown },
+    { type: ADD_ON_TYPES.AI_ENHANCEMENT, ...ADD_ON_METADATA[ADD_ON_TYPES.AI_ENHANCEMENT], price: ADD_ON_PRICING[ADD_ON_TYPES.AI_ENHANCEMENT], icon: Star },
+    { type: ADD_ON_TYPES.SPEC_SHEET, ...ADD_ON_METADATA[ADD_ON_TYPES.SPEC_SHEET], price: ADD_ON_PRICING[ADD_ON_TYPES.SPEC_SHEET], icon: TrendingUp },
   ];
 
   const getPrice = (tier: { priceMonthly: number; priceYearly?: number }) => {
@@ -265,41 +264,32 @@ export default function PricingContent() {
               </div>
             )}
 
-            {/* Contractor Plans */}
+            {/* Contractor/Company Plans - Professional Verified */}
             {activeTab === 'contractor' && (
-              <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                {contractorTiers.map((tier) => {
-                  const monthlyPrice = getPrice(tier);
-                  const savings = getSavings(tier);
+              <div className="grid md:grid-cols-1 gap-6 max-w-xl mx-auto">
+                {professionalTiers.map((tier) => {
+                  const yearlyPrice = tier.priceYearly || 0;
                   
                   return (
                     <div
                       key={tier.id}
-                      className={`bg-white rounded-xl p-6 ${
-                        tier.id === CONTRACTOR_TIERS.VERIFIED 
-                          ? 'ring-2 ring-green-500 shadow-lg' 
-                          : 'border border-surface-border'
-                      }`}
+                      className="bg-white rounded-xl p-6 ring-2 ring-green-500 shadow-lg"
                     >
-                      {tier.id === CONTRACTOR_TIERS.VERIFIED && (
-                        <div className="text-xs font-semibold text-green-600 mb-2">Recommended</div>
-                      )}
+                      <div className="text-xs font-semibold text-green-600 mb-2">All-In Plan</div>
                       <h3 className="text-lg font-bold text-navy-900 mb-1">{tier.name}</h3>
                       <p className="text-sm text-text-secondary mb-4">{tier.description}</p>
                       
                       <div className="mb-4">
                         <span className="text-3xl font-bold text-navy-900">
-                          {tier.priceMonthly === 0 ? 'Free' : formatPrice(monthlyPrice)}
+                          {formatPrice(yearlyPrice)}
                         </span>
-                        {tier.priceMonthly > 0 && <span className="text-text-secondary">/mo</span>}
+                        <span className="text-text-secondary">/year</span>
                       </div>
 
-                      {billingPeriod === 'yearly' && savings > 0 && (
-                        <p className="text-sm text-green-600 mb-4">Save {formatPrice(savings)}/year</p>
-                      )}
+                      <p className="text-sm text-green-600 mb-4">No monthly fees. Everything included.</p>
 
                       <ul className="space-y-2 mb-6">
-                        {tier.features.slice(0, 5).map((feature, idx) => (
+                        {tier.features.slice(0, 8).map((feature, idx) => (
                           <li key={idx} className="flex items-start gap-2 text-sm text-text-secondary">
                             <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
                             {feature}
@@ -308,46 +298,28 @@ export default function PricingContent() {
                       </ul>
 
                       {isLoggedIn ? (
-                        tier.priceMonthly === 0 ? (
-                          <Link
-                            href="/dashboard/contractor/profile"
-                            className={`block text-center w-full py-3 rounded-lg font-medium transition-colors ${
-                              tier.id === CONTRACTOR_TIERS.VERIFIED 
-                                ? 'bg-green-600 text-white hover:bg-green-700' 
-                                : 'bg-navy-900 text-white hover:bg-navy-800'
-                            }`}
-                          >
-                            {getCtaLabel(tier)}
-                          </Link>
-                        ) : (
-                          <PricingCheckoutButton
-                            tier={tier.id}
-                            type="contractor"
-                            billingPeriod={billingPeriod}
-                            className={`block text-center w-full py-3 rounded-lg font-medium transition-colors ${
-                              tier.id === CONTRACTOR_TIERS.VERIFIED 
-                                ? 'bg-green-600 text-white hover:bg-green-700' 
-                                : 'bg-navy-900 text-white hover:bg-navy-800'
-                            }`}
-                          >
-                            {getCtaLabel(tier)}
-                          </PricingCheckoutButton>
-                        )
+                        <PricingCheckoutButton
+                          tier={tier.id}
+                          type="contractor"
+                          billingPeriod="yearly"
+                          className="block text-center w-full py-3 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
+                        >
+                          Get Started
+                        </PricingCheckoutButton>
                       ) : (
                         <Link
-                          href={tier.priceMonthly === 0 ? '/contractors/onboard' : '/auth/register'}
-                          className={`block text-center w-full py-3 rounded-lg font-medium transition-colors ${
-                            tier.id === CONTRACTOR_TIERS.VERIFIED 
-                              ? 'bg-green-600 text-white hover:bg-green-700' 
-                              : 'bg-navy-900 text-white hover:bg-navy-800'
-                          }`}
+                          href="/auth/register"
+                          className="block text-center w-full py-3 rounded-lg font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
                         >
-                          {getCtaLabel(tier)}
+                          Get Started
                         </Link>
                       )}
                     </div>
                   );
                 })}
+                <p className="text-xs text-center text-text-secondary mt-4">
+                  For contractors and companies. Verification reflects document review only.
+                </p>
               </div>
             )}
 

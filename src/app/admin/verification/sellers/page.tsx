@@ -10,6 +10,23 @@
  * - Approve or reject verifications
  * - Revoke/reinstate badges
  * - Trigger re-verification
+ * 
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │ ARCHITECTURAL NOTE: Does NOT consume /api/verification              │
+ * │                                                                      │
+ * │ This page uses auth-gated admin APIs because it needs:              │
+ * │ - Admin-only access (role gated)                                    │
+ * │ - Document presigned URLs for secure review                         │
+ * │ - AI confidence scores and detailed flags                           │
+ * │ - Approve/reject/revoke action endpoints                            │
+ * │ - Full verification history and audit trail                         │
+ * │                                                                      │
+ * │ The public /api/verification endpoint returns badge status only.    │
+ * │ It cannot serve admin review needs. This separation is correct.     │
+ * └─────────────────────────────────────────────────────────────────────┘
+ * 
+ * RETIREMENT CANDIDATE: This page and /admin/seller-verifications serve
+ * similar purposes. Consider consolidating into single verification queue.
  */
 
 'use client';

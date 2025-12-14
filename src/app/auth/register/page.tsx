@@ -1,15 +1,17 @@
 /**
  * THE RAIL EXCHANGE™ — Registration Page
  * ========================================
- * BATCH 14 REQUIREMENTS:
- * - Form is hero (top of page) ✓
- * - No "What you get" content ✓
- * - Password requirements shown upfront ✓
- * - Inline validation as user types ✓
- * - Live match indicator for confirm password ✓
- * - OMIT: Benefits/upsells above form, forward-looking upgrade copy
+ * REGISTRATION & VERIFICATION UX (AI-ASSISTED)
  * 
- * Form is the hero. Inline validation. Password rules shown upfront.
+ * Role Selection:
+ * - Buyer: Browse free, $1 lifetime verification for actions
+ * - Seller: Dashboard + listings, $29/year verification
+ * - Professional: Full platform, $2,500/year (Contractor = Company)
+ * 
+ * All users:
+ * - Receive dashboard shell immediately
+ * - Can complete basic profile info
+ * - Can access settings
  */
 
 'use client';
@@ -18,12 +20,62 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, FormEvent, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
-import { Eye, EyeOff, Check, X } from 'lucide-react';
+import { Eye, EyeOff, Check, X, ShoppingCart, Store, Building2, Info } from 'lucide-react';
+
+type UserType = 'buyer' | 'seller' | 'professional';
+
+interface RoleOption {
+  id: UserType;
+  title: string;
+  description: string;
+  features: string[];
+  pricing: string;
+  icon: typeof ShoppingCart;
+}
+
+const ROLE_OPTIONS: RoleOption[] = [
+  {
+    id: 'buyer',
+    title: 'Buyer',
+    description: 'Browse listings and contact sellers',
+    features: [
+      'Browse all listings free',
+      'Save favorites',
+      'Search equipment & services',
+    ],
+    pricing: 'Free to browse • $1 verification to contact',
+    icon: ShoppingCart,
+  },
+  {
+    id: 'seller',
+    title: 'Seller',
+    description: 'List equipment for sale',
+    features: [
+      'Create unlimited listings',
+      'Receive buyer inquiries',
+      'Public seller profile',
+    ],
+    pricing: 'Free to list • $29/year verification',
+    icon: Store,
+  },
+  {
+    id: 'professional',
+    title: 'Professional',
+    description: 'Company or Contractor with full platform access',
+    features: [
+      'Full analytics suite',
+      'Directory listing',
+      'Lead intelligence',
+      'Business verification included',
+    ],
+    pricing: '$2,500/year (all-in)',
+    icon: Building2,
+  },
+];
 
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // S-12.7: Support callback URL for post-signup redirect
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   
   const [name, setName] = useState('');
@@ -33,8 +85,8 @@ function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<UserType>('buyer');
   
-  // Field-level errors (inline validation)
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
@@ -103,6 +155,9 @@ function RegisterForm() {
     setErrors({});
 
     try {
+      // Map 'professional' to 'contractor' for API (same commercial class)
+      const apiRole = selectedRole === 'professional' ? 'contractor' : selectedRole;
+      
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -110,7 +165,8 @@ function RegisterForm() {
           name,
           email,
           password,
-          role: 'buyer',
+          role: apiRole,
+          isProfessional: selectedRole === 'professional',
         }),
       });
 
@@ -148,9 +204,9 @@ function RegisterForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white p-6">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-2xl">
         {/* Logo */}
-        <Link href="/" className="inline-flex items-center mb-10">
+        <Link href="/" className="inline-flex items-center mb-8">
           <span className="text-xl font-bold text-navy-900">The Rail</span>
           <span className="text-xl font-bold text-rail-orange ml-1">Exchange</span>
           <span className="text-rail-orange text-xs font-medium ml-0.5">™</span>
@@ -158,11 +214,59 @@ function RegisterForm() {
 
         {/* Heading */}
         <h1 className="text-2xl font-bold text-navy-900 mb-2">Create your account</h1>
-        {/* S-12.6: Buyer-first copy adjustment */}
-        <p className="text-text-secondary text-sm mb-2">
-          Create an account to contact sellers and contractors — browsing is always free.
+        <p className="text-text-secondary text-sm mb-6">
+          Choose how you&apos;ll use The Rail Exchange. Browsing is always free.
         </p>
-        <p className="text-text-tertiary text-xs mb-8">Free to browse. Upgrade anytime.</p>
+
+        {/* Role Selection */}
+        <div className="grid md:grid-cols-3 gap-4 mb-8">
+          {ROLE_OPTIONS.map((role) => {
+            const Icon = role.icon;
+            const isSelected = selectedRole === role.id;
+            return (
+              <button
+                key={role.id}
+                type="button"
+                onClick={() => setSelectedRole(role.id)}
+                className={`p-4 border-2 rounded-xl text-left transition-all ${
+                  isSelected 
+                    ? 'border-rail-orange bg-rail-orange/5' 
+                    : 'border-surface-border hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`p-2 rounded-lg ${isSelected ? 'bg-rail-orange/10' : 'bg-slate-100'}`}>
+                    <Icon className={`w-5 h-5 ${isSelected ? 'text-rail-orange' : 'text-slate-600'}`} />
+                  </div>
+                  <span className={`font-semibold ${isSelected ? 'text-navy-900' : 'text-slate-700'}`}>
+                    {role.title}
+                  </span>
+                </div>
+                <p className="text-xs text-text-secondary mb-3">{role.description}</p>
+                <ul className="space-y-1 mb-3">
+                  {role.features.map((feature, idx) => (
+                    <li key={idx} className="text-xs text-slate-600 flex items-start gap-1.5">
+                      <Check className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <p className={`text-xs font-medium ${isSelected ? 'text-rail-orange' : 'text-slate-500'}`}>
+                  {role.pricing}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Info Banner */}
+        <div className="flex items-start gap-3 p-4 bg-slate-50 rounded-lg mb-6">
+          <Info className="w-5 h-5 text-slate-500 flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-slate-600">
+            <p className="font-medium text-slate-700 mb-1">All accounts include:</p>
+            <p>Dashboard access, profile settings, and saved searches. You can upgrade or add verification anytime.</p>
+          </div>
+        </div>
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-5">

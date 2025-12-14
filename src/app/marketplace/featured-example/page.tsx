@@ -120,8 +120,8 @@ export default function FeaturedExamplePage() {
                     'Top positioning in all category pages',
                     'Priority #1 ranking in search results',
                     'Elite badge with gold highlighting',
-                    '5x more views than standard listings',
-                    'Maximum buyer inquiries',
+                    'Maximum visibility boost',
+                    'Premium placement for buyer attention',
                   ].map((item, i) => (
                     <li key={i} className="flex items-center gap-3 text-text-secondary">
                       <svg className="w-5 h-5 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -151,9 +151,9 @@ export default function FeaturedExamplePage() {
                     { icon: '🏠', text: 'Homepage featured section' },
                     { icon: '🔍', text: '#1 search priority' },
                     { icon: '👑', text: 'Elite gold badge' },
-                    { icon: '📈', text: '5x more visibility' },
-                    { icon: '📧', text: 'Maximum buyer inquiries' },
-                    { icon: '⚡', text: 'Fastest sales cycle' },
+                    { icon: '📈', text: 'Maximum visibility boost' },
+                    { icon: '📧', text: 'Premium buyer exposure' },
+                    { icon: '⚡', text: 'Top-tier placement' },
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg">
                       <span className="text-2xl">{item.icon}</span>

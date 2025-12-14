@@ -17,7 +17,7 @@ export type UserRole = 'buyer' | 'seller' | 'contractor' | 'admin';
 
 // Subscription tier types (inline to avoid circular deps)
 export type SellerTierType = 'buyer' | 'basic' | 'plus' | 'pro' | 'enterprise';
-export type ContractorTierType = 'none' | 'verified' | 'featured' | 'priority';
+export type ContractorTierType = 'none' | 'verified' | 'featured' | 'priority' | 'platform' | 'professional';
 export type SubscriptionStatusType = 'active' | 'past_due' | 'canceled' | 'unpaid' | 'trialing' | 'incomplete' | 'incomplete_expired' | 'paused';
 
 export interface IUser {
@@ -201,7 +201,7 @@ export interface IUserModel extends Model<IUserDocument> {
 // ============================================
 
 const SELLER_TIER_VALUES: SellerTierType[] = ['buyer', 'basic', 'plus', 'pro', 'enterprise'];
-const CONTRACTOR_TIER_VALUES: ContractorTierType[] = ['none', 'verified', 'featured', 'priority'];
+const CONTRACTOR_TIER_VALUES: ContractorTierType[] = ['none', 'verified', 'featured', 'priority', 'platform', 'professional'];
 const SUBSCRIPTION_STATUS_VALUES: SubscriptionStatusType[] = [
   'active', 'past_due', 'canceled', 'unpaid', 'trialing', 'incomplete', 'incomplete_expired', 'paused'
 ];

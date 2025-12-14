@@ -252,9 +252,8 @@ export default function MyAddOnsPage() {
       if (listing.status !== 'active') return false;
       
       // Check if listing already has this add-on
+      // Elite is the ONLY placement tier (no Premium/Featured tiers)
       const addons = listing.premiumAddOns;
-      if (addonType === ADD_ON_TYPES.FEATURED && addons?.featured?.active) return false;
-      if (addonType === ADD_ON_TYPES.PREMIUM && addons?.premium?.active) return false;
       if (addonType === ADD_ON_TYPES.ELITE && addons?.elite?.active) return false;
       
       return true;

@@ -2,22 +2,26 @@
  * THE RAIL EXCHANGE™ — UI Utilities
  * 
  * Shared UI helper functions for GLOBAL UI ENFORCEMENT
- * - Single badge rule
+ * - Single badge rule (Elite ONLY for paid visibility)
  * - CTA blocked states
  * - Error feedback (403/429/verification_required)
  * 
  * S-2: Trust signal clarity via badge tooltips
+ * 
+ * FINAL EXECUTION COMMAND:
+ * - Elite is the ONLY paid visibility tier
+ * - Premium/Featured are legacy, map to Sponsored
+ * - Verified = Identity Verified (sellers) or Business Verified (contractors)
  */
 
 import {
   ELITE_BADGE_TOOLTIP,
-  PREMIUM_BADGE_TOOLTIP,
-  FEATURED_BADGE_TOOLTIP,
   VERIFIED_SELLER_TOOLTIP,
 } from './trust-signals';
 
 // ============================================
-// SINGLE BADGE RULE: Elite > Premium > Featured > Verified
+// SINGLE BADGE RULE: Elite > Verified (Elite ONLY for paid)
+// Legacy: Premium/Featured still accepted but map to Elite/Sponsored
 // ============================================
 export type BadgeTier = 'ELITE' | 'PREMIUM' | 'FEATURED' | 'VERIFIED';
 
@@ -27,14 +31,13 @@ export function getHighestBadge(badges: {
   featured?: boolean
   verified?: boolean
 }): BadgeTier | null {
-  if (badges.elite) return 'ELITE'
-  if (badges.premium) return 'PREMIUM'
-  if (badges.featured) return 'FEATURED'
+  // Elite is the ONLY paid tier - Premium/Featured map to Elite
+  if (badges.elite || badges.premium || badges.featured) return 'ELITE'
   if (badges.verified) return 'VERIFIED'
   return null
 }
 
-// S-5.1: Badge styles with 'Sponsored' for paid, 'Identity Verified' for verification
+// S-5.1: Badge styles - Elite ONLY for paid visibility, all show "Sponsored"
 export const BADGE_STYLES: Record<BadgeTier, { bg: string; text: string; label: string; title: string; isPaid: boolean }> = {
   ELITE: { 
     bg: 'bg-gradient-to-r from-amber-500 to-orange-600', 
@@ -43,18 +46,20 @@ export const BADGE_STYLES: Record<BadgeTier, { bg: string; text: string; label: 
     title: ELITE_BADGE_TOOLTIP,
     isPaid: true,
   },
+  // Legacy - maps to Sponsored
   PREMIUM: { 
-    bg: 'bg-purple-600', 
+    bg: 'bg-gradient-to-r from-amber-500 to-orange-600', 
     text: 'text-white', 
     label: 'Sponsored', 
-    title: PREMIUM_BADGE_TOOLTIP,
+    title: ELITE_BADGE_TOOLTIP,
     isPaid: true,
   },
+  // Legacy - maps to Sponsored
   FEATURED: { 
-    bg: 'bg-rail-orange', 
+    bg: 'bg-gradient-to-r from-amber-500 to-orange-600', 
     text: 'text-white', 
     label: 'Sponsored', 
-    title: FEATURED_BADGE_TOOLTIP,
+    title: ELITE_BADGE_TOOLTIP,
     isPaid: true,
   },
   VERIFIED: { 

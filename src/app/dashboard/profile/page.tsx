@@ -98,13 +98,24 @@ export default async function ContractorProfilePage() {
             Manage how your business appears to potential clients.
           </p>
         </div>
-        <Link
-          href={`/contractors/${profile.slug}`}
-          className="text-sm font-medium text-rail-orange hover:underline"
-          target="_blank"
-        >
-          View Public Profile →
-        </Link>
+        <div className="flex flex-col items-end gap-2">
+          {/* WIRING: Link to new Unified Profile (canonical public URL) */}
+          <Link
+            href={`/profile/${profile.slug}`}
+            className="text-sm font-medium text-rail-orange hover:underline"
+            target="_blank"
+          >
+            View Unified Profile →
+          </Link>
+          {/* Legacy contractor profile link */}
+          <Link
+            href={`/contractors/${profile.slug}`}
+            className="text-xs text-slate-400 hover:text-slate-600"
+            target="_blank"
+          >
+            View Contractor Page
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}

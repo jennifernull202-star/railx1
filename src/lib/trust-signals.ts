@@ -6,9 +6,33 @@
  * Centralized copy for all trust signals, badges, and disclaimers.
  * Ensures consistent messaging across the platform.
  * 
- * ⛔ DO NOT modify badge names (Elite/Premium/Featured/Verified)
+ * FINAL EXECUTION COMMAND - LOCKED BADGES:
+ * - Buyer: "Identity Confirmed" ($1 one-time)
+ * - Verified Buyer Activity: FREE earned badge (gray/slate only)
+ * - Seller: "Identity Verified" ($29/year)
+ * - Contractor: "Business Verified" ($150/year)
+ * - Company: Included in $2,500/year plan
+ * - Elite Placement: "Sponsored" ($99/30 days) - ONLY visibility tier
+ * 
+ * ⛔ DO NOT modify badge names without legal review
  * ✅ DO update clarifying copy as needed
  */
+
+// ============================================
+// BUYER VERIFICATION BADGES
+// ============================================
+
+// $1 one-time - Identity Confirmed
+export const BUYER_IDENTITY_BADGE = 'Identity Confirmed';
+
+export const BUYER_IDENTITY_TOOLTIP = 
+  'Identity confirmation verifies the account belongs to a real person. It does not imply purchasing authority or endorsement.';
+
+// FREE earned badge - Verified Buyer Activity
+export const VERIFIED_BUYER_ACTIVITY_BADGE = 'Verified Buyer (Activity)';
+
+export const VERIFIED_BUYER_ACTIVITY_TOOLTIP = 
+  'Verified Buyer (Activity) reflects completed marketplace transactions. It does not imply financial capability, purchasing authority, or endorsement.';
 
 // ============================================
 // S-2.1: VERIFIED BADGE DISCLAIMERS
@@ -39,17 +63,15 @@ export const VERIFICATION_DISCLAIMER_CANONICAL =
 // S-13.3: Paid Placement Honest Framing
 // ============================================
 
-// S-13.3: Inline label for paid badges
-export const PAID_PLACEMENT_LABEL = 'Paid placement';
+// S-13.3: Inline label for paid badges - ELITE ONLY
+export const PAID_PLACEMENT_LABEL = 'Sponsored';
 
 export const ELITE_BADGE_TOOLTIP = 
   'This listing is promoted for visibility. Paid placement does not indicate seller quality, endorsement, or transaction guarantee.';
 
-export const PREMIUM_BADGE_TOOLTIP = 
-  'This listing is promoted for visibility. Paid placement does not indicate seller quality, endorsement, or transaction guarantee.';
-
-export const FEATURED_BADGE_TOOLTIP = 
-  'This listing is promoted for visibility. Paid placement does not indicate seller quality, endorsement, or transaction guarantee.';
+// Legacy tooltips - map to Elite
+export const PREMIUM_BADGE_TOOLTIP = ELITE_BADGE_TOOLTIP;
+export const FEATURED_BADGE_TOOLTIP = ELITE_BADGE_TOOLTIP;
 
 // Generic for any paid placement
 export const PAID_PLACEMENT_TOOLTIP = 
@@ -120,31 +142,51 @@ export const TRANSACTION_DISCLAIMER =
 // BADGE STYLE CONFIGURATION (S-2.1, S-2.2)
 // ============================================
 
-// S-5.1: Badge labels updated to clarify paid vs identity status
+// S-5.1: Badge labels updated - Elite ONLY for paid visibility
 export const TRUST_BADGE_CONFIG = {
+  // ELITE is the ONLY paid visibility tier
   elite: {
     label: 'Sponsored',
     tooltip: ELITE_BADGE_TOOLTIP,
     isPaid: true,
   },
+  // Legacy mappings - all map to Sponsored
   premium: {
     label: 'Sponsored',
-    tooltip: PREMIUM_BADGE_TOOLTIP,
+    tooltip: ELITE_BADGE_TOOLTIP,
     isPaid: true,
   },
   featured: {
     label: 'Sponsored',
-    tooltip: FEATURED_BADGE_TOOLTIP,
+    tooltip: ELITE_BADGE_TOOLTIP,
     isPaid: true,
   },
+  // Identity verification badges
   verified: {
     label: 'Identity Verified',
     tooltip: VERIFIED_SELLER_TOOLTIP,
     isPaid: false,
   },
   verifiedContractor: {
-    label: 'Identity Verified',
+    label: 'Business Verified',
     tooltip: VERIFIED_CONTRACTOR_TOOLTIP,
     isPaid: false,
+  },
+  // Buyer badges
+  buyerIdentity: {
+    label: 'Identity Confirmed',
+    tooltip: BUYER_IDENTITY_TOOLTIP,
+    isPaid: true, // $1 one-time
+  },
+  buyerActivity: {
+    label: 'Verified Buyer (Activity)',
+    tooltip: VERIFIED_BUYER_ACTIVITY_TOOLTIP,
+    isPaid: false, // FREE earned badge
+    styling: {
+      colors: 'neutral', // gray/slate only
+      noGreen: true,
+      noShields: true,
+      noCheckmarks: true,
+    },
   },
 } as const;

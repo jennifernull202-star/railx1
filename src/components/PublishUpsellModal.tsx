@@ -57,34 +57,9 @@ const UPSELL_ADDONS: AddOnOption[] = [
       'Elite badge + homepage rotation',
       'Featured placement in search results',
       'Priority seller support',
-    ],
-  },
-  {
-    id: ADD_ON_TYPES.PREMIUM,
-    name: ADD_ON_METADATA[ADD_ON_TYPES.PREMIUM].name,
-    price: ADD_ON_PRICING[ADD_ON_TYPES.PREMIUM],
-    duration: ADD_ON_DURATION[ADD_ON_TYPES.PREMIUM],
-    description: ADD_ON_METADATA[ADD_ON_TYPES.PREMIUM].shortDescription,
-    icon: '💎',
-    features: [
-      '5x more visibility',
-      'Premium badge',
-      'Priority in search results',
+      '"Sponsored" disclosure',
     ],
     popular: true,
-  },
-  {
-    id: ADD_ON_TYPES.FEATURED,
-    name: ADD_ON_METADATA[ADD_ON_TYPES.FEATURED].name,
-    price: ADD_ON_PRICING[ADD_ON_TYPES.FEATURED],
-    duration: ADD_ON_DURATION[ADD_ON_TYPES.FEATURED],
-    description: ADD_ON_METADATA[ADD_ON_TYPES.FEATURED].shortDescription,
-    icon: '⭐',
-    features: [
-      '3x more visibility',
-      'Featured badge',
-      'Highlighted in search',
-    ],
   },
   // Enhancement Add-ons
   {
@@ -110,7 +85,7 @@ const UPSELL_ADDONS: AddOnOption[] = [
     features: [
       'Professional PDF spec sheet',
       'Downloadable by buyers',
-      'Increases trust & inquiries',
+      'Provides detailed equipment info',
     ],
   },
 ];
@@ -200,7 +175,7 @@ export function PublishUpsellModal({
           <div className="p-6">
             <div className="text-center mb-6">
               <p className="text-text-secondary">
-                Boost your listing&apos;s visibility and get more inquiries
+                Optional add-ons to increase listing visibility
               </p>
             </div>
 

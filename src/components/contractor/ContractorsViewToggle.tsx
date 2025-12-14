@@ -2,6 +2,12 @@
  * THE RAIL EXCHANGE™ — Contractors View Toggle
  * 
  * Client component for toggling between map and list views.
+ * 
+ * 📍 MAP VISIBILITY RULES (LOCKED):
+ * ✅ Verified Contractors/Companies: ALWAYS shown (Professional Plan)
+ * ❌ Buyers: NEVER shown
+ * 
+ * See /src/lib/map-visibility.ts for full rules.
  */
 
 'use client';
@@ -9,6 +15,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { MapWrapper } from '@/components/maps/MapWrapper';
+import { filterContractorsForMap } from '@/lib/map-visibility';
 
 interface Contractor {
   _id: string;
@@ -20,7 +27,9 @@ interface Contractor {
   regionsServed: string[];
   yearsInBusiness: number;
   verificationStatus: string;
-  visibilityTier?: 'none' | 'verified' | 'featured' | 'priority';
+  visibilityTier?: 'none' | 'verified' | 'featured' | 'priority' | 'professional';
+  isActive?: boolean;
+  isPublished?: boolean;
   address: {
     city: string;
     state: string;
@@ -98,8 +107,16 @@ export default function ContractorsViewToggle({ contractors, children }: Contrac
     return STATE_COORDINATES[stateAbbr] || null;
   };
 
-  // Count contractors with mappable locations
-  const mappableCount = contractors.filter(c => getContractorCoords(c)).length;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MAP VISIBILITY FILTER (LOCKED RULES)
+  // Only verified contractors/companies with Professional Plan are shown
+  // ═══════════════════════════════════════════════════════════════════════════
+  const mapEligibleContractors = React.useMemo(() => {
+    return filterContractorsForMap(contractors);
+  }, [contractors]);
+
+  // Count contractors with mappable locations (from eligible set only)
+  const mappableCount = mapEligibleContractors.filter(c => getContractorCoords(c)).length;
 
   // Update markers when contractors or map changes
   React.useEffect(() => {
@@ -112,7 +129,8 @@ export default function ContractorsViewToggle({ contractors, children }: Contrac
     const bounds = new google.maps.LatLngBounds();
     let hasMarkers = false;
 
-    contractors.forEach(contractor => {
+    // Only iterate over map-eligible contractors (enforced visibility rules)
+    mapEligibleContractors.forEach(contractor => {
       const coords = getContractorCoords(contractor);
       if (!coords) return;
 
@@ -179,7 +197,7 @@ export default function ContractorsViewToggle({ contractors, children }: Contrac
         google.maps.event.removeListener(listener);
       });
     }
-  }, [map, contractors, viewMode]);
+  }, [map, mapEligibleContractors, viewMode]);
 
   return (
     <>

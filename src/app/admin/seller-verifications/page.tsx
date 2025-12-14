@@ -4,6 +4,22 @@
  * Admin page to view and manage seller verifications.
  * Shows all sellers with verification status, tier, expiration dates.
  * Includes ability to force expire a verification.
+ * 
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │ ARCHITECTURAL NOTE: Does NOT consume /api/verification              │
+ * │                                                                      │
+ * │ This page uses /api/admin/seller-verifications because it needs:    │
+ * │ - Admin-only access (role gated)                                    │
+ * │ - Full seller list with verification details                        │
+ * │ - Tier, expiration dates, approval history                          │
+ * │ - Force expire action endpoint                                      │
+ * │                                                                      │
+ * │ The public /api/verification endpoint returns badge status only.    │
+ * │ It cannot serve admin management needs. This separation is correct. │
+ * └─────────────────────────────────────────────────────────────────────┘
+ * 
+ * RETIREMENT CANDIDATE: This page and /admin/verification/sellers serve
+ * similar purposes. Consider consolidating into single verification queue.
  */
 
 'use client';

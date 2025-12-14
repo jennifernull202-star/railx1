@@ -234,12 +234,9 @@ const ListingCard: React.FC<ListingCardProps> = ({
           <Badge variant="outline" className="bg-white/90 text-navy-900 border-0 text-xs capitalize">
             {condition}
           </Badge>
-          {/* BUYER AUDIT: FRA Compliant badge */}
-          {equipment?.fraCompliant && (
-            <Badge className="bg-green-600 text-white border-0 text-xs font-medium">
-              FRA
-            </Badge>
-          )}
+          {/* COMPLIANCE: Regulatory badges (FRA/DOT/Hazmat) removed per enterprise compliance audit.
+              Only platform-owned badges (Identity Verified, Sponsored) allowed on listing cards.
+              Regulatory claims appear ONLY in listing detail compliance section with disclaimer. */}
           {/* BUYER AUDIT: Quantity badge */}
           {quantity && quantity > 1 && (
             <Badge className="bg-blue-600 text-white border-0 text-xs font-medium">
