@@ -172,6 +172,12 @@ export async function POST(request: NextRequest) {
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   const { purchaseType, purchaseId, addonType, listingId, contractorId, userId, subscriptionType, tier, promoCode, type, verificationId } = session.metadata || {};
 
+  // Handle buyer verification (one-time $1 payment)
+  if (type === 'buyer_verification' && userId) {
+    await handleBuyerVerificationCheckout(session, userId);
+    return;
+  }
+
   // Handle seller verification (one-time payment)
   if ((type === 'seller_verification' || type === 'verified_seller') && verificationId && userId) {
     await handleVerifiedSellerCheckout(session, userId, verificationId);
@@ -515,6 +521,44 @@ async function handleSellerAnalyticsCheckout(
   }
 
   console.log(`Seller Analytics activated for user ${userId} - purchase ${purchase._id} - expires ${expiresAt.toISOString()}`);
+}
+
+/**
+ * Handle buyer verification payment completion
+ * $1 lifetime verification - no expiration
+ */
+async function handleBuyerVerificationCheckout(
+  session: Stripe.Checkout.Session,
+  userId: string
+) {
+  const user = await User.findById(userId);
+  if (!user) {
+    console.error(`User not found for buyer verification: ${userId}`);
+    return;
+  }
+
+  // Check if already verified (idempotency)
+  if (user.isVerifiedBuyer === true) {
+    console.log(`User ${userId} already a verified buyer, skipping`);
+    return;
+  }
+
+  const now = new Date();
+
+  // Activate buyer verification (lifetime - no expiration)
+  user.isVerifiedBuyer = true;
+  user.buyerVerificationStatus = 'active';
+  user.buyerVerifiedAt = now;
+  user.buyerVerificationPaymentId = session.payment_intent as string;
+  
+  // Update Stripe customer ID if not set
+  if (!user.stripeCustomerId && session.customer) {
+    user.stripeCustomerId = session.customer as string;
+  }
+
+  await user.save();
+
+  console.log(`Buyer Verification activated for user ${userId} at ${now.toISOString()}`);
 }
 
 async function handleSubscriptionUpdate(subscription: Stripe.Subscription) {

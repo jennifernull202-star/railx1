@@ -108,6 +108,15 @@ export interface IUser {
   paypalVerified?: boolean;
   
   // ============================================
+  // VERIFIED BUYER FIELDS
+  // $1 lifetime verification for spam prevention
+  // ============================================
+  isVerifiedBuyer: boolean;
+  buyerVerificationStatus: 'none' | 'pending' | 'active' | 'rejected';
+  buyerVerifiedAt: Date | null;
+  buyerVerificationPaymentId: string | null;
+  
+  // ============================================
   // VERIFIED SELLER FIELDS
   // Badge activates only after: AI review + Admin approval + Valid paid subscription
   // ============================================
@@ -485,6 +494,28 @@ const UserSchema = new Schema<IUserDocument, IUserModel>(
     paypalVerified: {
       type: Boolean,
       default: false,
+    },
+    
+    // ============================================
+    // VERIFIED BUYER FIELDS
+    // $1 lifetime verification for spam prevention
+    // ============================================
+    isVerifiedBuyer: {
+      type: Boolean,
+      default: false,
+    },
+    buyerVerificationStatus: {
+      type: String,
+      enum: ['none', 'pending', 'active', 'rejected'],
+      default: 'none',
+    },
+    buyerVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+    buyerVerificationPaymentId: {
+      type: String,
+      default: null,
     },
     
     // ============================================

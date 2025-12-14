@@ -17,6 +17,7 @@ import WelcomeMessage from '@/components/dashboard/WelcomeMessage';
 import SessionRefresher from '@/components/dashboard/SessionRefresher';
 import TrialBanner from '@/components/dashboard/TrialBanner';
 import FirstTimeSellerBanner from '@/components/dashboard/FirstTimeSellerBanner';
+import VerificationCTABanner from '@/components/dashboard/VerificationCTABanner';
 
 export const metadata: Metadata = {
   title: 'Dashboard | The Rail Exchange',
@@ -49,6 +50,11 @@ async function getDashboardData(userId: string): Promise<{
   trialEndsAt: Date | null;
   subscriptionStatus: string | null;
   unreadInquiryCount: number;
+  // Verification status
+  userRole: 'buyer' | 'seller' | 'contractor';
+  isVerifiedBuyer: boolean;
+  isVerifiedSeller: boolean;
+  isVerifiedContractor: boolean;
 }> {
   try {
     await connectDB();
@@ -77,7 +83,7 @@ async function getDashboardData(userId: string): Promise<{
         .sort({ createdAt: -1 })
         .limit(5)
         .lean(),
-      User.findById(userId).select('sellerTier isContractor contractorTier sellerSubscriptionStatus subscriptionCurrentPeriodEnd').lean(),
+      User.findById(userId).select('role sellerTier isContractor contractorTier sellerSubscriptionStatus subscriptionCurrentPeriodEnd isVerifiedBuyer buyerVerificationStatus isVerifiedSeller verifiedSellerStatus').lean(),
       Listing.find({ sellerId: userObjectId }).select('_id').lean(),
     ]);
     
@@ -101,6 +107,16 @@ async function getDashboardData(userId: string): Promise<{
       ? new Date(user.subscriptionCurrentPeriodEnd) 
       : null;
 
+    // Determine user's primary role for verification banner
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userObj = user as any;
+    const userRole: 'buyer' | 'seller' | 'contractor' = 
+      userObj?.isContractor || userObj?.contractorTier === 'verified' 
+        ? 'contractor' 
+        : userObj?.role === 'seller' 
+          ? 'seller' 
+          : 'buyer';
+
     return {
       stats,
       recentListings: recentListings as unknown as RecentListing[],
@@ -110,6 +126,11 @@ async function getDashboardData(userId: string): Promise<{
       trialEndsAt,
       subscriptionStatus: user?.sellerSubscriptionStatus || null,
       unreadInquiryCount,
+      // Verification status
+      userRole,
+      isVerifiedBuyer: userObj?.isVerifiedBuyer || false,
+      isVerifiedSeller: userObj?.isVerifiedSeller || userObj?.verifiedSellerStatus === 'active' || false,
+      isVerifiedContractor: userObj?.contractorTier === 'verified' || false,
     };
   } catch (error) {
     console.error('Dashboard data fetch error:', error);
@@ -123,6 +144,11 @@ async function getDashboardData(userId: string): Promise<{
       trialEndsAt: null,
       subscriptionStatus: null,
       unreadInquiryCount: 0,
+      // Verification defaults
+      userRole: 'buyer' as const,
+      isVerifiedBuyer: false,
+      isVerifiedSeller: false,
+      isVerifiedContractor: false,
     };
   }
 }
@@ -140,7 +166,20 @@ export default async function DashboardPage() {
     return null;
   }
 
-  const { stats, recentListings, hasSubscription, isContractor, sellerTier, trialEndsAt, subscriptionStatus, unreadInquiryCount } = await getDashboardData(session.user.id);
+  const { 
+    stats, 
+    recentListings, 
+    hasSubscription, 
+    isContractor, 
+    sellerTier, 
+    trialEndsAt, 
+    subscriptionStatus, 
+    unreadInquiryCount,
+    userRole,
+    isVerifiedBuyer,
+    isVerifiedSeller,
+    isVerifiedContractor,
+  } = await getDashboardData(session.user.id);
 
   // Calculate days remaining in trial
   const daysRemaining = trialEndsAt 
@@ -159,6 +198,15 @@ export default async function DashboardPage() {
       {subscriptionStatus === 'trialing' && daysRemaining !== null && (
         <TrialBanner daysRemaining={daysRemaining} userId={session.user.id} />
       )}
+
+      {/* OPUS: Post-Registration Verification CTA Banner */}
+      <VerificationCTABanner
+        userRole={userRole}
+        isVerifiedBuyer={isVerifiedBuyer}
+        isVerifiedSeller={isVerifiedSeller}
+        isVerifiedContractor={isVerifiedContractor}
+        userName={session.user.name?.split(' ')[0]}
+      />
 
       {/* UX Item #2: First-Time Seller Welcome Banner - shows once only */}
       {stats.total === 0 && !hasSubscription && (

@@ -204,6 +204,21 @@ export default function ContractorVerificationPage() {
         <p className="text-slate-500">Stand out with trust and credibility</p>
       </div>
 
+      {/* AI Disclosure Notice - MANDATORY */}
+      <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+        <div className="flex gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-amber-800 mb-1">AI-Assisted Verification</p>
+            <p className="text-amber-700">
+              Verification is assisted by automated (AI) analysis and human review. 
+              Verification confirms document submission only and does not guarantee 
+              performance, authority, compliance, or transaction outcomes.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Alerts */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
